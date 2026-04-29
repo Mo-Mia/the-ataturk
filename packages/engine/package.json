@@ -8,6 +8,10 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
+    "./internal/silence": {
+      "types": "./src/internal/silence.ts",
+      "default": "./src/internal/silence.ts"
+    },
     "./fixtures/init_config/team1.json": "./fixtures/init_config/team1.json",
     "./fixtures/init_config/team2.json": "./fixtures/init_config/team2.json",
     "./fixtures/init_config/pitch.json": "./fixtures/init_config/pitch.json"

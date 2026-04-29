@@ -9,6 +9,7 @@ import {
 import pitchFixture from "@the-ataturk/engine/fixtures/init_config/pitch.json";
 import teamOneFixture from "@the-ataturk/engine/fixtures/init_config/team1.json";
 import teamTwoFixture from "@the-ataturk/engine/fixtures/init_config/team2.json";
+import { withEngineConsoleMuted } from "@the-ataturk/engine/internal/silence";
 
 import { ITERATIONS_PER_HALF } from "../config";
 
@@ -31,17 +32,6 @@ async function runIteration(matchDetails: MatchDetails, fullLog: string[]): Prom
   const nextMatchDetails = await playIteration(matchDetails);
   fullLog.push(...nextMatchDetails.iterationLog);
   return nextMatchDetails;
-}
-
-async function withEngineConsoleMuted<T>(operation: () => Promise<T>): Promise<T> {
-  const originalLog = console.log;
-  console.log = () => undefined;
-
-  try {
-    return await operation();
-  } finally {
-    console.log = originalLog;
-  }
 }
 
 async function runSmokeMatchInternal(): Promise<MatchDetails> {

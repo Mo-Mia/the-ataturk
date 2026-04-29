@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import pitchFixture from "../fixtures/init_config/pitch.json";
 import teamOneFixture from "../fixtures/init_config/team1.json";
 import teamTwoFixture from "../fixtures/init_config/team2.json";
+import { withEngineConsoleMuted } from "../src/internal/silence";
 import {
   initiateGame,
   playIteration,
@@ -70,7 +71,6 @@ function shotsOnTarget(matchDetails: MatchDetails): number {
 
 describe("footballsimulationengine smoke test", () => {
   beforeEach(() => {
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
     vi.spyOn(Math, "random").mockImplementation(createSeededRandom(3));
   });
 
@@ -83,22 +83,24 @@ describe("footballsimulationengine smoke test", () => {
     const teamTwo: TeamInput = cloneFixture(teamTwoFixture);
     const pitch: Pitch = cloneFixture(pitchFixture);
 
-    let matchDetails: MatchDetails = await initiateGame(teamOne, teamTwo, pitch);
+    let matchDetails: MatchDetails = await withEngineConsoleMuted(() =>
+      initiateGame(teamOne, teamTwo, pitch)
+    );
     let iterationsRun = 0;
 
     assertBallWithinPitch(matchDetails, pitch);
 
     for (let iteration = 0; iteration < ITERATIONS_PER_HALF; iteration += 1) {
-      matchDetails = await playIteration(matchDetails);
+      matchDetails = await withEngineConsoleMuted(() => playIteration(matchDetails));
       iterationsRun += 1;
       assertBallWithinPitch(matchDetails, pitch);
     }
 
-    matchDetails = await startSecondHalf(matchDetails);
+    matchDetails = await withEngineConsoleMuted(() => startSecondHalf(matchDetails));
     assertBallWithinPitch(matchDetails, pitch);
 
     for (let iteration = 0; iteration < ITERATIONS_PER_HALF; iteration += 1) {
-      matchDetails = await playIteration(matchDetails);
+      matchDetails = await withEngineConsoleMuted(() => playIteration(matchDetails));
       iterationsRun += 1;
       assertBallWithinPitch(matchDetails, pitch);
     }
