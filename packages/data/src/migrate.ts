@@ -15,8 +15,11 @@ interface MigrationRow {
   name: string;
 }
 
-function getDatabasePath(databasePath = process.env.DATABASE_URL ?? DEFAULT_DATABASE_PATH): string {
-  return resolveRepoPath(databasePath);
+function getDatabasePath(databasePath = process.env.DATABASE_URL): string {
+  const configuredPath =
+    databasePath && databasePath.trim().length > 0 ? databasePath : DEFAULT_DATABASE_PATH;
+
+  return resolveRepoPath(configuredPath);
 }
 
 function listMigrationFiles(migrationsDir = MIGRATIONS_DIR): string[] {

@@ -85,8 +85,11 @@ export class DataNotFoundError extends Error {
 let dbInstance: SqliteDatabase | undefined;
 let dbPath: string | undefined;
 
-export function getDatabasePath(databasePath = process.env.DATABASE_URL ?? DEFAULT_DATABASE_PATH): string {
-  return resolveRepoPath(databasePath);
+export function getDatabasePath(databasePath = process.env.DATABASE_URL): string {
+  const configuredPath =
+    databasePath && databasePath.trim().length > 0 ? databasePath : DEFAULT_DATABASE_PATH;
+
+  return resolveRepoPath(configuredPath);
 }
 
 export function getDb(databasePath?: string): SqliteDatabase {
