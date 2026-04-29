@@ -2,5 +2,25 @@
   "name": "@the-ataturk/data",
   "version": "0.1.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "migrate": "tsx src/migrate.ts",
+    "seed": "tsx src/seed.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "12.9.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "7.6.13",
+    "tsx": "4.21.0",
+    "vitest": "4.0.13"
+  }
 }
