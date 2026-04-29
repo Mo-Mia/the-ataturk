@@ -12,4 +12,13 @@ pnpm dev
 
 Open `http://127.0.0.1:5175/admin` for the local admin tool.
 
-The admin is intentionally unauthenticated and localhost-only for now. It provides dense data tooling for clubs, squads, dataset versions, and manual player attribute edits.
+The admin is intentionally unauthenticated and localhost-only for now. It provides dense data tooling for clubs, squads, dataset versions, profile versions, manual player attribute edits, and player-profile curation.
+
+Useful routes:
+
+- `/admin/clubs`
+- `/admin/dataset-versions`
+- `/admin/profile-versions`
+- `/admin/extract-profiles`
+
+The profile extraction page calls the local backend, which calls Gemini using `GEMINI_API_KEY`. Each full run costs roughly $0.10-0.30 in API credits.

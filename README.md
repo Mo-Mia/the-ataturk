@@ -41,10 +41,17 @@ pnpm typecheck
 - `GET /api/dataset-versions`
 - `POST /api/dataset-versions`
 - `POST /api/dataset-versions/:id/activate`
+- `GET /api/profile-versions`
+- `POST /api/profile-versions`
+- `POST /api/profile-versions/:id/activate`
 - `GET /api/players/:playerId`
 - `GET /api/players/:playerId/attributes`
 - `PATCH /api/players/:playerId/attributes`
 - `GET /api/players/:playerId/attribute-history`
+- `GET /api/players/:playerId/profile`
+- `PATCH /api/players/:playerId/profile`
+- `GET /api/players/:playerId/profile-history`
+- `POST /api/profile-extraction/run`
 
 ## Documentation
 
