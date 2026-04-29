@@ -12,6 +12,7 @@ export type {
   PlayerInput,
   PlayerSkill,
   PlayerStats,
+  ShotStatistics,
   Team,
   TeamInput,
   TeamIntent,

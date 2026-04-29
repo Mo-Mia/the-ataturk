@@ -13,10 +13,13 @@
     "./fixtures/init_config/pitch.json": "./fixtures/init_config/pitch.json"
   },
   "scripts": {
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "footballsimulationengine": "5.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "vitest": "4.0.13"
+  }
 }

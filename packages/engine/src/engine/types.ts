@@ -43,6 +43,12 @@ export interface PlayerStats {
   [key: string]: unknown;
 }
 
+export interface ShotStatistics {
+  total: number;
+  on: number;
+  off: number;
+}
+
 export interface PlayerInput {
   name: string;
   position: string;
@@ -108,13 +114,13 @@ export interface Ball {
 }
 
 export interface TeamStatistics {
-  goals: number;
-  shots: number;
-  corners: number;
-  freekicks: number;
-  penalties: number;
-  fouls: number;
-  [key: string]: number;
+  goals: SkillRating;
+  shots: ShotStatistics;
+  corners: SkillRating;
+  freekicks: SkillRating;
+  penalties: SkillRating;
+  fouls: SkillRating;
+  [key: string]: SkillRating | ShotStatistics;
 }
 
 export interface MatchDetails {
