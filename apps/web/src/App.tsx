@@ -130,10 +130,14 @@ export function App() {
       </header>
 
       <section className="controls" aria-label="Smoke test controls">
-        <button type="button" onClick={runHealthCheck} disabled={healthState === "loading"}>
+        <button
+          type="button"
+          onClick={() => void runHealthCheck()}
+          disabled={healthState === "loading"}
+        >
           {healthState === "loading" ? "Checking..." : "Health check"}
         </button>
-        <button type="button" onClick={runMatch} disabled={matchState === "loading"}>
+        <button type="button" onClick={() => void runMatch()} disabled={matchState === "loading"}>
           {matchState === "loading" ? "Running match..." : "Run match"}
         </button>
       </section>

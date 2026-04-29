@@ -18,10 +18,7 @@
         "jumping": "62",
         "control": "60"
       },
-      "currentPOS": [
-        340,
-        0
-      ],
+      "currentPOS": [340, 0],
       "fitness": 100,
       "height": 177,
       "injured": false
@@ -42,10 +39,7 @@
         "jumping": "61",
         "control": "60"
       },
-      "currentPOS": [
-        80,
-        80
-      ],
+      "currentPOS": [80, 80],
       "fitness": 100,
       "height": 169,
       "injured": false
@@ -66,10 +60,7 @@
         "jumping": "46",
         "control": "60"
       },
-      "currentPOS": [
-        230,
-        80
-      ],
+      "currentPOS": [230, 80],
       "fitness": 100,
       "height": 160,
       "injured": false
@@ -90,10 +81,7 @@
         "jumping": "49",
         "control": "60"
       },
-      "currentPOS": [
-        420,
-        80
-      ],
+      "currentPOS": [420, 80],
       "fitness": 100,
       "height": 185,
       "injured": false
@@ -114,10 +102,7 @@
         "jumping": "53",
         "control": "60"
       },
-      "currentPOS": [
-        600,
-        80
-      ],
+      "currentPOS": [600, 80],
       "fitness": 100,
       "height": 176,
       "injured": false
@@ -138,10 +123,7 @@
         "jumping": "47",
         "control": "60"
       },
-      "currentPOS": [
-        80,
-        270
-      ],
+      "currentPOS": [80, 270],
       "fitness": 100,
       "height": 168,
       "injured": false
@@ -162,10 +144,7 @@
         "jumping": "31",
         "control": "60"
       },
-      "currentPOS": [
-        230,
-        270
-      ],
+      "currentPOS": [230, 270],
       "fitness": 100,
       "height": 164,
       "injured": false
@@ -186,10 +165,7 @@
         "jumping": "28",
         "control": "60"
       },
-      "currentPOS": [
-        420,
-        270
-      ],
+      "currentPOS": [420, 270],
       "fitness": 100,
       "height": 195,
       "injured": false
@@ -210,10 +186,7 @@
         "jumping": "66",
         "control": "60"
       },
-      "currentPOS": [
-        600,
-        270
-      ],
+      "currentPOS": [600, 270],
       "fitness": 100,
       "height": 170,
       "injured": false
@@ -234,10 +207,7 @@
         "jumping": "90",
         "control": "60"
       },
-      "currentPOS": [
-        280,
-        500
-      ],
+      "currentPOS": [280, 500],
       "fitness": 100,
       "height": 190,
       "injured": false
@@ -258,10 +228,7 @@
         "jumping": "35",
         "control": "60"
       },
-      "currentPOS": [
-        440,
-        500
-      ],
+      "currentPOS": [440, 500],
       "fitness": 100,
       "height": 183,
       "injured": false

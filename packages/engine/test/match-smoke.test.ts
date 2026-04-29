@@ -52,7 +52,9 @@ function hasAnyNonZeroStatistic(statistics: TeamStatistics): boolean {
 }
 
 function shotCount(matchDetails: MatchDetails): number {
-  return matchDetails.kickOffTeamStatistics.shots.total + matchDetails.secondTeamStatistics.shots.total;
+  return (
+    matchDetails.kickOffTeamStatistics.shots.total + matchDetails.secondTeamStatistics.shots.total
+  );
 }
 
 function goals(matchDetails: MatchDetails): number {

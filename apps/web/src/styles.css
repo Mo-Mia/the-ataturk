@@ -66,7 +66,9 @@ button {
   background: #151515;
   color: #ffffff;
   cursor: pointer;
-  font: 700 15px/1 "Trebuchet MS", sans-serif;
+  font:
+    700 15px/1 "Trebuchet MS",
+    sans-serif;
   padding: 12px 16px;
 }
 

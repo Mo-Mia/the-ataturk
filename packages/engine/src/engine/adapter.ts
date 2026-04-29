@@ -1,11 +1,6 @@
 import { createRequire } from "node:module";
 
-import type {
-  FootballSimulationEngineModule,
-  MatchDetails,
-  Pitch,
-  TeamInput
-} from "./types";
+import type { FootballSimulationEngineModule, MatchDetails, Pitch, TeamInput } from "./types";
 
 const require = createRequire(import.meta.url);
 const loadedEngine = require("footballsimulationengine") as unknown;
