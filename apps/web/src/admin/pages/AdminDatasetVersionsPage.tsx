@@ -143,9 +143,7 @@ export function AdminDatasetVersionsPage() {
         </form>
         {createMutation.error ? (
           <p className="admin-error">
-            {createMutation.error instanceof Error
-              ? createMutation.error.message
-              : "Create failed"}
+            {createMutation.error instanceof Error ? createMutation.error.message : "Create failed"}
           </p>
         ) : null}
       </div>

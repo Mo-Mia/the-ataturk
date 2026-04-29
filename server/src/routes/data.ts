@@ -284,7 +284,9 @@ export function registerDataRoutes(app: FastifyInstance): void {
 
     if (!attributes) {
       reply.code(404);
-      return { error: `Attributes for player '${player.id}' in '${datasetVersion.id}' do not exist` };
+      return {
+        error: `Attributes for player '${player.id}' in '${datasetVersion.id}' do not exist`
+      };
     }
 
     return attributes;
@@ -308,7 +310,9 @@ export function registerDataRoutes(app: FastifyInstance): void {
         };
 
         return updatePlayerAttributes(
-          input.changed_by === undefined ? updateInput : { ...updateInput, changedBy: input.changed_by }
+          input.changed_by === undefined
+            ? updateInput
+            : { ...updateInput, changedBy: input.changed_by }
         );
       } catch (error) {
         if (error instanceof DataValidationError) {

@@ -1,3 +1,4 @@
+import type { PlayerAttributeHistory } from "@the-ataturk/data";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../src/app";
@@ -35,7 +36,8 @@ describe("admin attribute edit routes", () => {
       });
 
       expect(history.statusCode).toBe(200);
-      expect(history.json()[0]).toMatchObject({
+      const historyRows = history.json<PlayerAttributeHistory[]>();
+      expect(historyRows[0]).toMatchObject({
         dataset_version: "v0-stub",
         attribute_name: "tackling",
         old_value: 0,

@@ -52,9 +52,10 @@ describe("admin dataset version routes", () => {
 
       const copiedCount =
         getDb(testDatabase.path)
-          .prepare<[string], CountRow>(
-            "SELECT COUNT(*) AS count FROM player_attributes WHERE dataset_version = ?"
-          )
+          .prepare<
+            [string],
+            CountRow
+          >("SELECT COUNT(*) AS count FROM player_attributes WHERE dataset_version = ?")
           .get("v1-test")?.count ?? 0;
 
       expect(copiedCount).toBe(realPlayerCount());

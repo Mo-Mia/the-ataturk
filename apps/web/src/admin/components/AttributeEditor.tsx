@@ -12,7 +12,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 
 interface AttributeEditorProps {
   attributes: PlayerAttributes;
-  onSaved(updatedAttributes: PlayerAttributes): void;
+  onSaved: (updatedAttributes: PlayerAttributes) => void;
   saveAttributes?: typeof updatePlayerAttributes;
 }
 
@@ -25,10 +25,14 @@ export function AttributeEditor({
   onSaved,
   saveAttributes = updatePlayerAttributes
 }: AttributeEditorProps) {
-  const [values, setValues] = useState<Record<PlayerAttributeName, string>>(() =>
-    Object.fromEntries(
-      PLAYER_ATTRIBUTE_NAMES.map((attributeName) => [attributeName, String(attributes[attributeName])])
-    ) as Record<PlayerAttributeName, string>
+  const [values, setValues] = useState<Record<PlayerAttributeName, string>>(
+    () =>
+      Object.fromEntries(
+        PLAYER_ATTRIBUTE_NAMES.map((attributeName) => [
+          attributeName,
+          String(attributes[attributeName])
+        ])
+      ) as Record<PlayerAttributeName, string>
   );
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<PlayerAttributeName, string>>>({});
@@ -37,7 +41,10 @@ export function AttributeEditor({
   useEffect(() => {
     setValues(
       Object.fromEntries(
-        PLAYER_ATTRIBUTE_NAMES.map((attributeName) => [attributeName, String(attributes[attributeName])])
+        PLAYER_ATTRIBUTE_NAMES.map((attributeName) => [
+          attributeName,
+          String(attributes[attributeName])
+        ])
       ) as Record<PlayerAttributeName, string>
     );
   }, [attributes]);

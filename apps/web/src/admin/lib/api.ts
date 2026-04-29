@@ -169,9 +169,7 @@ export function listDatasetVersions(): Promise<DatasetVersion[]> {
   return requestJson<DatasetVersion[]>("/api/dataset-versions");
 }
 
-export function createDatasetVersion(
-  body: CreateDatasetVersionRequest
-): Promise<DatasetVersion> {
+export function createDatasetVersion(body: CreateDatasetVersionRequest): Promise<DatasetVersion> {
   return requestJson<DatasetVersion>("/api/dataset-versions", {
     method: "POST",
     body: JSON.stringify(body)
@@ -188,10 +186,7 @@ export function getPlayer(playerId: string): Promise<Player> {
   return requestJson<Player>(`/api/players/${playerId}`);
 }
 
-export function getPlayerAttributes(
-  playerId: string,
-  version?: string
-): Promise<PlayerAttributes> {
+export function getPlayerAttributes(playerId: string, version?: string): Promise<PlayerAttributes> {
   const query = version ? `?version=${encodeURIComponent(version)}` : "";
   return requestJson<PlayerAttributes>(`/api/players/${playerId}/attributes${query}`);
 }

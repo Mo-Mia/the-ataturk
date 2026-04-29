@@ -1,3 +1,4 @@
+import type { PlayerAttributeHistory } from "@the-ataturk/data";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../src/app";
@@ -37,11 +38,19 @@ describe("admin attribute history routes", () => {
         method: "GET",
         url: "/api/players/steven-gerrard/attribute-history?version=v0-stub&limit=10"
       });
-      const body = response.json();
+      const body = response.json<PlayerAttributeHistory[]>();
 
       expect(response.statusCode).toBe(200);
-      expect(body[0].attribute_name).toBe("shooting");
-      expect(body[1].attribute_name).toBe("passing");
+      expect(body).toHaveLength(2);
+      const latest = body.at(0);
+      const previous = body.at(1);
+
+      if (!latest || !previous) {
+        throw new Error("Expected two history rows");
+      }
+
+      expect(latest.attribute_name).toBe("shooting");
+      expect(previous.attribute_name).toBe("passing");
     } finally {
       await app.close();
     }

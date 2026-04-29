@@ -26,10 +26,7 @@ const attributes: PlayerAttributes = {
   updated_at: "2026-04-29T00:00:00.000Z"
 };
 
-function renderEditor(
-  onSaved = vi.fn(),
-  saveAttributes: typeof updatePlayerAttributes = vi.fn()
-) {
+function renderEditor(onSaved = vi.fn(), saveAttributes: typeof updatePlayerAttributes = vi.fn()) {
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
