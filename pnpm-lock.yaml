@@ -89,6 +89,9 @@ importers:
 
   server:
     dependencies:
+      '@the-ataturk/data':
+        specifier: workspace:*
+        version: link:../packages/data
       '@the-ataturk/engine':
         specifier: workspace:*
         version: link:../packages/engine

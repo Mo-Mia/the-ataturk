@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 
+import { registerDataRoutes } from "./routes/data";
 import { registerHealthRoute } from "./routes/health";
 import { registerSmokeMatchRoute } from "./routes/smoke-match";
 
@@ -10,6 +11,7 @@ export function buildApp() {
     }
   });
 
+  registerDataRoutes(app);
   registerHealthRoute(app);
   registerSmokeMatchRoute(app);
 
