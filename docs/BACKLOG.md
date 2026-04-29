@@ -1,5 +1,20 @@
 # Backlog
 
+## Player Manager mode
+
+### Persistent player progression across matches (v0.2+)
+Currently a user-player is locked at creation and used for one match only. v0.2 (full Liverpool campaign) needs: form/fitness changes between matches, possible attribute drift, user-player carries across all 30+ matches in a season. Schema is mostly ready — needs a `match_runs` table linking user-players to matches.
+
+### Multiple user-players per save
+v0.1 assumes one user-player per match. Eventually: ability to switch between created characters, "save your favourite builds," etc.
+
+### User-player editing post-creation
+Currently locked at creation. Worth considering whether mid-season tweaks are interesting or whether they undermine the commitment of the build.
+
+### User-player kit / appearance customisation
+Cosmetic only. Probably v0.3+.
+
+
 Non-blocking follow-up work. Things worth doing eventually but not
 worth doing now. When picking up an item, move it to a "done" section
 or just delete it — git history preserves the trail.

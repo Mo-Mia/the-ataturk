@@ -4,6 +4,13 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-04-29 — v0.1 includes Player Manager mode (single mode, mandatory player creation)
+v0.1's core gameplay is "Player Manager": user creates their own player upfront with a budget-constrained attribute spread (5% above best player's total, configurable), picks from 8 archetype presets or blank slate, and joins Liverpool's squad. Tactical control depends on whether the user-player is on the pitch — full manager mode when off, frozen tactics + sub-self-off as the only action when on. There is no separate "manager only" mode; users who don't want to play themselves simply don't pick themselves in the XI or come off the bench. Rejected: two parallel modes (would have doubled UI surface for marginal benefit). Rejected: optional player creation (would have added branching everywhere for a feature most users would engage with). Scope expansion accepted: v0.1 ships ~30-40% later than manager-only would have. See PLAYER_MANAGER_MODE.md.
+
+## 2026-04-29 — Player attribute budget is configurable, not hardcoded
+The user-player's total attribute budget is a multiple of the best in-game player's total. Default multiplier 1.05 (5% above best), with per-attribute caps and floors. All values are configurable in `packages/data/src/config/player-budget.ts` for tuning during testing. Range supported: 0.8x to 1.5x for stress-testing different power levels. Not exposed to users — internal tuning knob.
+
+
 ## 2026-04-29 — Engine smoke test is deterministic via seeded `Math.random`
 The smoke test in packages/engine/test/match-smoke.test.ts mocks
 Math.random with a seeded LCG to produce a reproducible match each run.

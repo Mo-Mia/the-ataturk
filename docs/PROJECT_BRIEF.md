@@ -24,12 +24,16 @@ The narrative arc (Liverpool's group-stage struggle → Olympiakos → Juventus 
 
 ### v0.1 — "Istanbul"
 Single match, fully realised. The 2005 final: Liverpool vs Milan.
-- Pre-match: pick the XI, set tactics
+- **Player creation** (mandatory): user creates their own player with a configurable points budget, picks an archetype preset, joins Liverpool's squad
+- Pre-match: pick the XI (with or without the user-player), set tactics
 - Match: AI commentary (text + voice), tactical sub/shift controls
-- Half-time: team talk and tactical reset
-- Full-time: match report
+- **Tactical permissions depend on user-player position**: full manager controls when off the pitch; frozen tactics with sub-self-off as the only action when on the pitch
+- Half-time: team talk and tactical reset (off pitch) or tunnel-chat dialogue (on pitch)
+- Full-time: match report with user-player narrative beats
 
 If this match doesn't feel magical, the project doesn't continue. Everything else is built on top of this proven core.
+
+See `PLAYER_MANAGER_MODE.md` for the full specification.
 
 ### v0.2 — Full Liverpool campaign
 The complete 2004/05 CL run as Liverpool. Group stage through final. Squad/form/injury management between matches. Light training mechanic.
@@ -41,6 +45,8 @@ Same campaign, but the user can pick any of the 32 clubs and play their actual f
 Random club assignment per playthrough for SCM forum members. Async or scheduled-live matches between users. Significant backend work — only attempt once single-player is rock solid.
 
 ## Core mechanics (v0.1)
+
+- **Player creation** — mandatory upfront flow; user creates their player with budget-constrained attributes from one of 8 presets (or blank slate)
 
 - **Team selection** — XI from squad, formation choice (4-4-2, 4-3-3, 3-5-2, etc.)
 - **Tactics** — tempo, mentality (defensive → attacking), pressing intensity, per-player role
