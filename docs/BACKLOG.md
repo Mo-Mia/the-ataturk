@@ -23,6 +23,14 @@ Add new items at the top of the relevant section. If an item sits here
 for more than a few months without being addressed, it's probably not
 actually worth doing — delete it.
 
+## Refactor
+
+### Extract shared types package
+API boundary types are currently duplicated between `packages/data/src/types.ts`
+(Node, includes SQLite-specific helpers) and `apps/web/src/admin/lib/api.ts`
+(browser-safe types only). When the duplication grows beyond ~3 types, extract
+to a new `packages/types` workspace package consumed by both.
+
 ## Schema
 
 ### Penalty shootout result field

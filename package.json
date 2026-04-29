@@ -15,7 +15,7 @@
   "scripts": {
     "db:reset": "pnpm --filter @the-ataturk/data reset",
     "dev": "pnpm --parallel --filter @the-ataturk/server --filter @the-ataturk/web dev",
-    "test": "pnpm --filter @the-ataturk/engine test && pnpm --filter @the-ataturk/data test",
+    "test": "pnpm --filter @the-ataturk/engine test && pnpm --filter @the-ataturk/data test && pnpm --filter @the-ataturk/server test && pnpm --filter @the-ataturk/web test",
     "lint": "eslint . --max-warnings=0 && prettier --check .",
     "typecheck": "pnpm -r --if-present typecheck"
   },

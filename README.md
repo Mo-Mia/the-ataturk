@@ -22,6 +22,8 @@ pnpm dev
 
 The server runs on port 8005 and the web app runs on port 5175.
 
+Admin tooling is available locally at `http://127.0.0.1:5175/admin`.
+
 ## Checks
 
 ```sh
@@ -29,6 +31,20 @@ pnpm test
 pnpm lint
 pnpm typecheck
 ```
+
+## API Reference
+
+- `GET /api/health`
+- `POST /api/smoke-test/match`
+- `GET /api/clubs`
+- `GET /api/clubs/:id/squad`
+- `GET /api/dataset-versions`
+- `POST /api/dataset-versions`
+- `POST /api/dataset-versions/:id/activate`
+- `GET /api/players/:playerId`
+- `GET /api/players/:playerId/attributes`
+- `PATCH /api/players/:playerId/attributes`
+- `GET /api/players/:playerId/attribute-history`
 
 ## Documentation
 
