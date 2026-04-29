@@ -29,7 +29,11 @@ describe("data seed pipeline", () => {
     expect(count("SELECT COUNT(*) AS count FROM players WHERE club_id = 'ac-milan'")).toBe(23);
     expect(count("SELECT COUNT(*) AS count FROM fixtures")).toBe(1);
     expect(count("SELECT COUNT(*) AS count FROM player_dataset_versions WHERE is_active = 1")).toBe(1);
+    expect(count("SELECT COUNT(*) AS count FROM player_profile_versions WHERE is_active = 1")).toBe(1);
     expect(count("SELECT COUNT(*) AS count FROM player_attributes WHERE dataset_version = 'v0-stub'")).toBe(49);
+    expect(count("SELECT COUNT(*) AS count FROM player_profiles WHERE profile_version = 'v0-empty'")).toBe(49);
+    expect(count("SELECT COUNT(*) AS count FROM player_profiles WHERE tier = 'C' AND edited = 0")).toBe(49);
+    expect(count("SELECT COUNT(*) AS count FROM player_profiles WHERE role_2004_05 IS NOT NULL")).toBe(0);
     expect(count("SELECT COUNT(*) AS count FROM players WHERE player_origin = 'real'")).toBe(49);
     expect(count("SELECT COUNT(*) AS count FROM players WHERE player_origin = 'user_created'")).toBe(0);
     expect(

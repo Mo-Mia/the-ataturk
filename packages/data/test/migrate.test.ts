@@ -22,10 +22,10 @@ describe("data migrations", () => {
     const firstRun = migrate({ databasePath: testDatabase.path });
     const secondRun = migrate({ databasePath: testDatabase.path });
 
-    expect(firstRun.applied).toEqual(["001_initial.sql"]);
+    expect(firstRun.applied).toEqual(["001_initial.sql", "002_player_profiles.sql"]);
     expect(firstRun.skipped).toEqual([]);
     expect(secondRun.applied).toEqual([]);
-    expect(secondRun.skipped).toEqual(["001_initial.sql"]);
+    expect(secondRun.skipped).toEqual(["001_initial.sql", "002_player_profiles.sql"]);
 
     const db = new Database(testDatabase.path);
     try {
@@ -33,7 +33,7 @@ describe("data migrations", () => {
         .prepare<[], CountRow>("SELECT COUNT(*) AS count FROM _migrations")
         .get();
 
-      expect(row?.count).toBe(1);
+      expect(row?.count).toBe(2);
     } finally {
       db.close();
     }
