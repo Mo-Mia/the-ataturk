@@ -4,6 +4,16 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-04-29 — Engine smoke test is deterministic via seeded `Math.random`
+The smoke test in packages/engine/test/match-smoke.test.ts mocks
+Math.random with a seeded LCG to produce a reproducible match each run.
+This trades distributional realism for test stability — we'd rather have
+a deterministic pass/fail than a flaky test that fails one run in twenty
+when randomness conspires against us. Realism validation across seeds
+is tracked separately as a backlog item (engine realism characterisation
+test). Rejected: probabilistic assertions with statistical bounds (would
+add noise without catching real bugs at v0.1).
+
 ## 2026-04-29 — v0.1 is text-only; match state stream preserves full positional data for v0.2 renderer
 v0.1 ships with a commentary-only UI (no pitch view) — the radio-broadcast aesthetic is intentional, and the LLM commentary thesis must carry the experience without visual crutches. But the server's match state stream preserves the engine's full per-iteration positional payload (player x/y, ball x/y/z, per-player deltas) so v0.2 can add a 2D top-down pitch renderer as a pure additive frontend change. v0.3+ layers event overlays (pass arrows, shot arcs, heatmaps) on top. Pseudo-3D / FM-style match view is out of scope at all versions. Rejected: stripping the v0.1 stream down to events-only (would force a server refactor at v0.2).
 
