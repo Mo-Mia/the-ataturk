@@ -20,7 +20,7 @@ pnpm install
 pnpm dev
 ```
 
-The server runs on port 3001 and the web app runs on port 5173.
+The server runs on port 8005 and the web app runs on port 5175.
 
 ## Checks
 

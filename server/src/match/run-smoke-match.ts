@@ -33,7 +33,18 @@ async function runIteration(matchDetails: MatchDetails, fullLog: string[]): Prom
   return nextMatchDetails;
 }
 
-export async function runSmokeMatch(): Promise<MatchDetails> {
+async function withEngineConsoleMuted<T>(operation: () => Promise<T>): Promise<T> {
+  const originalLog = console.log;
+  console.log = () => undefined;
+
+  try {
+    return await operation();
+  } finally {
+    console.log = originalLog;
+  }
+}
+
+async function runSmokeMatchInternal(): Promise<MatchDetails> {
   const teamOne: TeamInput = cloneFixture(teamOneFixture);
   const teamTwo: TeamInput = cloneFixture(teamTwoFixture);
   const pitch: Pitch = cloneFixture(pitchFixture);
@@ -57,4 +68,8 @@ export async function runSmokeMatch(): Promise<MatchDetails> {
     ...matchDetails,
     iterationLog: truncateLog(fullLog)
   };
+}
+
+export async function runSmokeMatch(): Promise<MatchDetails> {
+  return withEngineConsoleMuted(runSmokeMatchInternal);
 }

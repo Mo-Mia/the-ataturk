@@ -1,5 +1,5 @@
 export const ITERATIONS_PER_HALF = 450;
-export const DEFAULT_PORT = 3001;
+export const DEFAULT_PORT = 8005;
 
 export function getPort(): number {
   const rawPort = process.env.PORT;
