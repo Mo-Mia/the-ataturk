@@ -1,4 +1,13 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+
+import { AdminLayout } from "./admin/components/AdminLayout";
+import { AdminClubDetailPage } from "./admin/pages/AdminClubDetailPage";
+import { AdminClubsPage } from "./admin/pages/AdminClubsPage";
+import { AdminDatasetVersionsPage } from "./admin/pages/AdminDatasetVersionsPage";
+import { AdminHomePage } from "./admin/pages/AdminHomePage";
+import { AdminPlayerDetailPage } from "./admin/pages/AdminPlayerDetailPage";
 
 type RequestState = "idle" | "loading" | "success" | "error";
 
@@ -33,6 +42,8 @@ interface SmokeMatchResponse {
   secondTeamStatistics: TeamStatistics;
   matchHistoryLog: string[];
 }
+
+const queryClient = new QueryClient();
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
@@ -85,7 +96,7 @@ function StatisticsTable({ match }: { match: SmokeMatchResponse }) {
   );
 }
 
-export function App() {
+function SmokeTestPage() {
   const [healthState, setHealthState] = useState<RequestState>("idle");
   const [matchState, setMatchState] = useState<RequestState>("idle");
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -163,5 +174,24 @@ export function App() {
         )}
       </section>
     </main>
+  );
+}
+
+export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<SmokeTestPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminHomePage />} />
+            <Route path="clubs" element={<AdminClubsPage />} />
+            <Route path="clubs/:id" element={<AdminClubDetailPage />} />
+            <Route path="players/:id" element={<AdminPlayerDetailPage />} />
+            <Route path="dataset-versions" element={<AdminDatasetVersionsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }

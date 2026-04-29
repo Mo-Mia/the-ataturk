@@ -1,0 +1,82 @@
+.admin-shell {
+  width: min(1280px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 16px 0 32px;
+  font-family: "Trebuchet MS", Verdana, sans-serif;
+  color: #111827;
+}
+
+.admin-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.admin-nav {
+  display: flex;
+  gap: 12px;
+}
+
+.admin-banner,
+.admin-panel {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  border: 1px solid #cbd5e1;
+  padding: 7px 8px;
+  vertical-align: top;
+}
+
+.admin-table th {
+  background: #f1f5f9;
+}
+
+.admin-form {
+  display: grid;
+  gap: 8px;
+  max-width: 680px;
+}
+
+.admin-form label {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea,
+.attribute-input {
+  border: 1px solid #94a3b8;
+  padding: 6px;
+  font: inherit;
+}
+
+.attribute-input {
+  width: 80px;
+}
+
+.admin-error {
+  color: #991b1b;
+}
+
+.admin-muted {
+  color: #64748b;
+}
