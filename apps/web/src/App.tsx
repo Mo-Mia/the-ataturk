@@ -31,7 +31,7 @@ interface SmokeMatchResponse {
   secondTeam: TeamSummary;
   kickOffTeamStatistics: TeamStatistics;
   secondTeamStatistics: TeamStatistics;
-  iterationLog: string[];
+  matchHistoryLog: string[];
 }
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -155,8 +155,8 @@ export function App() {
           <>
             <ScoreLine match={match} />
             <StatisticsTable match={match} />
-            <h3>Iteration log</h3>
-            <pre>{match.iterationLog.join("\n")}</pre>
+            <h3>Match history log</h3>
+            <pre>{match.matchHistoryLog.join("\n")}</pre>
           </>
         ) : (
           <pre>No match run yet.</pre>

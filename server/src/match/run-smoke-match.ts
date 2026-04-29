@@ -16,6 +16,10 @@ import { ITERATIONS_PER_HALF } from "../config";
 const LOG_HEAD_COUNT = 50;
 const LOG_TAIL_COUNT = 50;
 
+export type SmokeMatchResponse = Omit<MatchDetails, "iterationLog"> & {
+  matchHistoryLog: string[];
+};
+
 function cloneFixture<T>(fixture: unknown): T {
   return structuredClone(fixture) as T;
 }
@@ -34,7 +38,17 @@ async function runIteration(matchDetails: MatchDetails, fullLog: string[]): Prom
   return nextMatchDetails;
 }
 
-async function runSmokeMatchInternal(): Promise<MatchDetails> {
+function toSmokeMatchResponse(matchDetails: MatchDetails, fullLog: string[]): SmokeMatchResponse {
+  const response: Partial<SmokeMatchResponse> = {
+    ...matchDetails,
+    matchHistoryLog: truncateLog(fullLog)
+  };
+  delete (response as { iterationLog?: string[] }).iterationLog;
+
+  return response as SmokeMatchResponse;
+}
+
+async function runSmokeMatchInternal(): Promise<SmokeMatchResponse> {
   const teamOne: TeamInput = cloneFixture(teamOneFixture);
   const teamTwo: TeamInput = cloneFixture(teamTwoFixture);
   const pitch: Pitch = cloneFixture(pitchFixture);
@@ -54,12 +68,9 @@ async function runSmokeMatchInternal(): Promise<MatchDetails> {
     matchDetails = await runIteration(matchDetails, fullLog);
   }
 
-  return {
-    ...matchDetails,
-    iterationLog: truncateLog(fullLog)
-  };
+  return toSmokeMatchResponse(matchDetails, fullLog);
 }
 
-export async function runSmokeMatch(): Promise<MatchDetails> {
+export async function runSmokeMatch(): Promise<SmokeMatchResponse> {
   return withEngineConsoleMuted(runSmokeMatchInternal);
 }
