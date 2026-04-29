@@ -33,6 +33,7 @@ export const PLAYER_ATTRIBUTE_NAMES = [
   "control"
 ] as const;
 export type PlayerAttributeName = (typeof PLAYER_ATTRIBUTE_NAMES)[number];
+export type PlayerAttributeChanges = Partial<Record<PlayerAttributeName, number>>;
 
 export type FixtureRound = "group" | "r16" | "qf" | "sf" | "final";
 
@@ -122,6 +123,15 @@ export interface DatasetVersion {
   updated_at: string;
 }
 
+export interface CreateDatasetVersionInput {
+  id: string;
+  name: string;
+  description?: string | null;
+  parent_version_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface PlayerAttributes {
   id: string;
   player_id: string;
@@ -152,6 +162,14 @@ export interface PlayerAttributeHistory {
   new_value: number;
   changed_at: string;
   changed_by: string;
+}
+
+export interface UpdatePlayerAttributesInput {
+  playerId: string;
+  datasetVersion: string;
+  changes: PlayerAttributeChanges;
+  changedBy?: string;
+  changedAt?: string;
 }
 
 export interface Fixture {
