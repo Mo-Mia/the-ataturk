@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./llm/gemini": {
+      "types": "./src/llm/gemini.ts",
+      "default": "./src/llm/gemini.ts"
     }
   },
   "scripts": {
@@ -17,6 +21,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/genai": "^1.50.1",
     "better-sqlite3": "12.9.0"
   },
   "devDependencies": {
