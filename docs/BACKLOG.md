@@ -23,6 +23,15 @@ Add new items at the top of the relevant section. If an item sits here
 for more than a few months without being addressed, it's probably not
 actually worth doing — delete it.
 
+## Schema
+
+### Penalty shootout result field
+The `fixtures` table has `real_result_home_goals` and `real_result_away_goals`,
+which currently capture the on-pitch result (e.g. 3-3 for the 2005 final which
+went to penalties). When we model penalty shootouts in the engine we'll need a
+separate `penalty_shootout_winner` field, or similar. For now, the `notes`
+field is the place this lives.
+
 ## Engine
 
 ### Normalise `SkillRating` at the engine boundary
