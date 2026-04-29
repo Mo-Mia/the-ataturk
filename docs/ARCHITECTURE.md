@@ -86,6 +86,32 @@ Critical implementation notes:
 
 Provider-swappable from day one. Gemini TTS as default during dev. ElevenLabs available for A/B testing voice quality. Important: **decouple text generation from speech synthesis** — commentary text is the source of truth, audio is a derivative artefact. Replays, voice changes, and skip-TTS dev mode all become easy.
 
+## Match state streaming and the future renderer
+
+Even though v0.1 is text-only (commentary feed, no pitch view), the match state delivered to the client must include the full positional payload from the engine — every player's `currentPOS`, the ball's `[x, y, z]` position, and any per-iteration deltas. Do **not** strip down the engine output to "just events" for v0.1.
+
+### Why this matters now
+v0.2 will add a 2D top-down pitch renderer (SVG-based, smooth interpolation between iterations). That renderer is purely a *new client-side consumer* of the same stream commentary already uses — no backend changes, no new endpoints, no engine refactor. This works only if the v0.1 stream already carries the data the renderer needs.
+
+If we optimise the v0.1 stream down to the minimal shape commentary requires, we pay for the optimisation twice: once now, and again when v0.2 forces us to widen it.
+
+### What the stream contains, per iteration
+- Match clock (computed from iteration number)
+- Ball state: `position: [x, y, z]`, `withPlayer`, `withTeam`, `direction`
+- Both teams: full player array including `currentPOS`, `hasBall`, `action`, `fitness`, per-player `stats` deltas
+- Team-level statistics deltas (goals, shots, corners, fouls, etc.)
+- The engine's raw `iterationLog` (input to the event abstraction layer)
+- Any semantic events extracted in this iteration
+
+### Renderer roadmap (informational, not v0.1 work)
+- **v0.1** — text-only. Commentary feed in chat-like UI. The radio commentary aesthetic is the design goal, not a limitation.
+- **v0.2** — 2D top-down pitch (SVG, ~22 dots + ball, smooth tweening between iteration positions). Optional initials on dots. Toggleable trails / heat overlay.
+- **v0.3+** — Event overlays: pass arrows, shot trajectories rendered as 2D arcs using the engine's z-axis data, possession heatmap toggle, formation shape lines. All additive on top of the v0.2 base.
+- **Out of scope, all versions** — pseudo-3D / FM-style rendered match view, kit textures, animated player models. Licensing and scope landmines we explicitly excluded.
+
+### Implementation note for Codex
+When designing the server's match state response shape, default to passing through the engine's `matchDetails` object as-is (after type-casting through our adapter). Don't project it down. The exception is the `iterationLog` truncation in the smoke-test endpoint specifically, which is a smoke-test pragmatism, not a design pattern.
+
 ## Data layer
 
 SQLite. Schema (v0.1, expand later):

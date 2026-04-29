@@ -4,6 +4,9 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-04-29 — v0.1 is text-only; match state stream preserves full positional data for v0.2 renderer
+v0.1 ships with a commentary-only UI (no pitch view) — the radio-broadcast aesthetic is intentional, and the LLM commentary thesis must carry the experience without visual crutches. But the server's match state stream preserves the engine's full per-iteration positional payload (player x/y, ball x/y/z, per-player deltas) so v0.2 can add a 2D top-down pitch renderer as a pure additive frontend change. v0.3+ layers event overlays (pass arrows, shot arcs, heatmaps) on top. Pseudo-3D / FM-style match view is out of scope at all versions. Rejected: stripping the v0.1 stream down to events-only (would force a server refactor at v0.2).
+
 ## 2026-04-29 — Wrap, don't fork `footballsimulationengine`
 Adopt as npm dependency, build typed adapter layer above. Aligned with upstream improvements; small enough to fork later if upstream goes dark. Rejected: forking immediately (permanent maintenance debt) and writing our own engine (huge scope, no payoff for v0.1).
 
