@@ -2,12 +2,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { AttributeEditor } from "../components/AttributeEditor";
+import { ProfileEditor } from "../components/ProfileEditor";
 import {
   getPlayer,
   getPlayerAttributeHistory,
   getPlayerAttributes,
+  getPlayerProfile,
+  getPlayerProfileHistory,
   listDatasetVersions,
-  type PlayerAttributes
+  listProfileVersions,
+  runProfileExtraction,
+  type PlayerAttributes,
+  type PlayerProfile
 } from "../lib/api";
 import { queryKeys } from "../lib/query-keys";
 
@@ -19,7 +25,12 @@ export function AdminPlayerDetailPage() {
     queryKey: queryKeys.datasetVersions,
     queryFn: listDatasetVersions
   });
+  const profileVersionsQuery = useQuery({
+    queryKey: queryKeys.profileVersions,
+    queryFn: listProfileVersions
+  });
   const activeVersion = versionsQuery.data?.find((version) => version.is_active);
+  const activeProfileVersion = profileVersionsQuery.data?.find((version) => version.is_active);
   const playerQuery = useQuery({
     queryKey: queryKeys.player(playerId),
     queryFn: () => getPlayer(playerId),
@@ -35,6 +46,16 @@ export function AdminPlayerDetailPage() {
     queryFn: () => getPlayerAttributeHistory(playerId, activeVersion?.id, 50),
     enabled: playerId.length > 0 && activeVersion !== undefined
   });
+  const profileQuery = useQuery({
+    queryKey: queryKeys.playerProfile(playerId, activeProfileVersion?.id),
+    queryFn: () => getPlayerProfile(playerId, activeProfileVersion?.id),
+    enabled: playerId.length > 0 && activeProfileVersion !== undefined
+  });
+  const profileHistoryQuery = useQuery({
+    queryKey: queryKeys.profileHistory(playerId, activeProfileVersion?.id, 50),
+    queryFn: () => getPlayerProfileHistory(playerId, activeProfileVersion?.id, 50),
+    enabled: playerId.length > 0 && activeProfileVersion !== undefined
+  });
 
   async function handleSaved(updatedAttributes: PlayerAttributes): Promise<void> {
     queryClient.setQueryData(
@@ -45,7 +66,33 @@ export function AdminPlayerDetailPage() {
     await queryClient.invalidateQueries({ queryKey: ["clubSquad", playerQuery.data?.club_id] });
   }
 
-  if (playerQuery.isLoading || versionsQuery.isLoading) {
+  async function handleProfileSaved(updatedProfile: PlayerProfile): Promise<void> {
+    queryClient.setQueryData(
+      queryKeys.playerProfile(playerId, updatedProfile.profile_version),
+      updatedProfile
+    );
+    await queryClient.invalidateQueries({ queryKey: ["profileHistory"] });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.profileVersions });
+  }
+
+  async function extractThisPlayer(): Promise<void> {
+    if (!activeProfileVersion) {
+      return;
+    }
+
+    await runProfileExtraction(
+      {
+        profile_version: activeProfileVersion.id,
+        player_ids: [playerId]
+      },
+      () => undefined
+    );
+    await queryClient.invalidateQueries({ queryKey: ["playerProfile", playerId] });
+    await queryClient.invalidateQueries({ queryKey: ["profileHistory", playerId] });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.profileVersions });
+  }
+
+  if (playerQuery.isLoading || versionsQuery.isLoading || profileVersionsQuery.isLoading) {
     return <p>Loading player...</p>;
   }
 
@@ -78,17 +125,37 @@ export function AdminPlayerDetailPage() {
               <th>Active version</th>
               <td>{activeVersion?.id ?? "None"}</td>
             </tr>
+            <tr>
+              <th>Active profile version</th>
+              <td>{activeProfileVersion?.id ?? "None"}</td>
+            </tr>
           </tbody>
         </table>
       </div>
 
       <div className="admin-panel">
-        <h2>TODO: LLM derive</h2>
+        <h2>Profile extraction</h2>
         <p className="admin-muted">
-          Step 2 will add the Gemini-powered derive action here. Step 1 only supports manual
-          editing.
+          Extract or retry this player in the active profile version. Attribute derivation remains
+          deferred to Step 2B.
         </p>
+        <button
+          type="button"
+          disabled={!activeProfileVersion}
+          onClick={() => void extractThisPlayer()}
+        >
+          Extract this player profile
+        </button>
       </div>
+
+      {profileQuery.data ? (
+        <ProfileEditor
+          profile={profileQuery.data}
+          onSaved={(updatedProfile) => void handleProfileSaved(updatedProfile)}
+        />
+      ) : (
+        <p className="admin-error">No profile found for the active profile version.</p>
+      )}
 
       {attributesQuery.data ? (
         <AttributeEditor
@@ -100,7 +167,7 @@ export function AdminPlayerDetailPage() {
       )}
 
       <section className="admin-panel">
-        <h2>Edit history</h2>
+        <h2>Attribute edit history</h2>
         {historyQuery.isLoading ? <p>Loading history...</p> : null}
         {historyQuery.error ? <p className="admin-error">Could not load history.</p> : null}
         <table className="admin-table">
@@ -122,6 +189,38 @@ export function AdminPlayerDetailPage() {
                 <td>{row.attribute_name}</td>
                 <td>{row.old_value}</td>
                 <td>{row.new_value}</td>
+                <td>{row.changed_by}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="admin-panel">
+        <h2>Profile edit history</h2>
+        {profileHistoryQuery.isLoading ? <p>Loading profile history...</p> : null}
+        {profileHistoryQuery.error ? (
+          <p className="admin-error">Could not load profile history.</p>
+        ) : null}
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Changed at</th>
+              <th>Version</th>
+              <th>Field</th>
+              <th>Old</th>
+              <th>New</th>
+              <th>Changed by</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(profileHistoryQuery.data ?? []).map((row) => (
+              <tr key={row.id}>
+                <td>{row.changed_at}</td>
+                <td>{row.profile_version}</td>
+                <td>{row.field_name}</td>
+                <td>{row.old_value ?? "-"}</td>
+                <td>{row.new_value ?? "-"}</td>
                 <td>{row.changed_by}</td>
               </tr>
             ))}

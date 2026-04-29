@@ -6,5 +6,10 @@ export const queryKeys = {
   datasetVersions: ["datasetVersions"] as const,
   player: (playerId: string) => ["player", playerId] as const,
   playerAttributes: (playerId: string, version: string | undefined) =>
-    ["playerAttributes", playerId, version ?? "active"] as const
+    ["playerAttributes", playerId, version ?? "active"] as const,
+  playerProfile: (playerId: string, version: string | undefined) =>
+    ["playerProfile", playerId, version ?? "active"] as const,
+  profileHistory: (playerId: string, version: string | undefined, limit: number) =>
+    ["profileHistory", playerId, version ?? "active", limit] as const,
+  profileVersions: ["profileVersions"] as const
 };

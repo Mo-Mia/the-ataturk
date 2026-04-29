@@ -6,8 +6,10 @@ import { AdminLayout } from "./admin/components/AdminLayout";
 import { AdminClubDetailPage } from "./admin/pages/AdminClubDetailPage";
 import { AdminClubsPage } from "./admin/pages/AdminClubsPage";
 import { AdminDatasetVersionsPage } from "./admin/pages/AdminDatasetVersionsPage";
+import { AdminExtractProfilesPage } from "./admin/pages/AdminExtractProfilesPage";
 import { AdminHomePage } from "./admin/pages/AdminHomePage";
 import { AdminPlayerDetailPage } from "./admin/pages/AdminPlayerDetailPage";
+import { AdminProfileVersionsPage } from "./admin/pages/AdminProfileVersionsPage";
 
 type RequestState = "idle" | "loading" | "success" | "error";
 
@@ -189,6 +191,8 @@ export function App() {
             <Route path="clubs/:id" element={<AdminClubDetailPage />} />
             <Route path="players/:id" element={<AdminPlayerDetailPage />} />
             <Route path="dataset-versions" element={<AdminDatasetVersionsPage />} />
+            <Route path="profile-versions" element={<AdminProfileVersionsPage />} />
+            <Route path="extract-profiles" element={<AdminExtractProfilesPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

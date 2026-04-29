@@ -73,6 +73,15 @@
   width: 80px;
 }
 
+.admin-badge {
+  display: inline-block;
+  border: 1px solid #64748b;
+  background: #f8fafc;
+  padding: 2px 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .admin-error {
   color: #991b1b;
 }

@@ -15,6 +15,8 @@ export function AdminLayout() {
           <Link to="/admin">Home</Link>
           <Link to="/admin/clubs">Clubs</Link>
           <Link to="/admin/dataset-versions">Dataset versions</Link>
+          <Link to="/admin/profile-versions">Profile versions</Link>
+          <Link to="/admin/extract-profiles">Extract profiles</Link>
         </nav>
       </header>
       <ActiveVersionBanner />

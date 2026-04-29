@@ -19,6 +19,18 @@ export function AdminHomePage() {
               </td>
               <td>Create forks and switch the active attribute version.</td>
             </tr>
+            <tr>
+              <td>
+                <Link to="/admin/profile-versions">Profile versions</Link>
+              </td>
+              <td>Create forks and switch the active player-profile version.</td>
+            </tr>
+            <tr>
+              <td>
+                <Link to="/admin/extract-profiles">Extract profiles</Link>
+              </td>
+              <td>Run Gemini profile extraction over un-curated profiles.</td>
+            </tr>
           </tbody>
         </table>
       </div>

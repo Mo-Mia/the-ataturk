@@ -1,30 +1,42 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
-import { listDatasetVersions } from "../lib/api";
+import { listDatasetVersions, listProfileVersions } from "../lib/api";
 import { queryKeys } from "../lib/query-keys";
 
 export function ActiveVersionBanner() {
-  const { data, isLoading, error } = useQuery({
+  const datasetVersionsQuery = useQuery({
     queryKey: queryKeys.datasetVersions,
     queryFn: listDatasetVersions
   });
+  const profileVersionsQuery = useQuery({
+    queryKey: queryKeys.profileVersions,
+    queryFn: listProfileVersions
+  });
 
-  const activeVersion = data?.find((version) => version.is_active);
+  const activeDatasetVersion = datasetVersionsQuery.data?.find((version) => version.is_active);
+  const activeProfileVersion = profileVersionsQuery.data?.find((version) => version.is_active);
 
-  if (isLoading) {
-    return <div className="admin-banner">Loading active dataset version...</div>;
+  if (datasetVersionsQuery.isLoading || profileVersionsQuery.isLoading) {
+    return <div className="admin-banner">Loading active versions...</div>;
   }
 
-  if (error) {
-    return <div className="admin-banner admin-error">Could not load dataset versions.</div>;
+  if (datasetVersionsQuery.error || profileVersionsQuery.error) {
+    return <div className="admin-banner admin-error">Could not load active versions.</div>;
   }
 
   return (
     <div className="admin-banner">
-      Active dataset version: <strong>{activeVersion?.name ?? "None"}</strong>{" "}
-      <span className="admin-muted">({activeVersion?.id ?? "not set"})</span>{" "}
-      <Link to="/admin/dataset-versions">switch active version</Link>
+      <div>
+        Active attribute version: <strong>{activeDatasetVersion?.name ?? "None"}</strong>{" "}
+        <span className="admin-muted">({activeDatasetVersion?.id ?? "not set"})</span>{" "}
+        <Link to="/admin/dataset-versions">switch attribute version</Link>
+      </div>
+      <div>
+        Active profile version: <strong>{activeProfileVersion?.name ?? "None"}</strong>{" "}
+        <span className="admin-muted">({activeProfileVersion?.id ?? "not set"})</span>{" "}
+        <Link to="/admin/profile-versions">switch profile version</Link>
+      </div>
     </div>
   );
 }
