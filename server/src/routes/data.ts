@@ -30,7 +30,8 @@ export function registerDataRoutes(app: FastifyInstance): void {
     const { origin } = request.query;
 
     if (origin !== undefined && !isPlayerOrigin(origin)) {
-      return reply.code(400).send({ error: "origin must be 'real' or 'user_created'" });
+      reply.code(400).send({ error: "origin must be 'real' or 'user_created'" });
+      return;
     }
 
     return listSquadWithActiveAttributes(request.params.id, origin);
