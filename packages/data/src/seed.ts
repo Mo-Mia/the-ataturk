@@ -4,7 +4,15 @@ import { fileURLToPath } from "node:url";
 
 import { getDb, getDatabasePath, type SqliteDatabase } from "./db";
 import { SEEDS_DIR } from "./paths";
-import type { Club, DatasetVersion, Fixture, Player, PlayerAttributes } from "./types";
+import type {
+  Club,
+  DatasetVersion,
+  Fixture,
+  Player,
+  PlayerAttributes,
+  PlayerProfile,
+  PlayerProfileVersion
+} from "./types";
 
 interface SeedResult {
   clubs: number;
@@ -12,6 +20,8 @@ interface SeedResult {
   fixtures: number;
   datasetVersions: number;
   playerAttributes: number;
+  profileVersions: number;
+  playerProfiles: number;
 }
 
 type SeedDatasetVersion = DatasetVersion;
@@ -30,6 +40,16 @@ const ZERO_ATTRIBUTES = {
   control: 0
 } as const;
 
+const EMPTY_PROFILE_VERSION: PlayerProfileVersion = {
+  id: "v0-empty",
+  name: "Empty (Step 2A will populate via LLM extraction)",
+  description: null,
+  is_active: true,
+  parent_version_id: null,
+  created_at: "2026-04-29T00:00:00.000Z",
+  updated_at: "2026-04-29T00:00:00.000Z"
+};
+
 export function seed(options: { databasePath?: string; seedsDir?: string } = {}): SeedResult {
   const db = getDb(options.databasePath);
   const seedsDir = options.seedsDir ?? SEEDS_DIR;
@@ -45,9 +65,11 @@ export function seed(options: { databasePath?: string; seedsDir?: string } = {})
     wipeSeededTables(db);
     insertClubs(db, clubs);
     insertDatasetVersions(db, datasetVersions);
+    insertProfileVersions(db, [EMPTY_PROFILE_VERSION]);
     insertPlayers(db, players);
     insertFixtures(db, fixtures);
     insertStubAttributes(db, players, datasetVersions);
+    insertEmptyProfiles(db, players, EMPTY_PROFILE_VERSION);
   });
 
   reseed();
@@ -57,7 +79,9 @@ export function seed(options: { databasePath?: string; seedsDir?: string } = {})
     players: players.length,
     fixtures: fixtures.length,
     datasetVersions: datasetVersions.length,
-    playerAttributes: players.length
+    playerAttributes: players.length,
+    profileVersions: 1,
+    playerProfiles: players.filter((player) => player.player_origin === "real").length
   };
 }
 
@@ -66,6 +90,9 @@ function readJsonSeed<T>(seedsDir: string, fileName: string): T {
 }
 
 function wipeSeededTables(db: SqliteDatabase): void {
+  db.prepare("DELETE FROM player_profile_history").run();
+  db.prepare("DELETE FROM player_profiles").run();
+  db.prepare("DELETE FROM player_profile_versions").run();
   db.prepare("DELETE FROM player_attribute_history").run();
   db.prepare("DELETE FROM player_attributes").run();
   db.prepare("DELETE FROM fixtures").run();
@@ -126,6 +153,31 @@ function insertDatasetVersions(db: SqliteDatabase, datasetVersions: DatasetVersi
   }
 }
 
+function insertProfileVersions(db: SqliteDatabase, profileVersions: PlayerProfileVersion[]): void {
+  const insertProfileVersion = db.prepare<
+    [string, string, string | null, number, string | null, string, string]
+  >(
+    `
+      INSERT INTO player_profile_versions (
+        id, name, description, is_active, parent_version_id, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `
+  );
+
+  for (const profileVersion of profileVersions) {
+    insertProfileVersion.run(
+      profileVersion.id,
+      profileVersion.name,
+      profileVersion.description,
+      booleanToInteger(profileVersion.is_active),
+      profileVersion.parent_version_id,
+      profileVersion.created_at,
+      profileVersion.updated_at
+    );
+  }
+}
+
 function insertPlayers(db: SqliteDatabase, players: Player[]): void {
   const insertPlayer = db.prepare(
     `
@@ -163,6 +215,54 @@ function insertPlayers(db: SqliteDatabase, players: Player[]): void {
       player.budget_used,
       player.created_at,
       player.updated_at
+    );
+  }
+}
+
+function insertEmptyProfiles(
+  db: SqliteDatabase,
+  players: Player[],
+  profileVersion: PlayerProfileVersion
+): void {
+  const insertProfile = db.prepare<
+    [string, string, string, string, string | null, string | null, string, string, number, string, string]
+  >(
+    `
+      INSERT INTO player_profiles (
+        id, player_id, profile_version, tier, role_2004_05, qualitative_descriptor,
+        generated_by, generated_at, edited, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
+  );
+
+  for (const player of players.filter((seedPlayer) => seedPlayer.player_origin === "real")) {
+    const profile: PlayerProfile = {
+      id: `${player.id}:${profileVersion.id}`,
+      player_id: player.id,
+      profile_version: profileVersion.id,
+      tier: "C",
+      role_2004_05: null,
+      qualitative_descriptor: null,
+      generated_by: "human",
+      generated_at: profileVersion.created_at,
+      edited: false,
+      created_at: profileVersion.created_at,
+      updated_at: profileVersion.updated_at
+    };
+
+    insertProfile.run(
+      profile.id,
+      profile.player_id,
+      profile.profile_version,
+      profile.tier,
+      profile.role_2004_05,
+      profile.qualitative_descriptor,
+      profile.generated_by,
+      profile.generated_at,
+      booleanToInteger(profile.edited),
+      profile.created_at,
+      profile.updated_at
     );
   }
 }

@@ -5,6 +5,7 @@ import { dirname } from "node:path";
 import { DEFAULT_DATABASE_PATH, resolveRepoPath } from "./paths";
 import type {
   Club,
+  CreatePlayerProfileVersionInput,
   CreateDatasetVersionInput,
   DatasetVersion,
   Fixture,
@@ -16,20 +17,37 @@ import type {
   PlayerAttributeHistory,
   PlayerAttributeName,
   PlayerAttributes,
+  PlayerProfile,
+  PlayerProfileChanges,
+  PlayerProfileExtractionCandidate,
+  PlayerProfileFieldName,
+  PlayerProfileHistory,
+  PlayerProfileTier,
+  PlayerProfileVersion,
+  PlayerProfileVersionSummary,
   PlayerOrigin,
   Position,
   PresetArchetype,
   RealPlayer,
   SquadPlayerWithAttributes,
+  UpdatePlayerProfileInput,
   UpdatePlayerAttributesInput,
   UserCreatedPlayer
 } from "./types";
-import { PLAYER_ATTRIBUTE_NAMES } from "./types";
+import { PLAYER_ATTRIBUTE_NAMES, PLAYER_PROFILE_FIELD_NAMES, PLAYER_PROFILE_TIERS } from "./types";
 
 type SqliteDatabase = Database.Database;
 type ClubRow = Club;
 
 interface DatasetVersionRow extends Omit<DatasetVersion, "is_active"> {
+  is_active: number;
+}
+
+interface PlayerProfileVersionRow extends Omit<PlayerProfileVersion, "is_active"> {
+  is_active: number;
+}
+
+interface PlayerProfileVersionSummaryRow extends Omit<PlayerProfileVersionSummary, "is_active"> {
   is_active: number;
 }
 
@@ -44,6 +62,10 @@ interface PlayerRow extends Omit<PlayerBase, "is_captain" | "is_eligible_europea
 
 type PlayerAttributesRow = PlayerAttributes;
 type PlayerAttributeHistoryRow = PlayerAttributeHistory;
+interface PlayerProfileRow extends Omit<PlayerProfile, "edited"> {
+  edited: number;
+}
+type PlayerProfileHistoryRow = PlayerProfileHistory;
 type FixtureRow = Fixture;
 
 export class DataValidationError extends Error {
@@ -304,6 +326,345 @@ export function activateDatasetVersion(id: string, db = getDb()): DatasetVersion
   return activated;
 }
 
+export function listProfileVersions(db = getDb()): PlayerProfileVersionSummary[] {
+  const rows = db
+    .prepare<[], PlayerProfileVersionSummaryRow>(
+      `
+        SELECT
+          player_profile_versions.*,
+          COUNT(player_profiles.id) AS profile_count,
+          COALESCE(SUM(CASE WHEN player_profiles.edited = 0 THEN 1 ELSE 0 END), 0) AS uncurated_count,
+          COALESCE(SUM(CASE WHEN player_profiles.generated_by = 'llm-extraction-failed' THEN 1 ELSE 0 END), 0) AS failed_count
+        FROM player_profile_versions
+        LEFT JOIN player_profiles ON player_profiles.profile_version = player_profile_versions.id
+        GROUP BY player_profile_versions.id
+        ORDER BY player_profile_versions.created_at DESC, player_profile_versions.id
+      `
+    )
+    .all();
+
+  return rows.map(mapProfileVersionSummaryRow);
+}
+
+export function getProfileVersion(id: string, db = getDb()): PlayerProfileVersion | null {
+  const row =
+    db
+      .prepare<[string], PlayerProfileVersionRow>("SELECT * FROM player_profile_versions WHERE id = ?")
+      .get(id) ?? null;
+
+  return row ? mapProfileVersionRow(row) : null;
+}
+
+export function getActiveProfileVersion(db = getDb()): PlayerProfileVersion | null {
+  const row =
+    db
+      .prepare<[], PlayerProfileVersionRow>(
+        "SELECT * FROM player_profile_versions WHERE is_active = 1 LIMIT 1"
+      )
+      .get() ?? null;
+
+  return row ? mapProfileVersionRow(row) : null;
+}
+
+export function createProfileVersion(
+  input: CreatePlayerProfileVersionInput,
+  db = getDb()
+): PlayerProfileVersion {
+  const now = new Date().toISOString();
+  const createdAt = input.created_at ?? now;
+  const updatedAt = input.updated_at ?? createdAt;
+  const description = input.description ?? null;
+  const parentVersionId = input.parent_version_id ?? null;
+
+  const createVersion = db.transaction(() => {
+    if (getProfileVersion(input.id, db)) {
+      throw new DataValidationError(`Profile version '${input.id}' already exists`);
+    }
+
+    if (parentVersionId && !getProfileVersion(parentVersionId, db)) {
+      throw new DataValidationError(`Parent profile version '${parentVersionId}' does not exist`);
+    }
+
+    db.prepare<[string, string, string | null, string | null, string, string]>(
+      `
+        INSERT INTO player_profile_versions (
+          id, name, description, is_active, parent_version_id, created_at, updated_at
+        )
+        VALUES (?, ?, ?, 0, ?, ?, ?)
+      `
+    ).run(input.id, input.name, description, parentVersionId, createdAt, updatedAt);
+
+    if (parentVersionId) {
+      const parentRows = db
+        .prepare<[string], PlayerProfileRow>(
+          "SELECT * FROM player_profiles WHERE profile_version = ? ORDER BY player_id"
+        )
+        .all(parentVersionId);
+      const insertProfile = db.prepare<
+        [string, string, string, PlayerProfileTier, string | null, string | null, string, string, number, string, string]
+      >(
+        `
+          INSERT INTO player_profiles (
+            id, player_id, profile_version, tier, role_2004_05, qualitative_descriptor,
+            generated_by, generated_at, edited, created_at, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+      );
+
+      for (const row of parentRows) {
+        insertProfile.run(
+          `${row.player_id}:${input.id}`,
+          row.player_id,
+          input.id,
+          row.tier,
+          row.role_2004_05,
+          row.qualitative_descriptor,
+          row.generated_by,
+          row.generated_at,
+          row.edited,
+          createdAt,
+          updatedAt
+        );
+      }
+    }
+  });
+
+  createVersion();
+
+  const created = getProfileVersion(input.id, db);
+  if (!created) {
+    throw new DataNotFoundError(`Profile version '${input.id}' was not created`);
+  }
+
+  return created;
+}
+
+export function activateProfileVersion(id: string, db = getDb()): PlayerProfileVersion {
+  const activate = db.transaction(() => {
+    if (!getProfileVersion(id, db)) {
+      throw new DataNotFoundError(`Profile version '${id}' does not exist`);
+    }
+
+    const now = new Date().toISOString();
+    db.prepare("UPDATE player_profile_versions SET is_active = 0, updated_at = ?").run(now);
+    db.prepare<[string, string]>(
+      "UPDATE player_profile_versions SET is_active = 1, updated_at = ? WHERE id = ?"
+    ).run(now, id);
+  });
+
+  activate();
+
+  const activated = getProfileVersion(id, db);
+  if (!activated) {
+    throw new DataNotFoundError(`Profile version '${id}' does not exist`);
+  }
+
+  return activated;
+}
+
+export function getPlayerProfile(
+  playerId: string,
+  profileVersion: string,
+  db = getDb()
+): PlayerProfile | null {
+  const row =
+    db
+      .prepare<[string, string], PlayerProfileRow>(
+        "SELECT * FROM player_profiles WHERE player_id = ? AND profile_version = ?"
+      )
+      .get(playerId, profileVersion) ?? null;
+
+  return row ? mapPlayerProfileRow(row) : null;
+}
+
+export function updatePlayerProfile(
+  input: UpdatePlayerProfileInput,
+  db = getDb()
+): PlayerProfile {
+  validateProfileChanges(input.changes);
+
+  const changedBy = input.changedBy ?? "human:admin";
+  const changedAt = input.changedAt ?? new Date().toISOString();
+  const fieldNames = Object.keys(input.changes) as PlayerProfileFieldName[];
+
+  const updateProfile = db.transaction(() => {
+    if (!getPlayer(input.playerId, db)) {
+      throw new DataNotFoundError(`Player '${input.playerId}' does not exist`);
+    }
+
+    if (!getProfileVersion(input.profileVersion, db)) {
+      throw new DataNotFoundError(`Profile version '${input.profileVersion}' does not exist`);
+    }
+
+    const current = getPlayerProfile(input.playerId, input.profileVersion, db);
+    if (!current) {
+      throw new DataNotFoundError(
+        `Profile for player '${input.playerId}' in '${input.profileVersion}' does not exist`
+      );
+    }
+
+    const changedNames = fieldNames.filter((fieldName) => input.changes[fieldName] !== current[fieldName]);
+
+    if (changedNames.length === 0) {
+      return current;
+    }
+
+    const insertHistory = db.prepare<[string, string, string, string | null, string | null, string, string]>(
+      `
+        INSERT INTO player_profile_history (
+          player_id, profile_version, field_name, old_value, new_value, changed_at, changed_by
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `
+    );
+
+    for (const fieldName of changedNames) {
+      const newValue = input.changes[fieldName];
+      if (newValue === undefined) {
+        continue;
+      }
+
+      insertHistory.run(
+        input.playerId,
+        input.profileVersion,
+        fieldName,
+        current[fieldName],
+        newValue,
+        changedAt,
+        changedBy
+      );
+    }
+
+    const assignments = changedNames.map((fieldName) => `${fieldName} = ?`);
+    const values = changedNames.map((fieldName) => input.changes[fieldName] ?? null);
+
+    assignments.push("generated_by = ?", "generated_at = ?", "edited = ?", "updated_at = ?");
+    values.push(
+      input.generatedBy ?? (input.markEdited === false ? current.generated_by : "human-edited"),
+      input.generatedAt ?? (input.markEdited === false ? current.generated_at : changedAt),
+      String(booleanToInteger(input.markEdited ?? true)),
+      changedAt
+    );
+
+    db.prepare(
+      `
+        UPDATE player_profiles
+        SET ${assignments.join(", ")}
+        WHERE player_id = ? AND profile_version = ?
+      `
+    ).run(...values, input.playerId, input.profileVersion);
+
+    const updated = getPlayerProfile(input.playerId, input.profileVersion, db);
+    if (!updated) {
+      throw new DataNotFoundError(
+        `Profile for player '${input.playerId}' in '${input.profileVersion}' does not exist`
+      );
+    }
+
+    return updated;
+  });
+
+  return updateProfile();
+}
+
+export function getPlayerProfileHistory(
+  playerId: string,
+  profileVersion?: string,
+  limit = 50,
+  db = getDb()
+): PlayerProfileHistory[] {
+  if (limit < 1 || !Number.isInteger(limit)) {
+    throw new DataValidationError("History limit must be a positive integer");
+  }
+
+  if (profileVersion) {
+    return db
+      .prepare<[string, string, number], PlayerProfileHistoryRow>(
+        `
+          SELECT *
+          FROM player_profile_history
+          WHERE player_id = ? AND profile_version = ?
+          ORDER BY changed_at DESC, id DESC
+          LIMIT ?
+        `
+      )
+      .all(playerId, profileVersion, limit);
+  }
+
+  return db
+    .prepare<[string, number], PlayerProfileHistoryRow>(
+      `
+        SELECT *
+        FROM player_profile_history
+        WHERE player_id = ?
+        ORDER BY changed_at DESC, id DESC
+        LIMIT ?
+      `
+    )
+    .all(playerId, limit);
+}
+
+export function listProfileExtractionCandidates(
+  profileVersion: string,
+  playerIds?: string[],
+  db = getDb()
+): PlayerProfileExtractionCandidate[] {
+  if (!getProfileVersion(profileVersion, db)) {
+    throw new DataNotFoundError(`Profile version '${profileVersion}' does not exist`);
+  }
+
+  const rows = db
+    .prepare<[string], PlayerProfileRow>(
+      `
+        SELECT *
+        FROM player_profiles
+        WHERE profile_version = ?
+          AND edited = 0
+          AND (role_2004_05 IS NULL OR generated_by = 'llm-extraction-failed')
+        ORDER BY player_id
+      `
+    )
+    .all(profileVersion);
+  const requestedPlayerIds = playerIds === undefined ? null : new Set(playerIds);
+
+  return rows
+    .filter((row) => requestedPlayerIds === null || requestedPlayerIds.has(row.player_id))
+    .map((row) => {
+      const player = getPlayer(row.player_id, db);
+      if (!player) {
+        throw new DataNotFoundError(`Player '${row.player_id}' does not exist`);
+      }
+
+      return {
+        player,
+        profile: mapPlayerProfileRow(row)
+      };
+    });
+}
+
+export function markPlayerProfileExtractionFailed(
+  playerId: string,
+  profileVersion: string,
+  generatedAt = new Date().toISOString(),
+  db = getDb()
+): PlayerProfile {
+  db.prepare<[number, string, string, string, string]>(
+    `
+      UPDATE player_profiles
+      SET generated_by = 'llm-extraction-failed', edited = ?, generated_at = ?, updated_at = ?
+      WHERE player_id = ? AND profile_version = ?
+    `
+  ).run(booleanToInteger(false), generatedAt, generatedAt, playerId, profileVersion);
+
+  const profile = getPlayerProfile(playerId, profileVersion, db);
+  if (!profile) {
+    throw new DataNotFoundError(`Profile for player '${playerId}' in '${profileVersion}' does not exist`);
+  }
+
+  return profile;
+}
+
 export function listFixtures(db = getDb()): Fixture[] {
   return db.prepare<[], FixtureRow>("SELECT * FROM fixtures ORDER BY kicked_off_at").all();
 }
@@ -497,10 +858,31 @@ function listPlayersByOrigin(clubId: string, origin: PlayerOrigin, db: SqliteDat
   return origin === "real" ? listRealPlayersByClub(clubId, db) : listUserPlayersByClub(clubId, db);
 }
 
+function mapProfileVersionRow(row: PlayerProfileVersionRow): PlayerProfileVersion {
+  return {
+    ...row,
+    is_active: integerToBoolean(row.is_active)
+  };
+}
+
+function mapProfileVersionSummaryRow(row: PlayerProfileVersionSummaryRow): PlayerProfileVersionSummary {
+  return {
+    ...row,
+    is_active: integerToBoolean(row.is_active)
+  };
+}
+
 function mapDatasetVersionRow(row: DatasetVersionRow): DatasetVersion {
   return {
     ...row,
     is_active: integerToBoolean(row.is_active)
+  };
+}
+
+function mapPlayerProfileRow(row: PlayerProfileRow): PlayerProfile {
+  return {
+    ...row,
+    edited: integerToBoolean(row.edited)
   };
 }
 
@@ -578,8 +960,42 @@ function validateAttributeChanges(changes: PlayerAttributeChanges): void {
   }
 }
 
+function validateProfileChanges(changes: PlayerProfileChanges): void {
+  const fieldNames = Object.keys(changes);
+
+  for (const fieldName of fieldNames) {
+    if (!isPlayerProfileFieldName(fieldName)) {
+      throw new DataValidationError(`Unknown profile field '${fieldName}'`);
+    }
+
+    const value = changes[fieldName];
+    if (value === undefined) {
+      throw new DataValidationError(`Profile field '${fieldName}' is required`);
+    }
+
+    if (fieldName === "tier") {
+      if (!isPlayerProfileTier(value)) {
+        throw new DataValidationError("Profile tier must be one of S, A, B, C, or D");
+      }
+      continue;
+    }
+
+    if (value !== null && typeof value !== "string") {
+      throw new DataValidationError(`Profile field '${fieldName}' must be text`);
+    }
+  }
+}
+
 function isPlayerAttributeName(value: string): value is PlayerAttributeName {
   return PLAYER_ATTRIBUTE_NAMES.includes(value as PlayerAttributeName);
+}
+
+function isPlayerProfileFieldName(value: string): value is PlayerProfileFieldName {
+  return PLAYER_PROFILE_FIELD_NAMES.includes(value as PlayerProfileFieldName);
+}
+
+function isPlayerProfileTier(value: unknown): value is PlayerProfileTier {
+  return PLAYER_PROFILE_TIERS.includes(value as PlayerProfileTier);
 }
 
 function requireString(value: string | null, fieldName: string): string {

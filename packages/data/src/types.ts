@@ -35,6 +35,22 @@ export const PLAYER_ATTRIBUTE_NAMES = [
 export type PlayerAttributeName = (typeof PLAYER_ATTRIBUTE_NAMES)[number];
 export type PlayerAttributeChanges = Partial<Record<PlayerAttributeName, number>>;
 
+export const PLAYER_PROFILE_TIERS = ["S", "A", "B", "C", "D"] as const;
+export type PlayerProfileTier = (typeof PLAYER_PROFILE_TIERS)[number];
+
+export const PLAYER_PROFILE_FIELD_NAMES = [
+  "tier",
+  "role_2004_05",
+  "qualitative_descriptor"
+] as const;
+export type PlayerProfileFieldName = (typeof PLAYER_PROFILE_FIELD_NAMES)[number];
+
+export interface PlayerProfileChanges {
+  tier?: PlayerProfileTier;
+  role_2004_05?: string | null;
+  qualitative_descriptor?: string | null;
+}
+
 export type FixtureRound = "group" | "r16" | "qf" | "sf" | "final";
 
 export interface Club {
@@ -123,7 +139,32 @@ export interface DatasetVersion {
   updated_at: string;
 }
 
+export interface PlayerProfileVersion {
+  id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  parent_version_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlayerProfileVersionSummary extends PlayerProfileVersion {
+  profile_count: number;
+  uncurated_count: number;
+  failed_count: number;
+}
+
 export interface CreateDatasetVersionInput {
+  id: string;
+  name: string;
+  description?: string | null;
+  parent_version_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreatePlayerProfileVersionInput {
   id: string;
   name: string;
   description?: string | null;
@@ -170,6 +211,47 @@ export interface UpdatePlayerAttributesInput {
   changes: PlayerAttributeChanges;
   changedBy?: string;
   changedAt?: string;
+}
+
+export interface PlayerProfile {
+  id: string;
+  player_id: string;
+  profile_version: string;
+  tier: PlayerProfileTier;
+  role_2004_05: string | null;
+  qualitative_descriptor: string | null;
+  generated_by: string;
+  generated_at: string;
+  edited: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlayerProfileHistory {
+  id: number;
+  player_id: string;
+  profile_version: string;
+  field_name: PlayerProfileFieldName;
+  old_value: string | null;
+  new_value: string | null;
+  changed_at: string;
+  changed_by: string;
+}
+
+export interface UpdatePlayerProfileInput {
+  playerId: string;
+  profileVersion: string;
+  changes: PlayerProfileChanges;
+  changedBy?: string;
+  changedAt?: string;
+  markEdited?: boolean;
+  generatedBy?: string;
+  generatedAt?: string;
+}
+
+export interface PlayerProfileExtractionCandidate {
+  player: Player;
+  profile: PlayerProfile;
 }
 
 export interface Fixture {
