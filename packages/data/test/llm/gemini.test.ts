@@ -24,7 +24,7 @@ vi.mock("@google/genai", () => ({
       generateContent: googleGenAiMocks.generateContent
     };
 
-    constructor(options: unknown) {
+    constructor(options: { apiKey: string }) {
       googleGenAiMocks.constructor(options);
     }
   },
