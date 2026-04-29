@@ -20,13 +20,13 @@ function isPlayerOrigin(value: unknown): value is PlayerOrigin {
 }
 
 export function registerDataRoutes(app: FastifyInstance): void {
-  app.get<{ Reply: Club[] }>("/api/clubs", async () => listClubs());
+  app.get<{ Reply: Club[] }>("/api/clubs", () => listClubs());
 
   app.get<{
     Params: SquadParams;
     Querystring: SquadQuery;
     Reply: SquadPlayerWithAttributes[] | { error: string };
-  }>("/api/clubs/:id/squad", async (request, reply) => {
+  }>("/api/clubs/:id/squad", (request, reply) => {
     const { origin } = request.query;
 
     if (origin !== undefined && !isPlayerOrigin(origin)) {
