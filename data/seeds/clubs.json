@@ -1,0 +1,30 @@
+[
+  {
+    "id": "liverpool",
+    "name": "Liverpool",
+    "short_name": "LFC",
+    "country": "England",
+    "league": "Premier League",
+    "manager_real": "Rafael Benítez",
+    "stadium_name": "Anfield",
+    "stadium_capacity": 45362,
+    "kit_primary_hex": "#C8102E",
+    "kit_secondary_hex": "#FFFFFF",
+    "created_at": "2026-04-29T00:00:00.000Z",
+    "updated_at": "2026-04-29T00:00:00.000Z"
+  },
+  {
+    "id": "ac-milan",
+    "name": "AC Milan",
+    "short_name": "MIL",
+    "country": "Italy",
+    "league": "Serie A",
+    "manager_real": "Carlo Ancelotti",
+    "stadium_name": "Giuseppe Meazza / San Siro",
+    "stadium_capacity": 85700,
+    "kit_primary_hex": "#FB090B",
+    "kit_secondary_hex": "#000000",
+    "created_at": "2026-04-29T00:00:00.000Z",
+    "updated_at": "2026-04-29T00:00:00.000Z"
+  }
+]
