@@ -13,13 +13,18 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 interface AttributeEditorProps {
   attributes: PlayerAttributes;
   onSaved(updatedAttributes: PlayerAttributes): void;
+  saveAttributes?: typeof updatePlayerAttributes;
 }
 
 function labelForAttribute(attributeName: PlayerAttributeName): string {
   return attributeName.replace("_", " ");
 }
 
-export function AttributeEditor({ attributes, onSaved }: AttributeEditorProps) {
+export function AttributeEditor({
+  attributes,
+  onSaved,
+  saveAttributes = updatePlayerAttributes
+}: AttributeEditorProps) {
   const [values, setValues] = useState<Record<PlayerAttributeName, string>>(() =>
     Object.fromEntries(
       PLAYER_ATTRIBUTE_NAMES.map((attributeName) => [attributeName, String(attributes[attributeName])])
@@ -39,7 +44,7 @@ export function AttributeEditor({ attributes, onSaved }: AttributeEditorProps) {
 
   const mutation = useMutation({
     mutationFn: (input: { attributeName: PlayerAttributeName; value: number }) =>
-      updatePlayerAttributes(attributes.player_id, {
+      saveAttributes(attributes.player_id, {
         dataset_version: attributes.dataset_version,
         changes: { [input.attributeName]: input.value }
       }),
