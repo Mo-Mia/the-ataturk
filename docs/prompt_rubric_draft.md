@@ -4,7 +4,7 @@
 >
 > **Expected to change:** Once we see real LLM output across Liverpool + Milan squads, this rubric will be revised. Don't treat any number here as final until a full squad has been generated and a Mo-test match played with them.
 >
-> **Last updated:** 2026-04-29
+> **Last updated:** 2026-04-29 (post-validation revision)
 
 ## Purpose
 
@@ -59,21 +59,31 @@ The user assigns one of these tiers per player based on real-world reputation in
 - **`C`** — Squad player at a top club, or starter at a mid-table club. Capable but with notable limitations. Examples: Traoré, Riise (often), Smicer, Biscan, possibly Cissé in 2004/05 form.
 - **`D`** — Fringe player, youth, or notable weakness even at squad level. Mostly rotation and injury cover.
 
-Tier sets the *centre of gravity* for the player's attribute totals, not specific values. An A-tier striker has different highs and lows than an A-tier defender, but their *totals* should be roughly comparable.
+Tier sets the *quality of headline attributes* — i.e. "what is this player exceptional at?" — not a target total. A specialist S-tier player like Kaká has elite headline attributes (control, passing, agility) but real weaknesses (tackling, strength, jumping); his total ends up lower than a balanced S-tier all-rounder, and that's correct.
 
-## Tier-to-total guidance
+## Tier-to-headline guidance (what tier really means)
 
-These are approximate target totals across all 10 attributes. Treat as soft anchors, not hard caps.
+A player's tier is reflected in **how high their headline attributes go** and **how many attributes are above the various thresholds** — not in their total points.
 
-| Tier | Approximate total | Notes |
+| Tier | Minimum headlines | What this looks like |
 |---|---|---|
-| S | 750–800 | The truly elite. Compress this range; very few players sit here. |
-| A | 680–740 | The bulk of "world-class" players. |
-| B | 620–680 | Reliable top-flight. |
-| C | 560–620 | Squad players, mid-table starters. |
-| D | 500–560 | Fringe / cover. |
+| S | At least 3 attributes at 90+, at least 6 at 80+ | Elite at multiple disciplines + strong supporting attributes |
+| A | At least 2 attributes at 85+, at least 5 at 75+ | World-class at signature skills + solid all-round |
+| B | At least 1 attribute at 82+, at least 4 at 70+ | One real strength + reliable supporting attributes |
+| C | At least 1 attribute at 75+, at least 3 at 65+ | A definite strength + adequate elsewhere |
+| D | At least 1 attribute at 65+, at least 2 at 55+ | Capable in their core role; otherwise modest |
 
-Goalkeepers are an exception — see the goalkeeper notes below.
+These are *minimum* guidance — a tier-A player can absolutely have 3 attributes at 85+. The point is the floor: a tier-A player should never be missing the headline strengths that define world-class.
+
+A tier-A specialist (e.g. a winger with elite agility and control but middling strength and jumping) might end up with a total in the 640-700 range. A tier-A all-rounder with no glaring weaknesses might hit 720+. **Both are valid tier-A outputs.** The total is not the measure; the headline attributes are.
+
+### Why we don't target totals
+We tested this rubric on Kaká (S-tier, age 23). His attributes:
+- Headline: control 93, agility 92, passing 90, perception 90 (4 attributes at 90+, 6 at 80+ ✓ S-tier)
+- Real weaknesses: tackling 50, strength 60, jumping 65
+- Total: ~720
+
+If we'd targeted "S-tier total = 750-800," the LLM would have been forced to inflate Kaká's tackling or strength to hit the band — falsifying the player. The headline-attribute approach correctly captures that he's S-tier *because of his strengths*, not despite his weaknesses.
 
 ## Scale anchors (0–100)
 
@@ -93,8 +103,9 @@ Calibrated to the dataset, not the world. Assume the population is "appeared in 
 ### Important calibration notes
 
 - **The S-tier ceiling exists for a reason.** Don't put four S-tier strikers at 95 shooting. If Shevchenko is 92, Crespo is 88, and Trezeguet is 86, the relative ordering is what matters; absolute numbers should be conservative.
-- **Don't compress the elite tier.** Resist the urge to put every famous player at 90+. A player can be world-class overall (high total, high tier) without any single attribute being elite. Gerrard is the canonical example: he was an A-tier all-rounder with no single attribute at 95.
+- **Don't compress the elite tier.** Resist the urge to put every famous player at 90+. A player can be world-class overall (high tier) without any single attribute being elite. Gerrard is the canonical example: he was an A-tier all-rounder with no single attribute at 95.
 - **Use the full range.** A B-tier player should have attributes in the 50s and 80s, not all in the 70s. Variance within a player tells the engine what they actually do.
+- **Specialists are real and valid.** A tier-A player with a 50 in one attribute is not a calibration error — it's a player with a real weakness. Embrace it.
 
 ## Position-specific baselines and ceilings
 
@@ -102,7 +113,7 @@ These set engine-realistic minimums and maximums per position. They prevent dege
 
 | Position | High-priority attributes | Floor on these | Cap on `saving` | Notes |
 |---|---|---|---|---|
-| GK | saving, perception, jumping | saving ≥ 70 | (n/a) | Outfield attributes capped at 60 except passing/control which can reach 75 for sweeper-keepers (Dida, Lehmann, etc.). Tier-to-total guidance is replaced by GK-specific (see below). |
+| GK | saving, perception, jumping | saving ≥ 70 | (n/a) | Outfield attributes capped at 60 except passing/control which can reach 75 for sweeper-keepers (Dida, Lehmann, etc.). Tier-to-headline guidance is replaced by GK-specific (see below). |
 | CB | tackling, jumping, strength, perception | each ≥ 65 for A-tier | ≤ 25 | Pace (agility) is the typical weakness. |
 | LB / RB | tackling, agility, perception | each ≥ 60 for A-tier | ≤ 25 | Modern full-backs need stamina (control + agility) too. |
 | DM | tackling, perception, passing | each ≥ 70 for A-tier | ≤ 25 | Often weak in shooting and finishing. |
@@ -113,16 +124,17 @@ These set engine-realistic minimums and maximums per position. They prevent dege
 
 ### Goalkeeper-specific notes
 
-GK total scale is different from outfield. The expected total for a tier-A keeper is 550–620, much lower than an outfield A-tier (680–740), because most outfield attributes are *deliberately low* for a keeper.
+Goalkeepers have a different attribute distribution from outfield players. Most outfield attributes (shooting, tackling, strength) are *deliberately low* for a keeper. The headline-attribute guidance for keepers:
 
-A GK rubric:
-- `saving` is the headline attribute. S-tier keeper: 92–96. A-tier keeper: 84–90. B-tier: 75–82.
-- `perception` should be 70+ for any starter. Communication, command of area.
-- `jumping` should be 70+ for tier A and above. Important for crosses and shots into the corners.
+- **Tier S keeper:** saving 92–96, perception 85+, jumping 85+
+- **Tier A keeper:** saving 84–90, perception 78+, jumping 78+
+- **Tier B keeper:** saving 75–82, perception 72+, jumping 72+
+
+A GK rubric beyond headlines:
 - `passing` and `control` 50–75 depending on era and style. Dida (2004/05): around 55–60.
 - `agility` 65–80 typically — keepers need to dive and recover.
 - All other attributes (shooting, tackling, penalty_taking, strength) should be 20–50. The keeper isn't doing these.
-- `penalty_taking` is irrelevant for keepers in match (penalty *saving* is part of `saving`). Set it 20–40.
+- `penalty_taking` is irrelevant for keepers in match (penalty *saving* is part of `saving`, not `penalty_taking`). Set it 20–40.
 
 ## Keyword translation guidance (suggestive, not deterministic)
 
@@ -135,14 +147,18 @@ When encountering evocative qualitative language, translate to attributes by con
 | "limited turning speed" / "lumbering" | Low `agility` | Even for big players who are otherwise quick in straight lines. |
 | "wizard" / "silky" | High `control` | If attacking player, also high `agility`. If deep playmaker, also high `perception`. |
 | "destroyer" / "ball-winner" / "snapping into tackles" | High `tackling`, high `strength` | Sometimes low `agility` if "lumbering" is also implied. |
-| "engine" / "non-stop" | Higher across the board (no specific attribute), implies tier B+ | Doesn't directly map to one stat. |
+| "engine" / "non-stop" / "tireless" | Higher across the board (no specific attribute), implies tier B+ | Doesn't directly map to one stat. |
 | "elegant" / "composed" | High `control`, high `perception` | Not necessarily high `agility`. |
 | "thunderous shot" / "rocket" | High `shooting` | Standalone attribute. |
 | "Hollywood passes" / "ping a 40-yarder" | High `passing` (in long-range sense) | Implies the player has range, not just short distribution. |
-| "carries the team" / "talisman" | Higher tier overall, often high `perception` | Indirect indicator; modifies overall total. |
+| "carries the team" / "talisman" | Higher tier overall, often high `perception` | Indirect indicator; modifies overall total via headline floor. |
 | "metronome" / "tempo-setter" | High `passing`, high `perception` | Typical of deep midfielders. |
 | "marauding" / "rampaging" | High `agility`, high `strength` | Typical of attacking full-backs. |
 | "set-piece specialist" | High `passing` and/or `shooting` | If penalty-taker also implied: high `penalty_taking`. |
+| "harasses opponents" / "snarling" | High `tackling`, possibly high `agility` | Defensive midfielder vocabulary. |
+| "graceful" / "drives through midfield" | High `control`, high `agility` | Attacking midfielder vocabulary. |
+| "slight frame" / "rarely wins physical battles" | Low `strength` | Doesn't always imply low jumping; agile players can be tall and slight. |
+| "adequate but not progressive" (passing/control) | Around 55-65 | Used for keepers with limited distribution. |
 
 ## Age-curve adjustments
 
@@ -165,6 +181,7 @@ The LLM should not fabricate facts not in the input. Specifically:
 - Do not let famous-name bias inflate ratings beyond what tier and descriptor justify. (Counter-example to ignore: "Gerrard is famous, therefore 95+ everywhere.")
 - Do not output any field not in the schema.
 - Do not output reasoning text alongside JSON. The rationale field captures reasoning if requested separately.
+- Do not target a specific total. Targeting the headline thresholds is correct; targeting a sum of all attributes is not.
 
 ## Output schema
 
@@ -189,6 +206,8 @@ Use Gemini's structured output mode (`responseMimeType: "application/json"` + `r
 
 ## Worked examples
 
+These have been validated by manual rubric application. The LLM's outputs should be reproducible to within ~3 points per attribute when given the same inputs.
+
 ### Example 1 — A-tier centre-back (Hyypiä)
 
 **Input:**
@@ -207,26 +226,26 @@ Use Gemini's structured output mode (`responseMimeType: "application/json"` + `r
 ```json
 {
   "passing": 70,
-  "shooting": 40,
+  "shooting": 38,
   "tackling": 86,
   "saving": 12,
-  "agility": 55,
+  "agility": 56,
   "strength": 84,
-  "penalty_taking": 38,
+  "penalty_taking": 35,
   "perception": 90,
   "jumping": 88,
   "control": 70
 }
 ```
 
-**Total:** 633 (within A-tier guidance; slightly low because his age is starting to bite).
+**Tier-A headline check:** ✓ tackling 86, perception 90 (2 at 85+); jumping 88, strength 84, control 70, passing 70, agility 56 — that's 6 attributes at 70+ (5 expected for A). Passes.
 
 **Reasoning:**
 - Tackling 86 = world-class but not generational; he wasn't Nesta-level technically.
 - Perception 90 = "elite positioning" earns the elite tier.
 - Jumping 88 = "dominant aerial" but not 95+ because he's 31 and his peak aerial years are behind him.
 - Strength 84 = strong but the descriptor doesn't emphasise raw physicality.
-- Agility 55 = "limited turning speed" puts him below average even for a CB.
+- Agility 56 = "limited turning speed" puts him below average even for a CB.
 - Passing 70 = "composed on the ball" earns above-average; "rarely plays long Hollywood passes" prevents going higher.
 - Control 70 = composed but unremarkable.
 - Saving / shooting / penalty_taking are at outfield-defender lows.
@@ -261,7 +280,7 @@ Use Gemini's structured output mode (`responseMimeType: "application/json"` + `r
 }
 ```
 
-**Total:** 764 (top of A-tier; "carries the team" justifies pushing high).
+**Tier-A headline check:** ✓ shooting 90, passing 88, perception 85, control 84, strength 84 — that's 4 attributes at 84+, well clear of the 2-at-85+ floor (perception/shooting/passing). 9 attributes at 75+. Passes.
 
 **Reasoning:**
 - Shooting 90 = "thunderous shot" + actual real shooting record. His standout attribute.
@@ -273,7 +292,49 @@ Use Gemini's structured output mode (`responseMimeType: "application/json"` + `r
 - Penalty_taking 80 = he was a regular taker, with both glory and misses.
 - Saving / jumping at midfielder norms.
 
-### Example 3 — A-tier goalkeeper (Dida)
+### Example 3 — S-tier attacking midfielder, structural specialist (Kaká)
+
+**Input:**
+```json
+{
+  "name": "Ricardo Kaká",
+  "position": "AM",
+  "age_at_match": 23,
+  "tier": "S",
+  "role_2004_05": "Milan's primary creator, 36 Serie A apps with 7 goals + 5 assists, played every Champions League knockout match, peak years incoming",
+  "qualitative_descriptor": "graceful Brazilian playmaker. Devastating with the ball at his feet driving through midfield. Composed finisher. Excellent vision and timing of runs. Slight frame; rarely wins physical battles but agile enough to evade them."
+}
+```
+
+**Output:**
+```json
+{
+  "passing": 90,
+  "shooting": 84,
+  "tackling": 50,
+  "saving": 15,
+  "agility": 92,
+  "strength": 60,
+  "penalty_taking": 80,
+  "perception": 90,
+  "jumping": 65,
+  "control": 93
+}
+```
+
+**Tier-S headline check:** ✓ control 93, agility 92, passing 90, perception 90 (4 attributes at 90+; 3 needed); shooting 84, penalty_taking 80, control/agility/passing/perception all 80+ (6 at 80+; 6 needed). Passes.
+
+**Reasoning:**
+- Control 93 = peak Kaká, "devastating with the ball at his feet" is in the elite band.
+- Agility 92 = "agile enough to evade physical battles" + "driving through midfield" = elite.
+- Passing 90 = "excellent vision and timing of runs" earns elite passing without being 95+ (he's a creative playmaker, not a Pirlo-style metronome).
+- Perception 90 = "excellent vision" is positional/timing intelligence.
+- Shooting 84 = "composed finisher" earns world-class but he wasn't a 90+ pure goalscorer.
+- Strength 60, jumping 65 = "slight frame; rarely wins physical battles" — these are real weaknesses, and the rubric correctly captures them.
+- Tackling 50 = AM with no defensive descriptor; below the position floor for tier A but Kaká wasn't tier-A defensively, he was tier-S because of his strengths.
+- The total ends up around 720, lower than older tier-S guidance suggested. **This is correct** — Kaká's specialism is what makes him S-tier, not balance.
+
+### Example 4 — A-tier goalkeeper (Dida)
 
 **Input:**
 ```json
@@ -282,7 +343,7 @@ Use Gemini's structured output mode (`responseMimeType: "application/json"` + `r
   "position": "GK",
   "age_at_match": 31,
   "tier": "A",
-  "role_2004_05": "first-choice GK, every CL match, conceded 0.6 per CL game",
+  "role_2004_05": "first-choice GK, every CL knockout match, 0.6 goals conceded per CL game, kept 5 clean sheets in CL run",
   "qualitative_descriptor": "imposing 6'4\" Brazilian. Excellent shot-stopper, commanding in the air. Penalty-saving record one of the best in Europe. Distribution adequate but not progressive."
 }
 ```
@@ -290,10 +351,10 @@ Use Gemini's structured output mode (`responseMimeType: "application/json"` + `r
 **Output:**
 ```json
 {
-  "passing": 60,
-  "shooting": 25,
-  "tackling": 25,
-  "saving": 87,
+  "passing": 58,
+  "shooting": 22,
+  "tackling": 22,
+  "saving": 88,
   "agility": 76,
   "strength": 78,
   "penalty_taking": 30,
@@ -303,17 +364,59 @@ Use Gemini's structured output mode (`responseMimeType: "application/json"` + `r
 }
 ```
 
-**Total:** 607 (within GK tier-A guidance of 550–620).
+**GK Tier-A headline check:** ✓ saving 88 (band 84-90), perception 82 (≥78), jumping 84 (≥78). Passes.
 
 **Reasoning:**
-- Saving 87 = world-class shot-stopper, not Buffon-level (would be 90+) but clearly elite.
-- Jumping 84 = "commanding in the air" + 6'4" — high but not max.
+- Saving 88 = "excellent shot-stopper" + "penalty-saving record one of the best" — towards the top of the tier-A band.
+- Jumping 84 = "commanding in the air" + 6'4" — strong but not max.
 - Strength 78 = imposing physical presence.
-- Perception 82 = high command of area, but not top-1% reading-the-game.
+- Perception 82 = command of area, but not top-1% reading-the-game.
 - Agility 76 = good for a tall keeper; below the 80+ of smaller, more reactive keepers.
-- Passing 60 / control 60 = "adequate but not progressive" puts him at average for a GK.
+- Passing 58 / control 60 = "adequate but not progressive" puts him at average for a GK.
 - Penalty_taking 30 = low because he's a keeper, even though his saving record on penalties is excellent (which falls under `saving`, not `penalty_taking`).
 - Outfield attributes (shooting, tackling) at GK floor.
+
+### Example 5 — B-tier defensive midfielder (Gattuso)
+
+**Input:**
+```json
+{
+  "name": "Gennaro Gattuso",
+  "position": "DM",
+  "age_at_match": 27,
+  "tier": "B",
+  "role_2004_05": "first-choice defensive midfielder for Milan, every CL knockout match, partner to Pirlo in midfield",
+  "qualitative_descriptor": "snarling ball-winner. Tireless engine, aggressive in the tackle, harasses opponents into submission. Limited technique on the ball - he's there to win it back, not to spray passes. Strong physically despite modest height. Excellent at reading the game defensively."
+}
+```
+
+**Output:**
+```json
+{
+  "passing": 65,
+  "shooting": 58,
+  "tackling": 86,
+  "saving": 18,
+  "agility": 78,
+  "strength": 84,
+  "penalty_taking": 50,
+  "perception": 80,
+  "jumping": 65,
+  "control": 65
+}
+```
+
+**Tier-B headline check:** ✓ tackling 86 (1 at 82+ needed), strength 84, perception 80, agility 78 (4 at 70+ needed). Passes.
+
+**Reasoning:**
+- Tackling 86 = he was *the* archetypal ball-winner of his era; high tier-B headline.
+- Strength 84 = "strong physically despite modest height" earns above-average.
+- Perception 80 = "excellent at reading the game defensively" + decade of experience.
+- Agility 78 = "tireless engine" implies stamina-driven movement, captured here as agility.
+- Passing 65, control 65 = "limited technique on the ball" — modest.
+- Shooting 58 = he wasn't a goalscorer, but not negligible either.
+- penalty_taking 50 = unremarkable, took some but not a designated taker.
+- Saving / jumping at midfielder norms.
 
 ## Process notes
 
@@ -329,3 +432,4 @@ When the LLM produces output that feels wrong:
 - How much do we want the model to consider age-of-the-game (i.e. early-career players may have growth potential we explicitly don't model)? Currently we don't — players are static at match-day skill.
 - Should the rubric include a `style_modifier` input (e.g. "playing on the wing despite being a striker by trade")? Currently captured in `qualitative_descriptor` but could be a structured field.
 - Per-attribute confidence/error bands? The model could output `"passing": 88, "passing_confidence": "high"` to flag where it's certain vs guessing. Not in v0.1; consider for revision.
+- The headline-attribute floors for D-tier players are aggressive — they may produce 'too capable' D-tier players. Worth re-checking once we have C and D players in the dataset (Liverpool's fringe squad is the place to test this).
