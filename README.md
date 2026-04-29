@@ -6,7 +6,29 @@ The hook: AI-driven match commentary (text + voice) that makes a single match fe
 
 ## Status
 
-Pre-development. Architectural planning phase.
+v0.1 scaffolding in progress. The current app is a local development harness for proving the match engine can run end to end.
+
+## Prerequisites
+
+- Node.js 20+
+- pnpm 10+
+
+## Development
+
+```sh
+pnpm install
+pnpm dev
+```
+
+The server runs on port 3001 and the web app runs on port 5173.
+
+## Checks
+
+```sh
+pnpm test
+pnpm lint
+pnpm typecheck
+```
 
 ## Documentation
 
@@ -17,7 +39,7 @@ Pre-development. Architectural planning phase.
 
 ## Stack
 
-Vite + React + TypeScript frontend, Node backend wrapping `footballsimulationengine`, SQLite for state, Gemini 3 family for commentary, Gemini TTS / ElevenLabs for voice. Deployment to Vercel (deferred until v0.1).
+Vite + React + TypeScript frontend, Node backend wrapping `footballsimulationengine`, SQLite for state, Gemini 3 family for commentary, Gemini TTS / ElevenLabs for voice. Deployment to Vercel is deferred.
 
 ## Licence
 
