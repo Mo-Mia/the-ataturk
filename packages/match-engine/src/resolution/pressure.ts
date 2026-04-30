@@ -41,7 +41,7 @@ export function rollPressureTackle(state: MutableMatchState, carrier: MutablePla
 
     const outcome = resolveTackleAttempt(state, tackler, carrier);
     if (outcome === "foul") {
-      return false;
+      return true;
     }
 
     if (outcome === "won") {

@@ -5,7 +5,7 @@ import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
 import type { TeamId } from "../../types";
 import { attackDirection } from "../../zones/pitchZones";
-import { emitPossessionChange } from "../pressure";
+import { awardGoalKick } from "../setPieces";
 import { shotDistanceContext } from "../shotDistance";
 
 export function performShot(state: MutableMatchState, shooter: MutablePlayer): void {
@@ -29,8 +29,7 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
 
   if (!onTarget) {
     teamStats.shots.off += 1;
-    emitEvent(state, "goal_kick", otherTeam(shooter.teamId), undefined, { shooterId: shooter.id });
-    giveGoalKick(state, otherTeam(shooter.teamId), shooter.teamId);
+    awardGoalKick(state, otherTeam(shooter.teamId), shooter.teamId, shooter.id);
     return;
   }
 
@@ -66,15 +65,6 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),
     distanceBand: shotDistance.band
   });
-}
-
-function giveGoalKick(state: MutableMatchState, keeperTeam: TeamId, from: TeamId): void {
-  const keeper = goalkeeperFor(state, keeperTeam);
-  if (!keeper) {
-    return;
-  }
-  givePossession(state, keeper);
-  emitPossessionChange(state, from, keeperTeam, keeper.id);
 }
 
 function givePossession(state: MutableMatchState, receiver: MutablePlayer): void {

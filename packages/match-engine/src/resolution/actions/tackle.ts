@@ -1,6 +1,7 @@
 import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { emitEvent } from "../../ticks/runTick";
+import { awardFreeKick } from "../setPieces";
 
 export type TackleOutcome = "missed" | "won" | "foul";
 
@@ -36,13 +37,14 @@ function commitFoul(
 
     if (tackler.yellowCards >= 2) {
       sendOff(state, tackler, carrier, "second_yellow");
-      return;
     }
   }
 
-  if (state.rng.next() <= SUCCESS_PROBABILITIES.redOnFoul) {
+  if (!tackler.redCard && state.rng.next() <= SUCCESS_PROBABILITIES.redOnFoul) {
     sendOff(state, tackler, carrier, "straight_red");
   }
+
+  awardFreeKick(state, carrier.teamId, carrier.id, carrier.position, tackler.id);
 }
 
 function sendOff(

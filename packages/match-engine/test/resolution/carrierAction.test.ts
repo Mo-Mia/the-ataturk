@@ -43,6 +43,16 @@ describe("carrier action selection", () => {
 
     expect(state.eventsThisTick.some((event) => event.type === "throw_in")).toBe(true);
     expect(state.ball.position[0] === 0 || state.ball.position[0] === 680).toBe(true);
+    expect(state.pendingSetPiece?.type).toBe("throw_in");
+    expect(state.ball.carrierPlayerId).toBeNull();
+    expect(state.players.some((player) => player.hasBall)).toBe(false);
+
+    runTick(state);
+    runTick(state);
+    runTick(state);
+
+    expect(state.pendingSetPiece).toBeNull();
+    expect(state.ball.inFlight).toBe(true);
   });
 
   it("penalises long-range shot selection", () => {
@@ -84,5 +94,25 @@ describe("carrier action selection", () => {
     expect(state.eventsThisTick.some((event) => event.type === "kick_off")).toBe(true);
     expect(state.ball.position[0]).toBe(340);
     expect(state.ball.position[1]).toBeGreaterThan(525);
+  });
+
+  it("delays an off-target shot goal kick restart", () => {
+    const state = buildInitState(createTestConfig(23));
+    const shooter = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "ST"
+    )!;
+    shooter.position = [340, 930];
+    state.players.forEach((player) => {
+      player.hasBall = player.id === shooter.id;
+    });
+    state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+    state.rng.next = () => 1;
+
+    performShot(state, shooter);
+
+    expect(state.eventsThisTick.some((event) => event.type === "goal_kick")).toBe(true);
+    expect(state.pendingSetPiece?.type).toBe("goal_kick");
+    expect(state.ball.carrierPlayerId).toBeNull();
+    expect(state.players.some((player) => player.hasBall)).toBe(false);
   });
 });

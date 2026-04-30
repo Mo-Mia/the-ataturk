@@ -7,6 +7,7 @@ import {
 } from "../resolution/carrierAction";
 import { restartAfterGoal } from "../resolution/actions/shot";
 import { pressureLevel, rollPressureTackle } from "../resolution/pressure";
+import { continuePendingSetPiece } from "../resolution/setPieces";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
 import type { SemanticEvent, TeamId } from "../types";
 import { zoneForPosition } from "../zones/pitchZones";
@@ -20,6 +21,14 @@ export function runTick(state: MutableMatchState): void {
   if (state.pendingRestartTeam) {
     restartAfterGoal(state, state.pendingRestartTeam);
     determinePossessionState(state);
+    updatePossessionStats(state);
+    state.allEvents.push(...state.eventsThisTick);
+    return;
+  }
+
+  if (state.pendingSetPiece) {
+    updateMovement(state);
+    continuePendingSetPiece(state);
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
     return;
@@ -41,6 +50,12 @@ export function runTick(state: MutableMatchState): void {
   }
 
   if (state.pendingRestartTeam) {
+    updatePossessionStats(state);
+    state.allEvents.push(...state.eventsThisTick);
+    return;
+  }
+
+  if (state.pendingSetPiece) {
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
     return;

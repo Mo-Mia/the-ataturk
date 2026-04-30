@@ -52,7 +52,15 @@ describe("pressure and tackle resolution", () => {
     expect(outcome).toBe("foul");
     expect(tackler.onPitch).toBe(false);
     expect(tackler.redCard).toBe(true);
-    expect(state.eventsThisTick.map((event) => event.type)).toEqual(["foul", "yellow", "red"]);
-    expect(state.eventsThisTick.at(-1)?.detail?.reason).toBe("second_yellow");
+    expect(state.eventsThisTick.map((event) => event.type)).toEqual([
+      "foul",
+      "yellow",
+      "red",
+      "free_kick"
+    ]);
+    expect(state.eventsThisTick.find((event) => event.type === "red")?.detail?.reason).toBe(
+      "second_yellow"
+    );
+    expect(state.pendingSetPiece?.type).toBe("free_kick");
   });
 });

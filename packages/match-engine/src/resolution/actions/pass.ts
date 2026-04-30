@@ -1,11 +1,11 @@
 import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
-import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
-import { emitEvent } from "../../ticks/runTick";
+import { PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
 import { distanceSquared } from "../../utils/geometry";
 import { attackDirection } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
+import { awardThrowIn } from "../setPieces";
 
 export function performPass(state: MutableMatchState, carrier: MutablePlayer): void {
   const target = selectPassTarget(state, carrier);
@@ -24,7 +24,7 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer): v
   }
 
   if (state.rng.next() <= SUCCESS_PROBABILITIES.failedPassOutOfPlay) {
-    awardThrowIn(state, carrier);
+    awardThrowIn(state, carrier.teamId, carrier.position, "failed_pass");
     return;
   }
 
@@ -124,39 +124,4 @@ function forwardRunBonus(
 ): number {
   const progress = (candidate.position[1] - carrier.position[1]) * direction;
   return progress > 40 ? Math.min(28, progress / 10) : 0;
-}
-
-function awardThrowIn(state: MutableMatchState, carrier: MutablePlayer): void {
-  carrier.hasBall = false;
-  const throwTeam = otherTeam(carrier.teamId);
-  const thrower =
-    state.players
-      .filter((player) => player.teamId === throwTeam && player.onPitch)
-      .sort(
-        (a, b) =>
-          Math.abs(a.position[1] - carrier.position[1]) -
-          Math.abs(b.position[1] - carrier.position[1])
-      )[0] ?? null;
-
-  const touchlineX = carrier.position[0] < PITCH_WIDTH / 2 ? 0 : PITCH_WIDTH;
-  const throwY = Math.max(35, Math.min(PITCH_LENGTH - 35, carrier.position[1]));
-  state.ball.position = [touchlineX, throwY, 0];
-  state.ball.inFlight = false;
-  state.ball.targetPosition = null;
-  state.ball.targetCarrierPlayerId = null;
-
-  if (thrower) {
-    thrower.hasBall = true;
-    thrower.position = [touchlineX === 0 ? 22 : PITCH_WIDTH - 22, throwY];
-    thrower.targetPosition = thrower.position;
-    state.ball.carrierPlayerId = thrower.id;
-    state.possession.teamId = throwTeam;
-    emitEvent(state, "throw_in", throwTeam, thrower.id, {
-      wonFrom: carrier.teamId,
-      reason: "failed_pass",
-      x: touchlineX,
-      y: throwY
-    });
-    emitPossessionChange(state, carrier.teamId, throwTeam, thrower.id);
-  }
 }

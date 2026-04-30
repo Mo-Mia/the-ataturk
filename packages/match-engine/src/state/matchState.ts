@@ -33,6 +33,15 @@ export interface MutableBall {
   targetCarrierPlayerId: string | null;
 }
 
+export interface PendingSetPiece {
+  type: "throw_in" | "goal_kick" | "free_kick";
+  teamId: TeamId;
+  takerPlayerId: string;
+  position: Coordinate2D;
+  ticksUntilRestart: number;
+  detail?: Record<string, unknown>;
+}
+
 export interface MutableMatchState {
   iteration: number;
   matchClock: { half: 1 | 2; minute: number; seconds: number };
@@ -48,6 +57,7 @@ export interface MutableMatchState {
   possession: { teamId: TeamId | null; zone: Zone; pressureLevel: PressureLevel };
   possessionTicks: { home: number; away: number };
   pendingRestartTeam: TeamId | null;
+  pendingSetPiece: PendingSetPiece | null;
   eventsThisTick: SemanticEvent[];
   allEvents: SemanticEvent[];
 }

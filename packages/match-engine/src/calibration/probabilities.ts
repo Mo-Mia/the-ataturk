@@ -15,9 +15,9 @@ export const ACTION_WEIGHTS: Record<Zone, Record<PressureLevel, Record<CarrierAc
     high: { pass: 0.44, dribble: 0.07, hold: 0.32, clear: 0.13, shoot: 0.012 }
   },
   att: {
-    low: { pass: 0.56, dribble: 0.12, hold: 0.25, clear: 0.005, shoot: 0.095 },
-    medium: { pass: 0.5, dribble: 0.1, hold: 0.29, clear: 0.01, shoot: 0.145 },
-    high: { pass: 0.42, dribble: 0.07, hold: 0.34, clear: 0.02, shoot: 0.215 }
+    low: { pass: 0.56, dribble: 0.12, hold: 0.25, clear: 0.005, shoot: 0.15 },
+    medium: { pass: 0.5, dribble: 0.1, hold: 0.29, clear: 0.01, shoot: 0.22 },
+    high: { pass: 0.42, dribble: 0.07, hold: 0.34, clear: 0.02, shoot: 0.32 }
   }
 };
 

@@ -1,4 +1,5 @@
 import { PITCH_LENGTH, PITCH_WIDTH } from "../calibration/constants";
+import { setPieceTargetForPlayer } from "../resolution/setPieces";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
 import type { Coordinate2D, TeamId } from "../types";
 import { clamp, clamp2D, distanceSquared, moveTowards } from "../utils/geometry";
@@ -34,6 +35,10 @@ function targetForPlayer(
   carrier: MutablePlayer | null
 ): Coordinate2D {
   const direction = attackDirection(player.teamId);
+  const setPieceTarget = setPieceTargetForPlayer(state, player);
+  if (setPieceTarget) {
+    return clamp2D(setPieceTarget, PITCH_WIDTH, PITCH_LENGTH);
+  }
 
   if (player.hasBall) {
     return clamp2D(
