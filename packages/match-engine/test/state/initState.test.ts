@@ -1,33 +1,31 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { PITCH_LENGTH, PITCH_WIDTH } from "../../src/calibration/constants";
 import { buildInitState } from "../../src/state/initState";
-import type { MatchConfig, Team } from "../../src/types";
+import { createTestConfig } from "../helpers";
 
-describe("initState", () => {
-  it("builds a valid core state from config", () => {
-    const dummyTeam: Team = {
-      id: "home-1",
-      name: "Home",
-      shortName: "HOM",
-      players: [
-         { id: "p1", name: "Player 1", shortName: "P1", position: "GK", attributes: { passing: 50, shooting: 50, tackling: 50, saving: 50, agility: 50, strength: 50, penaltyTaking: 50, perception: 50, jumping: 50, control: 50 } }
-      ],
-      tactics: { formation: "4-4-2", mentality: "balanced", tempo: "normal", pressing: "medium", lineHeight: "normal", width: "normal" }
-    };
-
-    const config: MatchConfig = {
-      homeTeam: dummyTeam,
-      awayTeam: { ...dummyTeam, id: "away-1", name: "Away", shortName: "AWA" },
-      duration: "second_half",
-      seed: 123
-    };
-
-    const state = buildInitState(config);
+describe("buildInitState", () => {
+  it("builds a second-half state with formation positions and centre kickoff", () => {
+    const state = buildInitState(createTestConfig(42));
 
     expect(state.iteration).toBe(0);
-    expect(state.matchClock.half).toBe(2);
-    expect(state.matchClock.minute).toBe(45);
-    expect(state.players).toHaveLength(2); // 1 home + 1 away
-    expect(state.score.home).toBe(0);
-    expect(state.ball.position[0]).toBeGreaterThan(0);
+    expect(state.matchClock).toEqual({ half: 2, minute: 45, seconds: 0 });
+    expect(state.score).toEqual({ home: 0, away: 3 });
+    expect(state.players).toHaveLength(22);
+    expect(state.ball.position).toEqual([PITCH_WIDTH / 2, PITCH_LENGTH / 2, 0]);
+    expect(state.players.some((player) => player.teamId === "home" && player.hasBall)).toBe(true);
+    expect(
+      state.players.every((player) => player.position[0] >= 0 && player.position[0] <= PITCH_WIDTH)
+    ).toBe(true);
+    expect(
+      state.players.every((player) => player.position[1] >= 0 && player.position[1] <= PITCH_LENGTH)
+    ).toBe(true);
+  });
+
+  it("rejects teams without exactly eleven players", () => {
+    const config = createTestConfig(42);
+    config.homeTeam.players = config.homeTeam.players.slice(0, 10);
+
+    expect(() => buildInitState(config)).toThrow("exactly 11 players");
   });
 });
