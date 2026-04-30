@@ -4,6 +4,9 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-04-30 — Vertical slice ships text-only match playback
+The first playable match is plain text only — no commentary, no audio, no broadcast styling. The goal is engine validation: does the football look right? UI polish, commentary, TTS, and match HUD all build on top of a working text-only base. Decision deferred: layout and styling for the eventual `/match` page, handled in a future sprint after engine output is validated.
+
 ## 2026-04-30 — Pivot v0.1 to second-half-only Istanbul
 v0.1 now starts at the half-time whistle of the 2005 Champions League final, with Liverpool already 0-3 down to Milan and 45 minutes already played. The user takes control in the dressing room, has a short decision window for team-talk, tactics, substitutions, and optional self-substitution, then plays only the second half plus extra time/penalties if reached. Rationale: the project is named after the Atatürk and the second half is the emotionally important object; starting at kickoff asks the user to prevent the very disaster that gives Istanbul its meaning. See `PROJECT_BRIEF.md`, `LORE.md`, and `PLAYER_MANAGER_MODE.md`. Rejected: full 90-minute v0.1 as the canonical mode.
 
