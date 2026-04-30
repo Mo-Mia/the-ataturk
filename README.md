@@ -6,7 +6,7 @@ The hook: AI-driven match commentary (text + voice) that makes a single match fe
 
 ## Status
 
-v0.1 scaffolding in progress. The current app is a local development harness for proving the match engine can run end to end.
+v0.1 scaffolding in progress. The text-only match playback vertical slice is functional: the second half of the 2005 final streams 450 engine iterations over SSE and renders a live event log at `/match`.
 
 ## Prerequisites
 
@@ -23,6 +23,7 @@ pnpm dev
 The server runs on port 8005 and the web app runs on port 5175.
 
 Admin tooling is available locally at `http://127.0.0.1:5175/admin`.
+Match playback is available at `http://127.0.0.1:5175/match`.
 
 ## Checks
 
@@ -52,6 +53,7 @@ pnpm typecheck
 - `PATCH /api/players/:playerId/profile`
 - `GET /api/players/:playerId/profile-history`
 - `POST /api/profile-extraction/run`
+- `POST /api/match/run` — SSE stream of second-half match ticks (`?speed=fast` for dev)
 
 ## Documentation
 

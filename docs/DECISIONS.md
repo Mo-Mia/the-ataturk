@@ -4,6 +4,11 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-04-30 — Patching `footballsimulationengine` upstream bug (truthiness in discovery)
+A critical null-reference crash was discovered in `lib/actions.js` where `index` results from `findIndex` were checked for truthiness (`if (index)`) instead of existence (`if (index > -1)`). This caused crashes on non-discovery (-1 is truthy) and silent failures for the first player in any roster (0 is falsy). Given the engine's age and our "wrap, don't fork" strategy, we have applied a direct local patch to `node_modules`. Long-term strategy: use `patch-package` to maintain the patch or fork if further stability issues arise. See `docs/CHARACTERISATION.md`.
+
+---
+
 ## 2026-04-30 — Vertical slice ships text-only match playback
 The first playable match is plain text only — no commentary, no audio, no broadcast styling. The goal is engine validation: does the football look right? UI polish, commentary, TTS, and match HUD all build on top of a working text-only base. Decision deferred: layout and styling for the eventual `/match` page, handled in a future sprint after engine output is validated.
 

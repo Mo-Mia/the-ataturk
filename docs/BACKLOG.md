@@ -10,26 +10,11 @@ actually worth doing — delete it.
 
 ## Match Orchestration
 
-### Half-time historical state — exact stats, simulated micro-state
-The match begins at the half-time whistle with Liverpool 0-3 Milan and
-45 minutes already played. The implementation must construct a
-`matchDetails` object that the engine can resume from.
-
-Decision: hand-curate the gameplay-visible stats: goals, scorers, goal
-times, shots on/off per team, possession split, corners, fouls, and cards.
-Use an approximation for engine-internal state such as ball position,
-per-iteration state, and individual player sub-stats.
-
-Reference: 2005 final first half. Maldini 1' from a Pirlo free kick,
-Crespo 39' from Kaká, Crespo 44' from Kaká. Milan were dominant in
-possession, roughly 60/40, with about 8 shots to Liverpool's 1 and
-around 3 corners each. Maldini's goal came from a Pirlo free kick after
-Sissoko fouled Kaká just outside the box; use a Hamann/Carragher
-equivalent if we do not model that fixture detail.
-
-Implementation belongs in match orchestration, likely a
-`buildHalfTimeMatchState()` function that returns a partially populated
-`MatchDetails` consumed by the engine for the second-half tick loop.
+### ~~Half-time historical state — exact stats, simulated micro-state~~ ✅ Done
+Shipped in the vertical slice. `server/src/match/half-time-state.ts`
+builds the state via `initiateGame()` → `startSecondHalf()`, then
+overwrites canonical facts. Liverpool XI uses the corrected second-half
+lineup (with Smicer, not Hamann). See commits `98c1228`–`ce60c30`.
 
 ## Player Manager mode
 
@@ -90,25 +75,22 @@ loose `number | string` for fidelity to upstream.
 Trigger to address: first real consumer of player skills that needs
 clean numbers (likely tactics layer).
 
-### Engine realism characterisation test
+### Engine realism characterisation test — in progress
 We currently have a deterministic smoke test (seeded RNG, asserts
 threshold-of-6-shots etc.). Useful for catching regressions but doesn't
 validate that the engine produces realistic football across the random-
 seed distribution.
 
-Add a separate characterisation test that:
-- Runs the engine across N seeds (e.g. 100)
-- Reports distribution of: goals, shots, possession split, fouls,
-  match length stability
-- Asserts wide statistical bounds (e.g. avg goals across 100 matches
-  is between 1.5 and 5.0)
+A characterisation script (`server/src/match/characterise.ts`) is being
+built to run the match across N seeds and report distributions of goals,
+shots, fouls, cards, and semantic events.
 
-Goal: catch realism regressions if we ever fork or patch the engine,
-and establish a baseline before we start applying tactics modifiers.
+**Trigger**: the vertical slice's first fast-forward run produced only
+2 semantic events across 450 iterations. This may be an event extraction
+gap, an engine behaviour pattern, or a state setup issue. The
+characterisation script will diagnose which.
 
-Trigger to address: when we begin patching engine internals OR when
-the tactics layer is functional and we want to verify our modifiers
-don't push the engine into unrealistic territory.
+See `docs/DECISIONS.md` for the decision entry.
 
 ## Visualization
 

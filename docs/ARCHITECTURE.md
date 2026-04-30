@@ -54,6 +54,10 @@ The engine has player-level `action` overrides and team-level binary `intent` (`
 
 The tactics layer sits between the user's UI choices and the engine's iteration loop. Each iteration, we apply current tactics state to the match details *before* calling `playIteration`.
 
+### Current state (v0.1 vertical slice)
+
+`packages/tactics` currently implements **formation translation only**: `applyFormation(team, formation)` maps positional templates to player `currentPOS` arrays. Supported formations: 4-4-2 (Liverpool) and 4-3-1-2 (Milan). Mentality, tempo, pressing, and per-player roles are future work.
+
 ## Commentary architecture
 
 Two services, swappable via interface, decoupled from each other:
@@ -137,42 +141,46 @@ Real attribute ratings (FM-style) are not legally available. We derive our own f
 
 This is a **LLM-assisted, human-curated** process, not a scrape and not a black box. The LLM creates the first pass; the admin tool preserves version history and manual override.
 
-## File / module layout (proposed)
+## File / module layout
 
 ```
 the-ataturk/
 ├── apps/
 │   └── web/                    # Vite + React frontend
 │       ├── src/
-│       │   ├── routes/
+│       │   ├── admin/          # Admin tooling UI
+│       │   ├── match/          # Match playback page + SSE client
+│       │   │   ├── MatchPage.tsx
+│       │   │   └── api.ts      # Browser-safe match types + SSE parser
 │       │   ├── components/
-│       │   ├── lib/api.ts      # Backend client
-│       │   └── audio/          # TTS playback
+│       │   └── lib/api.ts      # Backend client (admin)
 │       └── package.json
 ├── packages/
 │   ├── engine/                 # Wrapper around footballsimulationengine
-│   │   ├── adapter.ts          # Typed API
-│   │   ├── events.ts           # Iteration log → semantic events
-│   │   └── types.ts            # All domain types
-│   ├── tactics/                # Formation, mentality, pressing, roles
-│   ├── commentary/             # LLM service + provider abstraction
-│   │   ├── providers/
-│   │   │   └── gemini.ts
-│   │   └── prompts/            # Prompt templates per event type
-│   ├── tts/                    # TTS service + provider abstraction
-│   │   └── providers/
-│   │       ├── gemini.ts
-│   │       └── elevenlabs.ts
-│   └── data/                   # SQLite schema, seed scripts, player derivation
-├── server/                     # Node backend (Fastify or Hono)
+│   │   ├── src/index.ts        # Re-exports: initiateGame, playIteration, startSecondHalf
+│   │   └── src/internal/       # silence.ts (console muting for engine noise)
+│   ├── tactics/                # Formation translation (4-4-2, 4-3-1-2)
+│   │   └── src/index.ts        # applyFormation(team, formation)
+│   ├── data/                   # SQLite schema, seed scripts, player derivation
+│   ├── commentary/             # LLM service + provider abstraction (future)
+│   └── tts/                    # TTS service + provider abstraction (future)
+├── server/                     # Node backend (Fastify)
 │   └── src/
 │       ├── match/              # Match orchestration
-│       └── api/                # HTTP routes
-├── DECISIONS.md                # Append-only decision log
-├── JOURNAL.md                  # Dev journal (optional)
-├── PROJECT_BRIEF.md            # The 'what'
-├── ARCHITECTURE.md             # The 'how' (this doc)
-├── LORE.md                     # The 'why' (narrative fiction)
+│       │   ├── half-time-state.ts   # Build MatchDetails from DB + engine
+│       │   ├── orchestrator.ts      # Async generator: 450 iterations
+│       │   ├── events.ts            # Semantic event extraction (deltas)
+│       │   └── run-smoke-match.ts   # Original smoke test runner
+│       ├── routes/
+│       │   ├── match.ts        # POST /api/match/run (SSE)
+│       │   └── smoke-match.ts  # POST /api/smoke-test/match
+│       └── config.ts
+├── docs/
+│   ├── ARCHITECTURE.md         # The 'how' (this doc)
+│   ├── DECISIONS.md            # Append-only decision log
+│   ├── PROJECT_BRIEF.md        # The 'what'
+│   ├── LORE.md                 # The 'why' (narrative fiction)
+│   └── BACKLOG.md              # Non-blocking follow-up work
 └── README.md
 ```
 
