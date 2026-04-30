@@ -1,6 +1,20 @@
 # Backlog
 
+Non-blocking follow-up work. Things worth doing eventually but not
+worth doing now. When picking up an item, move it to a "done" section
+or just delete it — git history preserves the trail.
+
+Add new items at the top of the relevant section. If an item sits here
+for more than a few months without being addressed, it's probably not
+actually worth doing — delete it.
+
 ## Player Manager mode
+
+### Squad-swapping mechanic after first canonical win
+After the user wins the canonical Istanbul scenario, consider unlocking a replayability mode that allows swapping up to 3 Liverpool players for Milan players. No swap-cost system is needed initially. Constraints: preserve the emotional core of Liverpool trying to rewrite the second half; avoid letting swap permutations become the main game; expect balance work because a few Milan players dramatically change Liverpool's ceiling.
+
+### Diving / simulation toggle for user-player
+Deferred to v0.1.5 or v0.2. A diving/simulation intent toggle needs wrapper-side detection of contact in the box and probability-based adjudication for penalty awarded, no call, or booking for simulation. Do not add this to the first Player Manager loop.
 
 ### Persistent player progression across matches (v0.2+)
 Currently a user-player is locked at creation and used for one match only. v0.2 (full Liverpool campaign) needs: form/fitness changes between matches, possible attribute drift, user-player carries across all 30+ matches in a season. Schema is mostly ready — needs a `match_runs` table linking user-players to matches.
@@ -13,15 +27,6 @@ Currently locked at creation. Worth considering whether mid-season tweaks are in
 
 ### User-player kit / appearance customisation
 Cosmetic only. Probably v0.3+.
-
-
-Non-blocking follow-up work. Things worth doing eventually but not
-worth doing now. When picking up an item, move it to a "done" section
-or just delete it — git history preserves the trail.
-
-Add new items at the top of the relevant section. If an item sits here
-for more than a few months without being addressed, it's probably not
-actually worth doing — delete it.
 
 ## Refactor
 
@@ -39,6 +44,11 @@ which currently capture the on-pitch result (e.g. 3-3 for the 2005 final which
 went to penalties). When we model penalty shootouts in the engine we'll need a
 separate `penalty_shootout_winner` field, or similar. For now, the `notes`
 field is the place this lives.
+
+## Attribute Calibration
+
+### Pirlo penalty_taking review
+The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That may be higher than real-world expectation for 2004/05 even if his technique and dead-ball reputation are elite. Revisit when forum feedback comes back and calibrate against other designated takers in the dataset.
 
 ## Engine
 

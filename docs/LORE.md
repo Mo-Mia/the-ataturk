@@ -6,37 +6,40 @@
 
 It's 25 May 2005. The Atatürk Olympic Stadium in Istanbul. Liverpool, against expectation, against form, against the conventional wisdom of an entire continent, have made it to the Champions League final. They face Milan — the favourites, the European aristocracy, holders of the trophy two years earlier.
 
-But Rafa Benítez isn't in the dugout.
+And at half-time, Liverpool are 3-0 down.
 
-Something has happened. (See "The Hook" below for options.) The club is in chaos. The board, the press, the players — all looking for someone to take charge.
+Maldini has scored inside a minute. Crespo has scored twice before the break. The dressing room is silent in that particular way only a dressing room can be silent when every player knows the match is already becoming a humiliation.
 
-And then they look at *you*.
+Rafa Benítez looks around the room and, for one impossible moment, loses faith in his own plan.
 
-You don't have Rafa's tactical pedigree. You don't have a UEFA badge. What you have is twenty years on a Liverpool forum called Six Crazy Minutes, an encyclopedic knowledge of this squad, and a weekend's worth of conviction that you can read this match better than anyone else available on short notice.
+Then he looks at *you*.
 
-The teamsheet is yours. The dugout is yours. Istanbul is yours.
+You are not a coach. You are an unknown Liverpool reserve, a player who has somehow ended up on the matchday squad and on the bench for the biggest night of the club's modern life. You have no UEFA badge, no tactical pedigree, and no right to be the person everyone is suddenly listening to.
+
+What you do have is ninety seconds. A team-talk. A tactical reset. Three substitutions in the bank. The option, absurd and terrifying, to put yourself on the pitch for the second half.
+
+The whistle is coming.
 
 Win it.
 
 ---
 
-## The Hook (pick one — or write a better one)
+## The handover
 
-These are draft framings. Goal: explain Rafa's absence in a way that's tonally right (a touch absurdist, a touch reverent, never disrespectful to the actual man) and gets the user into the dugout fast.
+The game begins in the dressing room at half-time. Not before kickoff, not with a clean slate, not with the comfort of being able to prevent the disaster. The disaster has already happened.
 
-### Option A — "The flight"
-Rafa's plane has been grounded by an electrical storm over the Bosphorus. He's stuck in Vienna with the technical staff, a cracked phone, and an Austrian air traffic controller who doesn't speak Spanish. He'll get there for the second half if the gods are kind. Until then, the dugout is empty and Steven Gerrard is looking at the bench with the expression of a man who needs an adult.
+Rafa has not vanished. He is there. That is the point. He has watched the first half, watched Milan cut Liverpool open, and in the shock of that room he hands the moment to the only person in the building reckless enough to still believe: the user.
 
-### Option B — "The illness"
-Food poisoning. Just before kickoff. Rafa is in the dressing room toilet and not coming out. The players know. The medical staff know. UEFA doesn't, and Liverpool would prefer they continue not to. *Someone* has to walk down that touchline in two minutes wearing the manager's coat. Hello, you.
+The user has approximately 90 seconds to:
 
-### Option C — "The forum"
-A simpler frame. You're a regular on a forum called Six Crazy Minutes (which, of course, doesn't exist yet — this match will name it). For reasons that don't need to be explained because dreams don't work that way, you've been pulled out of your living room and dropped into the dugout. Everyone is treating it as completely normal. The whistle is about to go.
+- give a team-talk
+- make tactical changes
+- optionally make substitutions
+- decide whether to put themselves into the XI for the second half
 
-### Option D — "The understudy"
-Rafa's appendix has burst on the team coach. He's in an Istanbul hospital. Pako Ayestarán is with him. Sammy Lee is in his ear via radio but has lost his voice screaming at the team's hotel TV during the warm-up. The fourth name on the contingency sheet — for reasons of administrative chaos at LFC that the user is welcome to imagine — is yours.
+Then the second-half whistle goes and the match plays out.
 
-**My recommendation:** Option C. It's honest about what the game *is* (a wish-fulfilment fantasy for a specific group of fans) and doesn't disrespect the real Rafa. It also lets you lean into the SCM forum reference, which is the actual emotional core. The other options can become unlockable alt-history scenarios in a future update.
+This framing keeps Rafa present and respected while making the user's authority a mid-match emotional rupture rather than a pre-match administrative contrivance. The project is named after the stadium; the second half is the sacred object.
 
 ---
 
@@ -61,10 +64,11 @@ What it shouldn't be:
 
 Places where the lore surfaces beyond the loading screen:
 
-1. **The dressing-room scene before kickoff.** A short LLM-generated address to the squad, in your manager-voice. Optional player input ("inspire," "calm," "tactical"). This is also where any tactical rationale you want to set is established.
-2. **Half-time.** A genuine moment of high lore-density. Liverpool are 3-0 down at half time in the actual match — the lore must accommodate any score the user is at. The LLM dressing-room scene at half-time is the second narrative beat.
-3. **Substitutions and tactical changes.** Each one gets a one-line "Manager's note" in the commentary feed: *"You bring on Hamann for Finnan. The dugout is silent. The Kop is not."*
-4. **Full-time.** Match report frames the result narratively, win or lose. Win → echoes of the actual miracle. Loss → a different ending, a different alternate-history Liverpool. Both are valid.
+1. **Half-time dressing-room scene.** The opening screen. Liverpool are 0-3 down. A short LLM-generated prompt frames Rafa's handover and the room's emotional state.
+2. **Team-talk and tactical reset.** The user's first input. Optional player tone ("inspire," "calm," "tactical") plus concrete tactical/substitution choices.
+3. **Subbing the user-player on.** If chosen, this should feel momentous and slightly absurd: an unknown reserve choosing to walk into the most famous second half in Liverpool history.
+4. **Substitutions and tactical changes.** Each one gets a one-line "Manager's note" in the commentary feed: *"You bring on Hamann for Finnan. The dugout is silent. The Kop is not."*
+5. **Full-time.** Match report frames the result narratively, win or lose. Win → echoes of the actual miracle. Loss → a different ending, a different alternate-history Liverpool. Both are valid.
 
 ---
 

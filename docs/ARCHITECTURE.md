@@ -40,6 +40,8 @@ Forking buys flexibility now at the cost of permanent maintenance debt. Wrapping
 ### Iteration → match time mapping
 The engine doesn't have a built-in 90-minute clock. We define the mapping ourselves. Initial proposal: **1 iteration = 6 seconds of match time, 900 iterations per match**. Tunable based on what produces good commentary pacing — too many iterations and commentary feels twitchy; too few and the sim loses fidelity.
 
+For v0.1, the match starts at half-time rather than kickoff. `ITERATIONS_PER_HALF` effectively becomes `ITERATIONS_FOR_MATCH`: the playable canonical segment is one 45-minute half, currently 450 iterations, plus extra time and penalties if the second half produces parity. The match state is pre-populated with the historical first-half score and context: Liverpool 0-3 Milan, Maldini 1', Crespo 39', Crespo 44', and plausible first-half shot/possession statistics. The engine still runs by repeated `playIteration` calls; the wrapper/orchestration layer owns the historical state injection.
+
 ## Tactics layer (we build this)
 
 The engine has player-level `action` overrides and team-level binary `intent` (`'attack'` / `'defend'`). That's a starting point, not a tactics system. Our layer:
@@ -123,16 +125,17 @@ SQLite. Schema (v0.1, expand later):
 
 For v0.1 (Istanbul only), we hardcode two squads (Liverpool, Milan) and one fixture. Database is overkill but worth setting up cleanly so v0.2 doesn't need a refactor.
 
-### Player attribute derivation
+### Player profile and attribute derivation
 
-Real attribute ratings (FM-style) are not legally available. We derive them from real 2004/05 stats and reputation using a deterministic algorithm:
+Real attribute ratings (FM-style) are not legally available. We derive our own from the canonical research document and human curation:
 
-- Position-specific weighting (e.g. a striker's `shooting` weighs goals/shot stats heavily; a centre-back's `tackling` weighs interceptions/duels)
-- Age curve adjustment (peak age penalty/bonus)
-- Reputation prior from a simple curated tier list (Tier S/A/B/C/D)
-- Output mapped to engine's 0–100 skill scale
+- Step 2A extracts player profiles with Gemini 3 Flash: tier, 2004/05 role, and qualitative descriptor.
+- The admin UI lets Mo fork profile versions, activate them, and hand-edit individual profiles.
+- Step 2B derives the 10 engine attributes from the active profile version and `docs/prompt_rubric_draft.md`, loaded from disk at runtime.
+- Position-specific validation checks the LLM output before it is persisted; transient failures and validation failures retry once, then mark the player failed and continue.
+- Final ratings live in named dataset versions. The engine consumes the active dataset version.
 
-This is a **manual-plus-automated** process, not a full scrape. For v0.1 (50 players across two squads), hand-curation guided by the algorithm is faster.
+This is a **LLM-assisted, human-curated** process, not a scrape and not a black box. The LLM creates the first pass; the admin tool preserves version history and manual override.
 
 ## File / module layout (proposed)
 

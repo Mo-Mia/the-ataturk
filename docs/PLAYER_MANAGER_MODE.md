@@ -4,7 +4,7 @@
 
 ## The pitch
 
-You are a player on Liverpool's Champions League squad for the 2004/05 season. You created your own attributes — within a tight budget — and chose your archetype. Your player exists alongside Gerrard, Carragher, Hyypiä and the rest. When you are off the pitch, you are the manager. When you are on the pitch, you are a player and the team plays the way you set them up before kickoff (or before you came on).
+You are a reserve player in Liverpool's Champions League matchday squad for the 2005 final. You created your own attributes — within a tight budget — and chose your archetype. Your player exists alongside Gerrard, Carragher, Hyypiä and the rest. When you are off the pitch, you are the manager. When you are on the pitch, you are a player and the team plays the way you set them up before the second-half restart (or before you came on).
 
 You can choose to be on the pitch or on the bench at any moment — at the cost of a substitution.
 
@@ -20,14 +20,20 @@ Before the match, the user creates their player:
 
 The user-player is committed to a single dataset version (the player-creation snapshot). Different match plays = different user-players.
 
-### 2. XI selection and tactics
-Pre-match, the user picks the starting XI from Liverpool's squad. The user-player is *not* automatically in the XI — the user chooses.
+### 2. Half-time selection and tactics
+v0.1 begins at half-time, not kickoff. Liverpool are already 0-3 down to Milan. The user-player is on the bench by default because they were a reserve in the first half.
 
-If the user-player is **not** in the XI, they must be on the bench (or in the squad as a non-matchday option — TBD if we model this distinction in v0.1; probably not).
+At the half-time decision moment, the user chooses the second-half XI and tactical setup. They can:
+
+- keep the historical players on the pitch
+- make normal substitutions
+- put the user-player into the second-half XI immediately
+
+Putting the user-player into the XI means subbing them on now. It uses one of the team's three substitutions.
 
 Tactics, formation, sliders are all set during this phase as in regular manager mode. Same UI surface.
 
-### 3. The match — the state machine
+### 3. The second half — the state machine
 
 The interesting bit. The user's tactical-control permissions depend on whether the user-player is on the pitch or off it.
 
@@ -36,13 +42,13 @@ The interesting bit. The user's tactical-control permissions depend on whether t
 - Mentality / tempo / pressing / line-height sliders editable in real time
 - Substitutions available (any combination, including subbing self on)
 - Formation changes available
-- Half-time team-talk options fully available
+- Half-time team-talk options fully available before the second-half restart
 
 #### When user-player is ON the pitch
 - All tactical controls **frozen** at their last-set state
 - Sliders visible but read-only with an explanation banner
 - Half-time team-talk options visible but not selectable
-- Special "tunnel chat" half-time option — short LLM-generated dialogue between the user-player and a teammate. Atmospheric flavour, not mechanical.
+- On-field intent toggles available (see below)
 - **One action available:** request substitution
   - User picks a replacement from the bench
   - Sub happens at the next iteration boundary
@@ -50,8 +56,8 @@ The interesting bit. The user's tactical-control permissions depend on whether t
 - This sub costs one of the team's three substitutions (UEFA 2004/05 rule)
 
 #### The interesting decision space
-- Starting in the XI = trust your setup, ride out 90 minutes, react only by subbing self off
-- Starting on the bench = full manager flex; come on if/when the moment is right
+- Subbing on at half-time = trust your setup, ride out the second half, react only by on-field intent or subbing self off
+- Staying on the bench = full manager flex; come on if/when the moment is right
 - Subbing self on, then off again = real tactical cost (two subs spent), real reason to do it (regain manager control after seeing how the match developed)
 - The user can sub themselves off at any time while on the pitch, *provided the team has remaining substitutions in the bank*
 
@@ -59,6 +65,7 @@ The interesting bit. The user's tactical-control permissions depend on whether t
 - Standard UEFA 2004/05 final allowance: 3 substitutions
 - This is a cap on the team's *total* subs across the match
 - User-player subbing on/off counts toward this cap normally
+- Subbing the user-player on at half-time counts toward this cap and brings the limit closer immediately
 - If the user-player is on the pitch and all 3 subs are spent, the user is locked into being on the pitch for the remainder
 
 ### 4. Post-match
@@ -66,6 +73,31 @@ The interesting bit. The user's tactical-control permissions depend on whether t
 - User-player gets specific narrative beats: their goals, shots, key moments, fitness/fatigue summary
 - A short post-match player-quote (LLM-generated, in user-player's "voice")
 - Match outcome is preserved for forum sharing (URL with results encoded, or screenshot)
+
+## User-player on-field intent controls
+
+When the user-player is on the pitch, broad tactical management is frozen, but the user can express personal intent. These controls bias the user's own engine-side behaviour; they do not rewrite the team's tactics.
+
+### Persistent toggles
+
+The user can select up to 3 of these 6 toggles at once:
+
+1. **Look for the killer pass** — biases long-pass and through-ball actions
+2. **Take it on yourself** — biases shoot and dribble actions
+3. **Get forward** — biases positioning further upfield
+4. **Sit deeper** — biases positioning further back
+5. **Press the ball** — biases tackle/intercept attempts while defending
+6. **Aggressive tackle** — boosts tackle attempt rate and raises foul/card probability; works against the player's natural `tackling` attribute rather than bypassing it
+
+These are persistent until changed, subject to the 3-toggle cap.
+
+### Resource-limited action
+
+7. **Demand the ball** — 3 uses per half. Temporarily buffs teammates' probability of passing to the user-player for one iteration.
+
+### Deferred intent: diving / simulation
+
+A diving or simulation toggle is deliberately deferred to v0.1.5 or v0.2. It requires wrapper-side detection of contact in the box and probability-based adjudication for award/no-award/booking. That is too much engine-adjacent behaviour for v0.1's first playable loop.
 
 ## Budget
 
@@ -119,6 +151,15 @@ The `players` table needs:
 The `player_attributes` table needs nothing extra — user players use the same attribute schema as real players. The `dataset_version` column distinguishes "the v3 dataset of real players" from "this user's match-start snapshot" by versioning convention.
 
 For v0.1 single-player single-match, we don't need a `match_runs` table. The user-player record is created at match-start, used for one match, persisted. If the user creates another player for a future match, that's just another row.
+
+## Curation lifecycle clarification
+
+Profile and attribute curation use two independent signals:
+
+- **Curated version** means "forked to a named version and activated." This is a workflow-level signal on the version.
+- **Edited flag** means "this specific player was hand-edited by a human." This is a granular player-level signal.
+
+These are intentionally independent. Activating a forked profile version does not auto-flip every player's `edited` flag. Step 2B's attribute derivation treats fully populated profiles as ready regardless of edited-flag state; a profile is blocked only when required fields are missing or marked failed.
 
 ## Implementation phasing
 

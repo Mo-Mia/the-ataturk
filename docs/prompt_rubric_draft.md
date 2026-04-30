@@ -1,10 +1,10 @@
 # Player Attribute Derivation — Prompt Rubric (Draft)
 
-> **Status:** Draft. This is the working document for the LLM-driven attribute derivation that lands in Phase B Step 2. Phase B Step 1 (the Admin Data Harness) builds the surface that consumes these outputs but does not call the LLM yet.
+> **Status:** Validated draft. This rubric was validated against real LLM output during Phase B Step 2B. The goalkeeper corrections below came from that validation pass.
 >
-> **Expected to change:** Once we see real LLM output across Liverpool + Milan squads, this rubric will be revised. Don't treat any number here as final until a full squad has been generated and a Mo-test match played with them.
+> **Expected to change:** Treat this as the current working rubric, not a permanent calibration. Forum feedback and match-feel testing may still require rating adjustments.
 >
-> **Last updated:** 2026-04-29 (post-validation revision)
+> **Last updated:** 2026-04-30 (post-Step-2B validation revision)
 
 ## Purpose
 
@@ -61,9 +61,11 @@ The user assigns one of these tiers per player based on real-world reputation in
 
 Tier sets the *quality of headline attributes* — i.e. "what is this player exceptional at?" — not a target total. A specialist S-tier player like Kaká has elite headline attributes (control, passing, agility) but real weaknesses (tackling, strength, jumping); his total ends up lower than a balanced S-tier all-rounder, and that's correct.
 
-## Tier-to-headline guidance (what tier really means)
+## Outfield tier-to-headline guidance (what tier really means)
 
-A player's tier is reflected in **how high their headline attributes go** and **how many attributes are above the various thresholds** — not in their total points.
+For outfield players, a player's tier is reflected in **how high their headline attributes go** and **how many attributes are above the various thresholds** — not in their total points.
+
+Goalkeepers are the exception. Do **not** apply the headline-count thresholds below to keepers. Goalkeepers use the GK-specific tier bands in "Goalkeeper-specific notes" instead: saving range plus perception, jumping, and agility expectations.
 
 | Tier | Minimum headlines | What this looks like |
 |---|---|---|
@@ -73,7 +75,7 @@ A player's tier is reflected in **how high their headline attributes go** and **
 | C | At least 1 attribute at 75+, at least 3 at 65+ | A definite strength + adequate elsewhere |
 | D | At least 1 attribute at 65+, at least 2 at 55+ | Capable in their core role; otherwise modest |
 
-These are *minimum* guidance — a tier-A player can absolutely have 3 attributes at 85+. The point is the floor: a tier-A player should never be missing the headline strengths that define world-class.
+These are *minimum* guidance for outfield players — a tier-A player can absolutely have 3 attributes at 85+. The point is the floor: a tier-A player should never be missing the headline strengths that define world-class.
 
 A tier-A specialist (e.g. a winger with elite agility and control but middling strength and jumping) might end up with a total in the 640-700 range. A tier-A all-rounder with no glaring weaknesses might hit 720+. **Both are valid tier-A outputs.** The total is not the measure; the headline attributes are.
 
@@ -113,7 +115,7 @@ These set engine-realistic minimums and maximums per position. They prevent dege
 
 | Position | High-priority attributes | Floor on these | Cap on `saving` | Notes |
 |---|---|---|---|---|
-| GK | saving, perception, jumping | saving ≥ 70 | (n/a) | Outfield attributes capped at 60 except passing/control which can reach 75 for sweeper-keepers (Dida, Lehmann, etc.). Tier-to-headline guidance is replaced by GK-specific (see below). |
+| GK | saving, perception, jumping, agility | saving ≥ 70 | (n/a) | GK-relevant non-saving attributes are perception, jumping, and agility. Outfield-only skills are deliberately modest; passing/control can reach 75 for sweeper-keepers (Dida, Lehmann, etc.). Tier-to-headline guidance is replaced by GK-specific (see below). |
 | CB | tackling, jumping, strength, perception | each ≥ 65 for A-tier | ≤ 25 | Pace (agility) is the typical weakness. |
 | LB / RB | tackling, agility, perception | each ≥ 60 for A-tier | ≤ 25 | Modern full-backs need stamina (control + agility) too. |
 | DM | tackling, perception, passing | each ≥ 70 for A-tier | ≤ 25 | Often weak in shooting and finishing. |
@@ -124,16 +126,20 @@ These set engine-realistic minimums and maximums per position. They prevent dege
 
 ### Goalkeeper-specific notes
 
-Goalkeepers have a different attribute distribution from outfield players. Most outfield attributes (shooting, tackling, strength) are *deliberately low* for a keeper. The headline-attribute guidance for keepers:
+Goalkeepers have a different attribute distribution from outfield players. Do not apply the outfield headline-count table to them. Keepers are evaluated against their own bands because `saving` dominates and because `perception`, `jumping`, and `agility` are genuinely goalkeeper-relevant rather than generic outfield skills.
 
-- **Tier S keeper:** saving 92–96, perception 85+, jumping 85+
-- **Tier A keeper:** saving 84–90, perception 78+, jumping 78+
-- **Tier B keeper:** saving 75–82, perception 72+, jumping 72+
+The headline-attribute guidance for keepers:
+
+- **Tier S keeper:** saving 92–96, perception 85+, jumping 85+, agility 80+
+- **Tier A keeper:** saving 84–90, perception 78+, jumping 78+, agility 72+
+- **Tier B keeper:** saving 75–82, perception 72+, jumping 72+, agility 68+
 
 A GK rubric beyond headlines:
 - `passing` and `control` 50–75 depending on era and style. Dida (2004/05): around 55–60.
-- `agility` 65–80 typically — keepers need to dive and recover.
-- All other attributes (shooting, tackling, penalty_taking, strength) should be 20–50. The keeper isn't doing these.
+- `agility` 65–85 typically — keepers need to dive and recover. This is not capped like an outfield-only skill.
+- `perception` and `jumping` are high-priority goalkeeper attributes and should not be capped at generic non-saving levels.
+- Outfield-only attributes (`shooting`, `tackling`, and usually `penalty_taking`) should be 20–50. The keeper isn't doing these.
+- `strength` can be moderate to strong for physically imposing keepers, typically 60–80, because command of area and contact through bodies matter.
 - `penalty_taking` is irrelevant for keepers in match (penalty *saving* is part of `saving`, not `penalty_taking`). Set it 20–40.
 
 ## Keyword translation guidance (suggestive, not deterministic)

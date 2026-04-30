@@ -4,6 +4,21 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-04-30 — Pivot v0.1 to second-half-only Istanbul
+v0.1 now starts at the half-time whistle of the 2005 Champions League final, with Liverpool already 0-3 down to Milan and 45 minutes already played. The user takes control in the dressing room, has a short decision window for team-talk, tactics, substitutions, and optional self-substitution, then plays only the second half plus extra time/penalties if reached. Rationale: the project is named after the Atatürk and the second half is the emotionally important object; starting at kickoff asks the user to prevent the very disaster that gives Istanbul its meaning. See `PROJECT_BRIEF.md`, `LORE.md`, and `PLAYER_MANAGER_MODE.md`. Rejected: full 90-minute v0.1 as the canonical mode.
+
+## 2026-04-30 — User-player on-field intent uses six toggles plus demand-ball action
+When the user-player is on the pitch, broad tactical controls remain frozen, but the user gets direct personal intent controls: up to 3 persistent toggles from killer pass, take it on yourself, get forward, sit deeper, press the ball, and aggressive tackle, plus 3 uses per half of demand the ball. Rationale: this preserves the Player Manager state-machine tradeoff while giving on-pitch play agency that is concrete and engine-mappable. Diving/simulation is deferred because it requires wrapper-side contact-in-box detection and award/booking adjudication. See `PLAYER_MANAGER_MODE.md`.
+
+## 2026-04-30 — Attribute derivation retries include validation feedback
+Phase B Step 2B added adaptive retry for LLM-derived player attributes: if structured output parses but fails position/tier validation, the retry includes the validation reasons. Without this, roughly 5 of 49 players would have failed deterministic validation on the first pass. Rationale: the model can correct specific rubric misses cheaply, while a hard fail would force unnecessary manual edits. Rejected: silently accepting invalid ratings or retrying without telling the model what failed.
+
+## 2026-04-30 — Goalkeeper validation uses GK-specific bands, not outfield headline counts
+Step 2B exposed contradictory goalkeeper wording in `docs/prompt_rubric_draft.md`: outfield headline-count thresholds conflicted with the GK-specific saving/perception/jumping bands. The rubric and validator now treat headline counts as outfield-only. Goalkeepers use saving tier bands and GK-relevant perception, jumping, and agility floors. Rationale: otherwise valid keepers fail because they are not supposed to have many high outfield attributes.
+
+## 2026-04-30 — Derivation readiness uses populated profiles, not edited flags
+Attribute derivation pre-flight treats a profile version as ready when required profile fields are populated and not failed. It does not require every player profile to have `edited=true`. Rationale: "curated" is a version workflow signal (forked, named, activated), while `edited` is a granular per-player signal meaning a human touched that specific profile. Activating a curated fork should not force fake edited flags across every row.
+
 ## 2026-04-30 — Attribute derivation reads rubric from disk at runtime, not embedded
 The LLM system prompt for attribute derivation is the contents of
 docs/prompt_rubric_draft.md, loaded at the start of each derivation

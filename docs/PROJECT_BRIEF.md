@@ -2,9 +2,9 @@
 
 > **Repo name:** `the-ataturk`
 > **Display name:** The Atatürk
-> **Status:** Pre-development, architectural planning phase
+> **Status:** Phase B Step 2B complete; local-first prototype in progress
 > **Owner:** Mo Mia
-> **Last updated:** 2026-04-29
+> **Last updated:** 2026-04-30
 
 ---
 
@@ -23,13 +23,13 @@ The narrative arc (Liverpool's group-stage struggle → Olympiakos → Juventus 
 ## Versions and scope
 
 ### v0.1 — "Istanbul"
-Single match, fully realised. The 2005 final: Liverpool vs Milan.
-- **Player creation** (mandatory): user creates their own player with a configurable points budget, picks an archetype preset, joins Liverpool's squad
-- Pre-match: pick the XI (with or without the user-player), set tactics
-- Match: AI commentary (text + voice), tactical sub/shift controls
-- **Tactical permissions depend on user-player position**: full manager controls when off the pitch; frozen tactics with sub-self-off as the only action when on the pitch
-- Half-time: team talk and tactical reset (off pitch) or tunnel-chat dialogue (on pitch)
-- Full-time: match report with user-player narrative beats
+Single half, fully realised. The 2005 final resumes at half-time: Liverpool 0-3 Milan, 45 minutes already played, Atatürk dressing room, the miracle still unwritten.
+- **Player creation** (mandatory): user creates their own reserve player with a configurable points budget, picks an archetype preset, joins Liverpool's matchday squad
+- Half-time takeover: Benítez hands control to the user in the dressing room
+- Decision window: approximately 90 seconds to give a team-talk, make tactical changes, optionally make substitutions, and decide whether to sub the user-player on for the second half
+- Match: second half only by default, with AI commentary (text + voice), tactical sub/shift controls while the user-player is off the pitch
+- **Tactical permissions depend on user-player position**: full manager controls when off the pitch; frozen tactics with on-field intent controls and sub-self-off as the escape hatch when on the pitch
+- Full-time: match report with user-player narrative beats; extra time and penalties if the second half produces parity
 
 If this match doesn't feel magical, the project doesn't continue. Everything else is built on top of this proven core.
 
@@ -46,12 +46,11 @@ Random club assignment per playthrough for SCM forum members. Async or scheduled
 
 ## Core mechanics (v0.1)
 
-- **Player creation** — mandatory upfront flow; user creates their player with budget-constrained attributes from one of 8 presets (or blank slate)
-
-- **Team selection** — XI from squad, formation choice (4-4-2, 4-3-3, 3-5-2, etc.)
+- **Player creation** — mandatory upfront flow; user creates a reserve player with budget-constrained attributes from one of 8 presets (or blank slate)
+- **Half-time team talk** — shapes morale/performance modifiers before the second half begins
+- **Second-half team selection** — choose whether to keep the historical restart shape, change formation, make substitutions, and optionally spend one substitution to put the user-player on
 - **Tactics** — tempo, mentality (defensive → attacking), pressing intensity, per-player role
-- **In-match decisions** — substitutions, formation shifts, tactical tweaks at any time
-- **Half-time team talk** — shapes player morale/performance modifiers for the second half
+- **In-match decisions** — substitutions, formation shifts, tactical tweaks while the user-player is off the pitch; on-field intent toggles while they are on it
 
 Deliberately **not** in v0.1: economy, transfers, training, multi-season, scouting, board interactions, press conferences (other than as AI-generated flavour text), youth academies.
 
@@ -78,19 +77,20 @@ The risk: if the commentary is mid, the game is mid. We must validate this works
 
 A SCM forum member can:
 1. Open the game in a browser
-2. See the Istanbul final teamsheet, choose Liverpool's XI and tactics
-3. Watch/listen to a 90-minute match unfold with AI commentary
-4. Make at least one substitution and one tactical change
-5. Get a full-time report
-6. Want to play it again
+2. Arrive in the Istanbul dressing room at half-time, Liverpool 0-3 Milan
+3. Give a team-talk, adjust tactics, and decide whether to put their user-player on for the second half
+4. Watch/listen to the second half unfold with AI commentary
+5. Make at least one meaningful in-match decision, either as manager or as the user-player on the pitch
+6. Get a full-time report that understands the historical first half and the user-authored second half
+7. Want to play it again
 
-If five of six are met and forum reaction is positive, ship v0.2.
+If six of seven are met and forum reaction is positive, ship v0.2.
 
 ## Naming and lore
 
 The project leans into Istanbul. The repo is `the-ataturk` (after the Atatürk Olympic Stadium where the final was played). Display name **The Atatürk**.
 
-The framing fiction: *Rafa Benítez can't take charge in Istanbul (reason TBD — see LORE.md). Liverpool need a manager to take the dugout for the most important night in the club's recent history. That's the user.*
+The framing fiction: *Rafa Benítez has reached half-time 3-0 down and, in a moment of crisis, hands control to the user: an unknown Liverpool reserve who somehow ended up in the matchday squad. The user has one dressing-room window to talk, change the plan, and decide whether to step onto the pitch.*
 
 ## Tech stack (one-line summary)
 
