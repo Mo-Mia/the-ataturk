@@ -8,6 +8,29 @@ Add new items at the top of the relevant section. If an item sits here
 for more than a few months without being addressed, it's probably not
 actually worth doing — delete it.
 
+## Match Orchestration
+
+### Half-time historical state — exact stats, simulated micro-state
+The match begins at the half-time whistle with Liverpool 0-3 Milan and
+45 minutes already played. The implementation must construct a
+`matchDetails` object that the engine can resume from.
+
+Decision: hand-curate the gameplay-visible stats: goals, scorers, goal
+times, shots on/off per team, possession split, corners, fouls, and cards.
+Use an approximation for engine-internal state such as ball position,
+per-iteration state, and individual player sub-stats.
+
+Reference: 2005 final first half. Maldini 1' from a Pirlo free kick,
+Crespo 39' from Kaká, Crespo 44' from Kaká. Milan were dominant in
+possession, roughly 60/40, with about 8 shots to Liverpool's 1 and
+around 3 corners each. Maldini's goal came from a Pirlo free kick after
+Sissoko fouled Kaká just outside the box; use a Hamann/Carragher
+equivalent if we do not model that fixture detail.
+
+Implementation belongs in match orchestration, likely a
+`buildHalfTimeMatchState()` function that returns a partially populated
+`MatchDetails` consumed by the engine for the second-half tick loop.
+
 ## Player Manager mode
 
 ### Squad-swapping mechanic after first canonical win
