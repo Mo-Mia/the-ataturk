@@ -16,7 +16,7 @@ export function rollPressure(state: MutableMatchState): boolean {
     if (p.teamId === carrier.teamId || !p.onPitch) continue;
 
     const distStateSq = distSq(p.position, carrier.position);
-    if (distStateSq < 60 * 60) { // arbitrary engagement distance
+    if (distStateSq < 90 * 90) { // 9m arbitrary engagement distance
       
       const prob = PROBABILITIES.ACTION_SUCCESS.tackle_attempt_base * (p.baseInput.attributes.tackling / 100);
       if (rng() < prob) {

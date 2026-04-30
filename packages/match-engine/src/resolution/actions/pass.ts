@@ -6,8 +6,13 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer, rn
   
   if (rng() < prob) {
     // Pass succeeds. Pick a target teammate.
-    const teammates = state.players.filter(p => p.teamId === carrier.teamId && p.id !== carrier.id && p.onPitch);
+    let teammates = state.players.filter(p => p.teamId === carrier.teamId && p.id !== carrier.id && p.onPitch);
     if (teammates.length > 0) {
+      const yDir = carrier.teamId === "home" ? 1 : -1;
+      const forwardTeammates = teammates.filter(t => (t.position[1] - carrier.position[1]) * yDir > -20);
+      if (forwardTeammates.length > 0) {
+        teammates = forwardTeammates;
+      }
       const target = teammates[Math.floor(rng() * teammates.length)]!;
       // For v0.1, we immediately transfer the ball if short pass, or mark inFlight for 1 tick if long.
       // Easiest is just set target target.targetPosition = target.position, and teleport ball slightly.

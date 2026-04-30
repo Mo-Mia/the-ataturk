@@ -1,5 +1,6 @@
 import type { MutableMatchState } from "../state/matchState";
 import { moveTowards, distSq } from "../utils/geometry";
+import { PITCH_LENGTH } from "../calibration/constants";
 
 const MAX_PLAYER_SPEED_PER_TICK = 25; // meters-ish per 3 sec
 
@@ -28,8 +29,15 @@ export function updateMovement(state: MutableMatchState): void {
         p.targetPosition[1] -= 15;
       }
     } else {
-      // Defending team moves toward ball if close
-      if (state.possession.teamId && state.possession.teamId !== p.teamId) {
+      if (state.possession.teamId === p.teamId) {
+        // Attacking team pushes up the pitch
+        if (p.teamId === "home") {
+          p.targetPosition[1] = Math.min(p.targetPosition[1] + 5, PITCH_LENGTH - 100);
+        } else {
+          p.targetPosition[1] = Math.max(p.targetPosition[1] - 5, 100);
+        }
+      } else if (state.possession.teamId && state.possession.teamId !== p.teamId) {
+        // Defending team moves toward ball if close
         if (distSq(p.position, [ballX, ballY]) < 150 * 150) {
           p.targetPosition = [ballX + (Math.random() * 20 - 10), ballY + (Math.random() * 20 - 10)];
         }

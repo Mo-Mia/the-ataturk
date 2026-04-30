@@ -1,8 +1,8 @@
 export const PROBABILITIES = {
   ZONE_ACTION_WEIGHTS: {
-    def: { pass: 70, hold: 10, clear: 20, shoot: 0 },
-    mid: { pass: 75, hold: 20, clear: 5, shoot: 0 },
-    att: { pass: 50, hold: 20, clear: 0, shoot: 30 }
+    def: { pass: 150, hold: 100, clear: 50, shoot: 0 },
+    mid: { pass: 150, hold: 80,  clear: 10, shoot: 3 },
+    att: { pass: 100, hold: 40,  clear: 0,  shoot: 25 }
   },
 
   MENTALITY_MODIFIERS: {
@@ -14,9 +14,9 @@ export const PROBABILITIES = {
   ACTION_SUCCESS: {
     pass_base: 0.80,
     shot_on_target_base: 0.45,
-    tackle_attempt_base: 0.30,
-    foul_on_tackle_base: 0.20,
-    yellow_card_base: 0.10,
-    red_card_base: 0.005
+    tackle_attempt_base: 0.10,
+    foul_on_tackle_base: 0.80,
+    yellow_card_base: 0.35,
+    red_card_base: 0.015
   }
 };
