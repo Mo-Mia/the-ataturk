@@ -1,4 +1,3 @@
-import { createDatasetVersion, getDb } from "@the-ataturk/data";
 import { playIteration, type MatchDetails } from "@the-ataturk/engine";
 import { withEngineConsoleMuted } from "@the-ataturk/engine/internal/silence";
 import { afterEach, describe, expect, it } from "vitest";
@@ -9,6 +8,7 @@ import {
   buildHalfTimeMatchState
 } from "../../src/match/half-time-state";
 import { createServerTestDatabase, type TestDatabase } from "../admin/test-db";
+import { TEST_DERIVED_DATASET_VERSION, setupTestDerivedDataset } from "./test-derived-dataset";
 
 let testDatabase: TestDatabase | undefined;
 
@@ -16,49 +16,6 @@ afterEach(() => {
   testDatabase?.cleanup();
   testDatabase = undefined;
 });
-
-function setupDerivedDataset(): void {
-  const db = getDb(testDatabase?.path);
-  createDatasetVersion(
-    { id: "v2-llm-derived-final", name: "Derived test", parent_version_id: "v0-stub" },
-    db
-  );
-
-  const starters = [...LIVERPOOL_SECOND_HALF_XI, ...MILAN_SECOND_HALF_XI];
-  const updateAttributes = db.prepare<[string]>(
-    `
-      UPDATE player_attributes
-      SET passing = 72,
-          shooting = 70,
-          tackling = 71,
-          saving = 12,
-          agility = 73,
-          strength = 74,
-          penalty_taking = 65,
-          perception = 75,
-          jumping = 72,
-          control = 76,
-          generated_by = 'test',
-          generated_at = '2026-04-30T00:00:00.000Z',
-          updated_at = '2026-04-30T00:00:00.000Z'
-      WHERE dataset_version = 'v2-llm-derived-final'
-        AND player_id = ?
-    `
-  );
-
-  for (const playerId of starters) {
-    updateAttributes.run(playerId);
-  }
-
-  db.prepare(
-    `
-      UPDATE player_attributes
-      SET saving = 82
-      WHERE dataset_version = 'v2-llm-derived-final'
-        AND player_id IN ('jerzy-dudek', 'dida')
-    `
-  ).run();
-}
 
 function allPlayers(matchDetails: MatchDetails) {
   return [...matchDetails.kickOffTeam.players, ...matchDetails.secondTeam.players];
@@ -73,18 +30,10 @@ function allSkillsAreNonZero(matchDetails: MatchDetails): boolean {
 describe("buildHalfTimeMatchState", () => {
   it("builds a deterministic second-half kickoff state from the database", async () => {
     testDatabase = createServerTestDatabase("half-time-state");
-    setupDerivedDataset();
+    setupTestDerivedDataset(testDatabase.path);
 
-    const first = await buildHalfTimeMatchState(
-      "liverpool",
-      "ac-milan",
-      "v2-llm-derived-final"
-    );
-    const second = await buildHalfTimeMatchState(
-      "liverpool",
-      "ac-milan",
-      "v2-llm-derived-final"
-    );
+    const first = await buildHalfTimeMatchState("liverpool", "ac-milan", TEST_DERIVED_DATASET_VERSION);
+    const second = await buildHalfTimeMatchState("liverpool", "ac-milan", TEST_DERIVED_DATASET_VERSION);
 
     expect(first).toEqual(second);
     expect(first.matchID).toBe("final-2005:liverpool-v-ac-milan:v2-llm-derived-final:second-half");
@@ -117,12 +66,12 @@ describe("buildHalfTimeMatchState", () => {
 
   it("produces a state the engine can resume with playIteration", async () => {
     testDatabase = createServerTestDatabase("half-time-state-iteration");
-    setupDerivedDataset();
+    setupTestDerivedDataset(testDatabase.path);
 
     const matchDetails = await buildHalfTimeMatchState(
       "liverpool",
       "ac-milan",
-      "v2-llm-derived-final"
+      TEST_DERIVED_DATASET_VERSION
     );
     const next = await withEngineConsoleMuted(() => playIteration(matchDetails));
 
