@@ -42,7 +42,11 @@ function toMatchTick(state: MutableMatchState): MatchTick {
   return {
     iteration: state.iteration,
     matchClock: { ...state.matchClock },
-    ball: { ...state.ball },
+    ball: { 
+      inFlight: state.ball.inFlight,
+      carrierPlayerId: state.ball.carrierPlayerId,
+      position: [...state.ball.position]
+    },
     players: state.players.map(p => ({
       id: p.id,
       teamId: p.teamId,
