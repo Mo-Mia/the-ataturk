@@ -203,6 +203,8 @@ export interface ProfileExtractionSummary {
   succeeded: number;
   failed: number;
   failed_player_ids: string[];
+  aborted?: boolean;
+  abort_reason?: string;
 }
 
 export type ProfileExtractionEvent =

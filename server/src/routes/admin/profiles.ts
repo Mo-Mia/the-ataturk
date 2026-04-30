@@ -57,6 +57,8 @@ interface ExtractionSummary {
   succeeded: number;
   failed: number;
   failed_player_ids: string[];
+  aborted?: boolean;
+  abort_reason?: string;
 }
 
 interface ExtractionProgressEvent {
@@ -71,6 +73,7 @@ const RESEARCH_DOCUMENT_PATH = new URL(
   "../../../../data/research/2004-05-cl-reference.md",
   import.meta.url
 );
+const PROFILE_EXTRACTION_RETRY_DELAY_MS = process.env.NODE_ENV === "test" ? 0 : 5_000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -258,6 +261,12 @@ function sendSseEvent(reply: FastifyReply, eventName: string, data: unknown): vo
   reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 async function extractWithRetry(input: ProfileExtractionInput): Promise<ProfileExtractionResult> {
   try {
     return await extractPlayerProfile(input);
@@ -266,8 +275,29 @@ async function extractWithRetry(input: ProfileExtractionInput): Promise<ProfileE
       throw error;
     }
 
+    await sleep(PROFILE_EXTRACTION_RETRY_DELAY_MS);
     return await extractPlayerProfile(input);
   }
+}
+
+function profileExtractionLogDetails(error: unknown): Record<string, unknown> {
+  if (error instanceof ProfileExtractionError) {
+    return {
+      message: error.message,
+      status: error.status,
+      transient: error.transient,
+      cause: error.cause instanceof Error ? error.cause.message : error.cause
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name
+    };
+  }
+
+  return { error };
 }
 
 export function registerProfileAdminRoutes(app: FastifyInstance): void {
@@ -489,7 +519,25 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
             status: "succeeded"
           } satisfies ExtractionProgressEvent);
         } catch (error) {
-          app.log.error({ error, playerId: candidate.player.id }, "Profile extraction failed");
+          app.log.error(
+            { error: profileExtractionLogDetails(error), playerId: candidate.player.id },
+            "Profile extraction failed"
+          );
+
+          if (error instanceof ProfileExtractionError && error.transient) {
+            summary.failed += 1;
+            summary.failed_player_ids.push(candidate.player.id);
+            summary.aborted = true;
+            summary.abort_reason = `Transient Gemini failure for ${candidate.player.id}; batch paused for retry later.`;
+            sendSseEvent(reply, "player", {
+              player_id: candidate.player.id,
+              player_name: candidate.player.name,
+              status: "failed",
+              error: errorMessage(error)
+            } satisfies ExtractionProgressEvent);
+            break;
+          }
+
           markPlayerProfileExtractionFailed(candidate.player.id, candidate.profile.profile_version);
           summary.failed += 1;
           summary.failed_player_ids.push(candidate.player.id);

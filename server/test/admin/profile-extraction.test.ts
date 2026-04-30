@@ -10,11 +10,13 @@ vi.mock("@the-ataturk/data/llm/gemini", () => ({
   PROFILE_EXTRACTION_GENERATED_BY: "llm-gemini-3-flash",
   ProfileExtractionError: class extends Error {
     readonly transient: boolean;
+    readonly status: number | null;
 
-    constructor(message: string, options: { transient?: boolean } = {}) {
+    constructor(message: string, options: { status?: number | null; transient?: boolean } = {}) {
       super(message);
       this.name = "ProfileExtractionError";
       this.transient = options.transient ?? false;
+      this.status = options.status ?? null;
     }
   },
   extractPlayerProfile: geminiMocks.extractPlayerProfile
@@ -230,6 +232,50 @@ describe("admin profile extraction route", () => {
       expect(profileRow("steven-gerrard")).toMatchObject({
         role_2004_05: "Liverpool captain and midfield talisman.",
         generated_by: "llm-gemini-3-flash"
+      });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("pauses the batch without marking the row when a transient failure survives retry", async () => {
+    testDatabase = createServerTestDatabase("profile-extraction-transient-abort");
+    geminiMocks.extractPlayerProfile.mockRejectedValue(
+      new ProfileExtractionError("Gemini returned 429", { status: 429, transient: true })
+    );
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/profile-extraction/run",
+        payload: {
+          profile_version: "v0-empty",
+          player_ids: ["sami-hyypia", "steven-gerrard"]
+        }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(geminiMocks.extractPlayerProfile).toHaveBeenCalledTimes(2);
+      expect(parseSse(response.body).at(-1)).toMatchObject({
+        event: "summary",
+        data: {
+          total: 2,
+          succeeded: 0,
+          failed: 1,
+          failed_player_ids: ["sami-hyypia"],
+          aborted: true
+        }
+      });
+      expect(profileRow("sami-hyypia")).toMatchObject({
+        generated_by: "human",
+        role_2004_05: null,
+        edited: 0
+      });
+      expect(profileRow("steven-gerrard")).toMatchObject({
+        generated_by: "human",
+        role_2004_05: null,
+        edited: 0
       });
     } finally {
       await app.close();

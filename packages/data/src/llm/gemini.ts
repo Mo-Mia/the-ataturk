@@ -20,11 +20,16 @@ export interface ProfileExtractionResult {
 
 export class ProfileExtractionError extends Error {
   readonly transient: boolean;
+  readonly status: number | null;
 
-  constructor(message: string, options: { cause?: unknown; transient?: boolean } = {}) {
+  constructor(
+    message: string,
+    options: { cause?: unknown; status?: number | null; transient?: boolean } = {}
+  ) {
     super(message, options);
     this.name = "ProfileExtractionError";
     this.transient = options.transient ?? false;
+    this.status = options.status ?? null;
   }
 }
 
@@ -103,6 +108,7 @@ export async function extractPlayerProfile(
 
     throw new ProfileExtractionError("Gemini profile extraction failed", {
       cause: error,
+      status: statusFromGeminiError(error),
       transient: isTransientGeminiError(error)
     });
   }
@@ -178,8 +184,10 @@ function isPlayerProfileTier(value: unknown): value is PlayerProfileTier {
 }
 
 function isTransientGeminiError(error: unknown): boolean {
-  if (isErrorWithStatus(error)) {
-    return error.status === 429 || error.status >= 500;
+  const status = statusFromGeminiError(error);
+
+  if (status !== null) {
+    return status === 429 || status >= 500;
   }
 
   if (error instanceof Error) {
@@ -195,11 +203,20 @@ function isTransientGeminiError(error: unknown): boolean {
   return false;
 }
 
-function isErrorWithStatus(error: unknown): error is { status: number } {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "status" in error &&
-    typeof (error as { status?: unknown }).status === "number"
-  );
+function statusFromGeminiError(error: unknown): number | null {
+  if (typeof error !== "object" || error === null) {
+    return null;
+  }
+
+  const directStatus = (error as { status?: unknown }).status;
+  if (typeof directStatus === "number") {
+    return directStatus;
+  }
+
+  const statusCode = (error as { statusCode?: unknown }).statusCode;
+  if (typeof statusCode === "number") {
+    return statusCode;
+  }
+
+  return null;
 }

@@ -89,9 +89,16 @@ export function AdminExtractProfilesPage() {
           </p>
         ) : null}
         {summary ? (
-          <p>
-            {summary.succeeded} of {summary.total} succeeded; {summary.failed} failed.
-          </p>
+          <>
+            <p>
+              {summary.succeeded} of {summary.total} succeeded; {summary.failed} failed.
+            </p>
+            {summary.aborted ? (
+              <p className="admin-error">
+                {summary.abort_reason ?? "Extraction paused before the batch completed."}
+              </p>
+            ) : null}
+          </>
         ) : null}
       </div>
 
