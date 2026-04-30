@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 
+import { registerAttributeAdminRoutes } from "./routes/admin/attributes";
 import { registerProfileAdminRoutes } from "./routes/admin/profiles";
 import { registerDataRoutes } from "./routes/data";
 import { registerHealthRoute } from "./routes/health";
@@ -14,6 +15,7 @@ export function buildApp() {
   });
 
   registerDataRoutes(app);
+  registerAttributeAdminRoutes(app);
   registerProfileAdminRoutes(app);
   registerHealthRoute(app);
   registerSmokeMatchRoute(app);

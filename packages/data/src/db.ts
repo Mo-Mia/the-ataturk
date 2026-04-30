@@ -12,6 +12,7 @@ import type {
   InjuryStatus,
   InsertUserPlayerInput,
   Player,
+  PlayerAttributeDerivationCandidate,
   PlayerAttributeChanges,
   PlayerBase,
   PlayerAttributeHistory,
@@ -19,6 +20,7 @@ import type {
   PlayerAttributes,
   PlayerProfile,
   PlayerProfileChanges,
+  PlayerProfileDerivationBlocker,
   PlayerProfileExtractionCandidate,
   PlayerProfileFieldName,
   PlayerProfileHistory,
@@ -732,16 +734,21 @@ export function updatePlayerAttributes(
       );
     }
 
-    const assignments = changedNames.map((attributeName) => `${attributeName} = ?`).join(", ");
-    const values = changedNames.map((attributeName) => input.changes[attributeName] ?? current[attributeName]);
+    const assignments = changedNames.map((attributeName) => `${attributeName} = ?`);
+    const values: Array<number | string> = changedNames.map(
+      (attributeName) => input.changes[attributeName] ?? current[attributeName]
+    );
+
+    assignments.push("generated_by = ?", "generated_at = ?", "updated_at = ?");
+    values.push(input.generatedBy ?? current.generated_by, input.generatedAt ?? current.generated_at, changedAt);
 
     db.prepare(
       `
         UPDATE player_attributes
-        SET ${assignments}, updated_at = ?
+        SET ${assignments.join(", ")}
         WHERE player_id = ? AND dataset_version = ?
       `
-    ).run(...values, changedAt, input.playerId, input.datasetVersion);
+    ).run(...values, input.playerId, input.datasetVersion);
 
     const updated = getPlayerAttributes(input.playerId, input.datasetVersion, db);
     if (!updated) {
@@ -754,6 +761,167 @@ export function updatePlayerAttributes(
   });
 
   return updateAttributes();
+}
+
+export function listAttributeDerivationCandidates(
+  datasetVersion: string,
+  profileVersion: string,
+  playerIds?: string[],
+  db = getDb()
+): PlayerAttributeDerivationCandidate[] {
+  if (!getDatasetVersion(datasetVersion, db)) {
+    throw new DataNotFoundError(`Dataset version '${datasetVersion}' does not exist`);
+  }
+
+  if (!getProfileVersion(profileVersion, db)) {
+    throw new DataNotFoundError(`Profile version '${profileVersion}' does not exist`);
+  }
+
+  validateRequestedPlayers(playerIds, db);
+
+  const rows = db
+    .prepare<[string, string], PlayerAttributesRow>(
+      `
+        SELECT player_attributes.*
+        FROM player_attributes
+        JOIN player_profiles
+          ON player_profiles.player_id = player_attributes.player_id
+         AND player_profiles.profile_version = ?
+        WHERE player_attributes.dataset_version = ?
+          AND player_profiles.generated_by != 'llm-extraction-failed'
+          AND player_profiles.role_2004_05 IS NOT NULL
+          AND TRIM(player_profiles.role_2004_05) != ''
+          AND player_profiles.qualitative_descriptor IS NOT NULL
+          AND TRIM(player_profiles.qualitative_descriptor) != ''
+          AND (
+            player_attributes.generated_by = 'llm-attribute-derivation-failed'
+            OR (
+              player_attributes.passing = 0
+              AND player_attributes.shooting = 0
+              AND player_attributes.tackling = 0
+              AND player_attributes.saving = 0
+              AND player_attributes.agility = 0
+              AND player_attributes.strength = 0
+              AND player_attributes.penalty_taking = 0
+              AND player_attributes.perception = 0
+              AND player_attributes.jumping = 0
+              AND player_attributes.control = 0
+            )
+          )
+          AND NOT EXISTS (
+            SELECT 1
+            FROM player_attribute_history
+            WHERE player_attribute_history.player_id = player_attributes.player_id
+              AND player_attribute_history.dataset_version = player_attributes.dataset_version
+              AND player_attribute_history.changed_by LIKE 'human:%'
+          )
+        ORDER BY player_attributes.player_id
+      `
+    )
+    .all(profileVersion, datasetVersion);
+  const requestedPlayerIds = playerIds === undefined ? null : new Set(playerIds);
+
+  return rows
+    .filter((row) => requestedPlayerIds === null || requestedPlayerIds.has(row.player_id))
+    .map((attributes) => {
+      const player = getPlayer(attributes.player_id, db);
+      if (!player) {
+        throw new DataNotFoundError(`Player '${attributes.player_id}' does not exist`);
+      }
+
+      const profile = getPlayerProfile(player.id, profileVersion, db);
+      if (!profile) {
+        throw new DataNotFoundError(
+          `Profile for player '${player.id}' in '${profileVersion}' does not exist`
+        );
+      }
+
+      return {
+        player,
+        profile,
+        attributes
+      };
+    });
+}
+
+export function listPlayerProfileDerivationBlockers(
+  profileVersion: string,
+  playerIds?: string[],
+  db = getDb()
+): PlayerProfileDerivationBlocker[] {
+  if (!getProfileVersion(profileVersion, db)) {
+    throw new DataNotFoundError(`Profile version '${profileVersion}' does not exist`);
+  }
+
+  validateRequestedPlayers(playerIds, db);
+
+  const rows = db
+    .prepare<[string], PlayerProfileRow & { player_name: string }>(
+      `
+        SELECT player_profiles.*, players.name AS player_name
+        FROM player_profiles
+        JOIN players ON players.id = player_profiles.player_id
+        WHERE player_profiles.profile_version = ?
+        ORDER BY player_profiles.player_id
+      `
+    )
+    .all(profileVersion);
+  const requestedPlayerIds = playerIds === undefined ? null : new Set(playerIds);
+
+  return rows
+    .filter((row) => requestedPlayerIds === null || requestedPlayerIds.has(row.player_id))
+    .flatMap((row) => {
+      const reasons: string[] = [];
+
+      if (row.generated_by === "llm-extraction-failed") {
+        reasons.push("profile extraction failed");
+      }
+
+      if (row.edited === 0) {
+        reasons.push("profile is un-curated");
+      }
+
+      if (row.role_2004_05 === null || row.role_2004_05.trim().length === 0) {
+        reasons.push("role_2004_05 is missing");
+      }
+
+      if (
+        row.qualitative_descriptor === null ||
+        row.qualitative_descriptor.trim().length === 0
+      ) {
+        reasons.push("qualitative_descriptor is missing");
+      }
+
+      return reasons.map((reason) => ({
+        player_id: row.player_id,
+        player_name: row.player_name,
+        reason
+      }));
+    });
+}
+
+export function markPlayerAttributeDerivationFailed(
+  playerId: string,
+  datasetVersion: string,
+  generatedAt = new Date().toISOString(),
+  db = getDb()
+): PlayerAttributes {
+  db.prepare<[string, string, string, string]>(
+    `
+      UPDATE player_attributes
+      SET generated_by = 'llm-attribute-derivation-failed', generated_at = ?, updated_at = ?
+      WHERE player_id = ? AND dataset_version = ?
+    `
+  ).run(generatedAt, generatedAt, playerId, datasetVersion);
+
+  const attributes = getPlayerAttributes(playerId, datasetVersion, db);
+  if (!attributes) {
+    throw new DataNotFoundError(
+      `Attributes for player '${playerId}' in '${datasetVersion}' do not exist`
+    );
+  }
+
+  return attributes;
 }
 
 export function getPlayerAttributeHistory(
@@ -985,6 +1153,18 @@ function validateProfileChanges(changes: PlayerProfileChanges): void {
 
     if (value !== null && typeof value !== "string") {
       throw new DataValidationError(`Profile field '${fieldName}' must be text`);
+    }
+  }
+}
+
+function validateRequestedPlayers(playerIds: string[] | undefined, db: SqliteDatabase): void {
+  if (playerIds === undefined) {
+    return;
+  }
+
+  for (const playerId of playerIds) {
+    if (!getPlayer(playerId, db)) {
+      throw new DataNotFoundError(`Player '${playerId}' does not exist`);
     }
   }
 }
