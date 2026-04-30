@@ -111,3 +111,41 @@ pre {
   padding: 16px;
   white-space: pre-wrap;
 }
+
+.match-shell {
+  max-width: 960px;
+}
+
+.match-scoreboard {
+  border: 1px solid #d4d0c4;
+  background: #ffffff;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.match-clock {
+  margin-bottom: 8px;
+  font:
+    700 20px/1 "Trebuchet MS",
+    sans-serif;
+}
+
+.match-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "Trebuchet MS", sans-serif;
+}
+
+.match-event-log {
+  max-height: 520px;
+  overflow: auto;
+  border: 1px solid #d4d0c4;
+  background: #ffffff;
+  margin: 0;
+  padding: 16px 16px 16px 40px;
+}
+
+.match-event-log li {
+  padding: 4px 0;
+}

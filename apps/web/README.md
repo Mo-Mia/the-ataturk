@@ -12,6 +12,8 @@ pnpm dev
 
 Open `http://127.0.0.1:5175/admin` for the local admin tool.
 
+Open `http://127.0.0.1:5175/match` for the current text-only match playback slice. It is dev-quality only: the page streams a second-half Liverpool v Milan run from the local backend and is meant for engine validation, not final UI.
+
 The admin is intentionally unauthenticated and localhost-only for now. It provides dense data tooling for clubs, squads, dataset versions, profile versions, manual player attribute edits, and player-profile curation.
 
 Useful routes:

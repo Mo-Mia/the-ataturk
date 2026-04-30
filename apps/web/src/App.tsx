@@ -11,6 +11,7 @@ import { AdminExtractProfilesPage } from "./admin/pages/AdminExtractProfilesPage
 import { AdminHomePage } from "./admin/pages/AdminHomePage";
 import { AdminPlayerDetailPage } from "./admin/pages/AdminPlayerDetailPage";
 import { AdminProfileVersionsPage } from "./admin/pages/AdminProfileVersionsPage";
+import { MatchPage } from "./match/MatchPage";
 
 type RequestState = "idle" | "loading" | "success" | "error";
 
@@ -186,6 +187,7 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<SmokeTestPage />} />
+          <Route path="/match" element={<MatchPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminHomePage />} />
             <Route path="clubs" element={<AdminClubsPage />} />
