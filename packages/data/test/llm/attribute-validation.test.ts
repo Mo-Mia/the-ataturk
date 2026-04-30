@@ -47,6 +47,27 @@ describe("attribute validation", () => {
     }
   });
 
+  it("allows goalkeeper-relevant perception, jumping, and agility above 75", () => {
+    const result = validateAttributesAgainstPosition(
+      {
+        passing: 60,
+        shooting: 20,
+        tackling: 30,
+        saving: 86,
+        agility: 79,
+        strength: 45,
+        penalty_taking: 30,
+        perception: 82,
+        jumping: 82,
+        control: 60
+      },
+      "GK",
+      "A"
+    );
+
+    expect(result).toEqual({ ok: true });
+  });
+
   it("fails an A-tier centre-back with too-low tackling", () => {
     const result = validateAttributesAgainstPosition(
       {

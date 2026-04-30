@@ -85,15 +85,13 @@ function validateGoalkeeper(
     reasons.push("Goalkeepers must have saving of at least 70");
   }
 
-  for (const attributeName of PLAYER_ATTRIBUTE_NAMES) {
-    if (attributeName === "saving") {
-      continue;
-    }
-
-    if (attrs[attributeName] > 75) {
-      reasons.push(`Goalkeeper ${attributeName} must be 75 or lower`);
-    }
-  }
+  validateGoalkeeperCap(attrs.shooting, "shooting", reasons);
+  validateGoalkeeperCap(attrs.tackling, "tackling", reasons);
+  validateGoalkeeperCap(attrs.strength, "strength", reasons);
+  validateGoalkeeperCap(attrs.penalty_taking, "penalty_taking", reasons);
+  validateRange(attrs.passing, 0, 75, "Goalkeeper passing", reasons);
+  validateRange(attrs.control, 0, 75, "Goalkeeper control", reasons);
+  validateRange(attrs.agility, 0, 80, "Goalkeeper agility", reasons);
 
   if (tier === "S") {
     validateRange(attrs.saving, 92, 96, "S-tier goalkeeper saving", reasons);
@@ -111,6 +109,16 @@ function validateGoalkeeper(
     validateRange(attrs.saving, 75, 82, "B-tier goalkeeper saving", reasons);
     validateFloor(attrs.perception, 72, "B-tier goalkeeper perception", reasons);
     validateFloor(attrs.jumping, 72, "B-tier goalkeeper jumping", reasons);
+  }
+}
+
+function validateGoalkeeperCap(
+  value: number,
+  attributeName: PlayerAttributeName,
+  reasons: string[]
+): void {
+  if (value > 75) {
+    reasons.push(`Goalkeeper ${attributeName} must be 75 or lower`);
   }
 }
 
