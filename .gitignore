@@ -33,6 +33,7 @@ Thumbs.db
 *.swo
 .antigravity/
 .codex
+.playwright-mcp/
 
 # Database
 *.sqlite

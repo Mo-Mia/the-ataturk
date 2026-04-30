@@ -13,7 +13,7 @@
  */
 
 import fs from "node:fs";
-import { playIteration, type MatchDetails, type TeamStatistics } from "@the-ataturk/engine";
+import { playIteration, type MatchDetails } from "@the-ataturk/engine";
 import { withEngineConsoleMuted } from "@the-ataturk/engine/internal/silence";
 
 import { ITERATIONS_PER_HALF } from "../config";
@@ -25,7 +25,12 @@ import { clockForIteration } from "./orchestrator";
 // Variants Config
 // ---------------------------------------------------------------------------
 
-export type VariantName = "control" | "both-attack" | "milan-attack" | "milan-tackle-boost" | "liverpool-shoot-boost";
+export type VariantName =
+  | "control"
+  | "both-attack"
+  | "milan-attack"
+  | "milan-tackle-boost"
+  | "liverpool-shoot-boost";
 
 interface VariantConfig {
   name: VariantName;
@@ -110,7 +115,12 @@ function createSeededRandom(seed: number): () => number {
 // Run a single match with a given seed & variant
 // ---------------------------------------------------------------------------
 
-async function runMatchWithSeed(seed: number, isFirstSeed: boolean, variant: VariantName, mutationLog: string[]): Promise<SeedResult> {
+async function runMatchWithSeed(
+  seed: number,
+  isFirstSeed: boolean,
+  variant: VariantName,
+  mutationLog: string[]
+): Promise<SeedResult> {
   const rng = createSeededRandom(seed);
   const originalRandom = Math.random;
   Math.random = rng;
@@ -139,7 +149,9 @@ async function runMatchWithSeed(seed: number, isFirstSeed: boolean, variant: Var
           const oldVal = p.skill.tackling;
           p.skill.tackling = Math.min(100, Math.round(Number(oldVal)) + 10);
           if (isFirstSeed) {
-            mutationLog.push(`Milan ${p.name} (idx ${i}) tackling: ${oldVal} -> ${p.skill.tackling}`);
+            mutationLog.push(
+              `Milan ${p.name} (idx ${i}) tackling: ${oldVal} -> ${p.skill.tackling}`
+            );
           }
         }
       }
@@ -151,7 +163,9 @@ async function runMatchWithSeed(seed: number, isFirstSeed: boolean, variant: Var
           const oldVal = p.skill.shooting;
           p.skill.shooting = Math.min(100, Math.round(Number(oldVal)) + 10);
           if (isFirstSeed) {
-            mutationLog.push(`Liverpool ${p.name} (idx ${i}) shooting: ${oldVal} -> ${p.skill.shooting}`);
+            mutationLog.push(
+              `Liverpool ${p.name} (idx ${i}) shooting: ${oldVal} -> ${p.skill.shooting}`
+            );
           }
         }
       }
@@ -173,14 +187,20 @@ async function runMatchWithSeed(seed: number, isFirstSeed: boolean, variant: Var
         const elapsed = performance.now() - start;
         return {
           seed,
-          homeGoals: 0, awayGoals: 0,
-          homeShots: 0, awayShots: 0,
-          homeFouls: 0, awayFouls: 0,
-          homeYellows: 0, awayYellows: 0,
-          homeReds: 0, awayReds: 0,
+          homeGoals: 0,
+          awayGoals: 0,
+          homeShots: 0,
+          awayShots: 0,
+          homeFouls: 0,
+          awayFouls: 0,
+          homeYellows: 0,
+          awayYellows: 0,
+          homeReds: 0,
+          awayReds: 0,
           semanticEvents: allEvents.length,
           semanticEventsByType: countByType(allEvents),
-          shotExtractionGap: 0, foulExtractionGap: 0,
+          shotExtractionGap: 0,
+          foulExtractionGap: 0,
           elapsedMs: elapsed,
           crashed: true,
           crashIteration: iteration,
@@ -206,14 +226,18 @@ async function runMatchWithSeed(seed: number, isFirstSeed: boolean, variant: Var
     const awayFouls = numStat(finalAwayStats.fouls) - numStat(initialAwayStats.fouls);
 
     // Per-player card deltas
-    const homeYellows = sumPlayerStat(current.kickOffTeam.players, (p) => p.stats.cards.yellow)
-      - sumPlayerStat(matchDetails.kickOffTeam.players, (p) => p.stats.cards.yellow);
-    const awayYellows = sumPlayerStat(current.secondTeam.players, (p) => p.stats.cards.yellow)
-      - sumPlayerStat(matchDetails.secondTeam.players, (p) => p.stats.cards.yellow);
-    const homeReds = sumPlayerStat(current.kickOffTeam.players, (p) => p.stats.cards.red)
-      - sumPlayerStat(matchDetails.kickOffTeam.players, (p) => p.stats.cards.red);
-    const awayReds = sumPlayerStat(current.secondTeam.players, (p) => p.stats.cards.red)
-      - sumPlayerStat(matchDetails.secondTeam.players, (p) => p.stats.cards.red);
+    const homeYellows =
+      sumPlayerStat(current.kickOffTeam.players, (p) => p.stats.cards.yellow) -
+      sumPlayerStat(matchDetails.kickOffTeam.players, (p) => p.stats.cards.yellow);
+    const awayYellows =
+      sumPlayerStat(current.secondTeam.players, (p) => p.stats.cards.yellow) -
+      sumPlayerStat(matchDetails.secondTeam.players, (p) => p.stats.cards.yellow);
+    const homeReds =
+      sumPlayerStat(current.kickOffTeam.players, (p) => p.stats.cards.red) -
+      sumPlayerStat(matchDetails.kickOffTeam.players, (p) => p.stats.cards.red);
+    const awayReds =
+      sumPlayerStat(current.secondTeam.players, (p) => p.stats.cards.red) -
+      sumPlayerStat(matchDetails.secondTeam.players, (p) => p.stats.cards.red);
 
     // Semantic event counts by type
     const byType = countByType(allEvents);
@@ -278,10 +302,7 @@ function aggregate(values: number[]): AggregateStat {
   const sorted = [...values].sort((a, b) => a - b);
   const sum = sorted.reduce((a, b) => a + b, 0);
   const mid = Math.floor(sorted.length / 2);
-  const median =
-    sorted.length % 2 === 0
-      ? (sorted[mid - 1]! + sorted[mid]!) / 2
-      : sorted[mid]!;
+  const median = sorted.length % 2 === 0 ? (sorted[mid - 1]! + sorted[mid]!) / 2 : sorted[mid]!;
 
   return {
     min: sorted[0]!,
@@ -303,7 +324,9 @@ async function main(): Promise<void> {
   const { seedCount, variantsToRun } = parseConfig();
   const seeds = Array.from({ length: seedCount }, (_, i) => i + 1);
 
-  console.log(`\n🏟️  Engine Characterisation: ${seedCount} seeds x ${variantsToRun.length} variants\n`);
+  console.log(
+    `\n🏟️  Engine Characterisation: ${seedCount} seeds x ${variantsToRun.length} variants\n`
+  );
 
   const allReports: VariantReport[] = [];
 
@@ -317,21 +340,25 @@ async function main(): Promise<void> {
     const mutationLog: string[] = [];
 
     for (const seed of seeds) {
-      const isFirstSeed = (seed === seeds[0]);
+      const isFirstSeed = seed === seeds[0];
       const result = await runMatchWithSeed(seed, isFirstSeed, variant.name, mutationLog);
       results.push(result);
       if (result.crashed) crashes.push(result);
 
       // Per-seed one-liner
       if (result.crashed) {
-        console.log(`  seed ${String(seed).padStart(3)}  💥 CRASH at iteration ${result.crashIteration}: ${result.crashError}`);
+        console.log(
+          `  seed ${String(seed).padStart(3)}  💥 CRASH at iteration ${result.crashIteration}: ${result.crashError}`
+        );
       } else {
         const score = `${result.homeGoals}-${result.awayGoals + 3}`;
         const evts = `events=${result.semanticEvents}`;
         const shots = `shots=${result.homeShots + result.awayShots}`;
         const fouls = `fouls=${result.homeFouls + result.awayFouls}`;
         const time = `${Math.round(result.elapsedMs)}ms`;
-        console.log(`  seed ${String(seed).padStart(3)}  ${score.padEnd(5)}  ${evts.padEnd(12)}  ${shots.padEnd(10)}  ${fouls.padEnd(10)}  ${time}`);
+        console.log(
+          `  seed ${String(seed).padStart(3)}  ${score.padEnd(5)}  ${evts.padEnd(12)}  ${shots.padEnd(10)}  ${fouls.padEnd(10)}  ${time}`
+        );
       }
     }
 
@@ -346,26 +373,28 @@ async function main(): Promise<void> {
       variant,
       mutationLog,
       crashes: crashes.length,
-      crashDetails: crashes.map(c => `seed ${c.seed}: iteration ${c.crashIteration} — ${c.crashError}`),
+      crashDetails: crashes.map(
+        (c) => `seed ${c.seed}: iteration ${c.crashIteration} — ${c.crashError}`
+      ),
       completed: completed.length,
-      homeGoalsAgg: aggregate(completed.map(r => r.homeGoals)),
-      awayGoalsAgg: aggregate(completed.map(r => r.awayGoals)),
-      totalGoalsAgg: aggregate(completed.map(r => r.homeGoals + r.awayGoals)),
-      totalShotsAgg: aggregate(completed.map(r => r.homeShots + r.awayShots)),
-      totalFoulsAgg: aggregate(completed.map(r => r.homeFouls + r.awayFouls)),
-      totalYellowsAgg: aggregate(completed.map(r => r.homeYellows + r.awayYellows)),
-      totalRedsAgg: aggregate(completed.map(r => r.homeReds + r.awayReds)),
-      semanticEventsAgg: aggregate(completed.map(r => r.semanticEvents)),
-      shotGapAgg: aggregate(completed.map(r => r.shotExtractionGap)),
-      foulGapAgg: aggregate(completed.map(r => r.foulExtractionGap)),
-      elapsedMsAgg: aggregate(completed.map(r => r.elapsedMs)),
+      homeGoalsAgg: aggregate(completed.map((r) => r.homeGoals)),
+      awayGoalsAgg: aggregate(completed.map((r) => r.awayGoals)),
+      totalGoalsAgg: aggregate(completed.map((r) => r.homeGoals + r.awayGoals)),
+      totalShotsAgg: aggregate(completed.map((r) => r.homeShots + r.awayShots)),
+      totalFoulsAgg: aggregate(completed.map((r) => r.homeFouls + r.awayFouls)),
+      totalYellowsAgg: aggregate(completed.map((r) => r.homeYellows + r.awayYellows)),
+      totalRedsAgg: aggregate(completed.map((r) => r.homeReds + r.awayReds)),
+      semanticEventsAgg: aggregate(completed.map((r) => r.semanticEvents)),
+      shotGapAgg: aggregate(completed.map((r) => r.shotExtractionGap)),
+      foulGapAgg: aggregate(completed.map((r) => r.foulExtractionGap)),
+      elapsedMsAgg: aggregate(completed.map((r) => r.elapsedMs)),
       semanticEventsByTypeAgg: {
-        goal: aggregate(completed.map(r => r.semanticEventsByType.goal ?? 0)),
-        shot: aggregate(completed.map(r => r.semanticEventsByType.shot ?? 0)),
-        save: aggregate(completed.map(r => r.semanticEventsByType.save ?? 0)),
-        foul: aggregate(completed.map(r => r.semanticEventsByType.foul ?? 0)),
-        yellow: aggregate(completed.map(r => r.semanticEventsByType.yellow ?? 0)),
-        red: aggregate(completed.map(r => r.semanticEventsByType.red ?? 0))
+        goal: aggregate(completed.map((r) => r.semanticEventsByType.goal ?? 0)),
+        shot: aggregate(completed.map((r) => r.semanticEventsByType.shot ?? 0)),
+        save: aggregate(completed.map((r) => r.semanticEventsByType.save ?? 0)),
+        foul: aggregate(completed.map((r) => r.semanticEventsByType.foul ?? 0)),
+        yellow: aggregate(completed.map((r) => r.semanticEventsByType.yellow ?? 0)),
+        red: aggregate(completed.map((r) => r.semanticEventsByType.red ?? 0))
       },
       scoreDistribution: []
     };
@@ -393,7 +422,8 @@ async function main(): Promise<void> {
   // -----------------------------------------------------------------------
 
   const md = generateMarkdownReport(seedCount, allReports);
-  const outPath = "/media/mo/Projects/Active_Dev_Projects/2026-the-ataturk/docs/CHARACTERISATION_VARIANTS.md";
+  const outPath =
+    "/media/mo/Projects/Active_Dev_Projects/2026-the-ataturk/docs/CHARACTERISATION_VARIANTS.md";
   fs.writeFileSync(outPath, md, "utf8");
   console.log(`📄 Markdown report written to: docs/CHARACTERISATION_VARIANTS.md`);
   console.log("\nDone.\n");
@@ -408,7 +438,9 @@ function generateMarkdownReport(seedCount: number, allReports: VariantReport[]):
   md += `| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n`;
 
   for (const rep of allReports) {
-    const topScore = rep.scoreDistribution[0] ? `${rep.scoreDistribution[0].score} (${rep.scoreDistribution[0].pct}%)` : "N/A";
+    const topScore = rep.scoreDistribution[0]
+      ? `${rep.scoreDistribution[0].score} (${rep.scoreDistribution[0].pct}%)`
+      : "N/A";
     md += `| **${rep.variant.name}** | ${rep.variant.description} | ${rep.homeGoalsAgg.avg} | ${rep.awayGoalsAgg.avg} | ${rep.totalShotsAgg.avg} | ${rep.totalFoulsAgg.avg} | ${rep.semanticEventsAgg.avg} | ${topScore} |\n`;
   }
 
@@ -423,7 +455,7 @@ function generateMarkdownReport(seedCount: number, allReports: VariantReport[]):
 
     if (rep.mutationLog && rep.mutationLog.length > 0) {
       md += `**Mutations (Sanity Check):**\n`;
-      md += rep.mutationLog.map(log => `- ${log}`).join("\n") + "\n\n";
+      md += rep.mutationLog.map((log) => `- ${log}`).join("\n") + "\n\n";
     }
 
     if (rep.crashes > 0) {
@@ -463,17 +495,17 @@ function parseConfig(): RunConfig {
     if (!Number.isNaN(parsed) && parsed > 0) seedCount = parsed;
   }
 
-  const variantArg = args.find(a => a.startsWith("--variant="));
+  const variantArg = args.find((a) => a.startsWith("--variant="));
   if (variantArg) {
     const val = variantArg.split("=")[1];
     if (val === "all") {
-      variantsNames = ALL_VARIANTS.map(v => v.name);
+      variantsNames = ALL_VARIANTS.map((v) => v.name);
     } else if (val) {
       variantsNames = val.split(",");
     }
   }
 
-  const variantsToRun = ALL_VARIANTS.filter(v => variantsNames.includes(v.name));
+  const variantsToRun = ALL_VARIANTS.filter((v) => variantsNames.includes(v.name));
   if (variantsToRun.length === 0) {
     console.warn("No matching variants found. Defaulting to control.");
     variantsToRun.push(ALL_VARIANTS[0]!);

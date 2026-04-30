@@ -4,3 +4,4 @@ coverage/
 docs/
 data/
 pnpm-lock.yaml
+.playwright-mcp/
