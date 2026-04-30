@@ -1,186 +1,478 @@
-import { useState, useEffect, useRef } from "react";
-import { simulateMatch } from "@the-ataturk/match-engine";
-import type { MatchSnapshot, Team, PlayerInput } from "@the-ataturk/match-engine";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import type { MatchSnapshot, MatchTick, SemanticEvent, TeamId } from "@the-ataturk/match-engine";
 
-function createMockTeam(id: string, name: string): Team {
-  const players: PlayerInput[] = [];
-  const positions: Array<PlayerInput["position"]> = [
-    "GK", "RB", "CB", "CB", "LB", "RW", "CM", "CM", "LW", "ST", "ST"
-  ];
-  for (let i = 0; i < 11; i++) {
-    players.push({
-      id: `${id}-p${i}`, name: `Player ${i}`, shortName: `P${i}`, position: positions[i]!,
-      attributes: { passing: 50, shooting: 50, tackling: 50, saving: 50, agility: 50, strength: 50, penaltyTaking: 50, perception: 50, jumping: 50, control: 50 }
-    });
-  }
-  return {
-    id, name, shortName: name.slice(0, 3).toUpperCase(), players,
-    tactics: { formation: "4-4-2", mentality: "balanced", tempo: "normal", pressing: "medium", lineHeight: "normal", width: "normal" }
-  };
-}
+const PITCH_WIDTH = 680;
+const PITCH_LENGTH = 1050;
+const SPEEDS = [1, 4, 16, "instant"] as const;
+type ReplaySpeed = (typeof SPEEDS)[number];
 
 export function VisualiserPage() {
-  const [engineType, setEngineType] = useState<"custom" | "fse">("custom");
   const [snapshot, setSnapshot] = useState<MatchSnapshot | null>(null);
   const [tickIndex, setTickIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const animationRef = useRef<number | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<ReplaySpeed>(4);
+  const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
-  const generateMatch = async () => {
-    setIsPlaying(false);
-    setIsLoading(true);
-    setTickIndex(0);
-    
-    try {
-      if (engineType === "custom") {
-        const snap = simulateMatch({
-          homeTeam: createMockTeam("home-1", "Liverpool"),
-          awayTeam: createMockTeam("away-1", "Milan"),
-          duration: "second_half",
-          seed: Date.now()
-        });
-        setSnapshot(snap);
-      } else {
-        const response = await fetch("/api/match/snapshot/fse");
-        const snap = await response.json();
-        setSnapshot(snap);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const currentTick = snapshot?.ticks[tickIndex] ?? null;
+  const stats = useMemo(
+    () => (snapshot && currentTick ? statsForReplay(snapshot.ticks.slice(0, tickIndex + 1)) : null),
+    [currentTick, snapshot, tickIndex]
+  );
 
   useEffect(() => {
-    if (isPlaying && snapshot) {
-      animationRef.current = window.setInterval(() => {
-        setTickIndex(i => {
-          if (i >= snapshot.ticks.length - 1) {
-            setIsPlaying(false);
-            return i;
-          }
-          return i + 1;
-        });
-      }, 100); // Fast playback: 10 ticks per sec. (30 sec match time per sec real time)
-    } else if (animationRef.current) {
-      window.clearInterval(animationRef.current);
+    if (!playing || !snapshot) {
+      clearReplayInterval(intervalRef);
+      return;
     }
-    return () => {
-      if (animationRef.current) window.clearInterval(animationRef.current);
-    };
-  }, [isPlaying, snapshot]);
 
-  if (!snapshot) {
-    return (
-      <main style={{ padding: 20 }}>
-        <h1>Match Visualiser</h1>
-        <div style={{ marginBottom: 20 }}>
-          <select value={engineType} onChange={e => setEngineType(e.target.value as any)}>
-            <option value="custom">Custom Match Engine (Local)</option>
-            <option value="fse">FootballSimulationEngine (Server FSE)</option>
-          </select>
-        </div>
-        <button onClick={() => void generateMatch()} disabled={isLoading}>
-          {isLoading ? "Generating..." : "Generate Match"}
-        </button>
-      </main>
-    );
+    if (speed === "instant") {
+      setTickIndex(snapshot.ticks.length - 1);
+      setPlaying(false);
+      return;
+    }
+
+    clearReplayInterval(intervalRef);
+    intervalRef.current = window.setInterval(() => {
+      setTickIndex((previous) => {
+        const next = Math.min(previous + speed, snapshot.ticks.length - 1);
+        if (next >= snapshot.ticks.length - 1) {
+          setPlaying(false);
+        }
+        return next;
+      });
+    }, 300);
+
+    return () => clearReplayInterval(intervalRef);
+  }, [playing, snapshot, speed]);
+
+  async function handleFile(file: File | undefined): Promise<void> {
+    if (!file) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(await file.text()) as MatchSnapshot;
+      validateSnapshot(parsed);
+      setSnapshot(parsed);
+      setTickIndex(0);
+      setPlaying(false);
+      setError(null);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Snapshot could not be loaded");
+      setSnapshot(null);
+    }
   }
 
-  const currentTick = snapshot.ticks[tickIndex]!;
-  const PITCH_W = 680;
-  const PITCH_H = 1050;
+  const events = snapshot ? eventsUntil(snapshot.ticks, tickIndex) : [];
 
   return (
-    <main style={{ display: "flex", height: "100vh", background: "#1a1a1a", color: "#fff", fontFamily: "sans-serif" }}>
-      <section style={{ flex: 1, padding: 20, display: "flex", flexDirection: "column" }}>
-        
-        <header style={{ marginBottom: 20, display: "flex", justifyContent: "space-between" }}>
+    <main style={styles.page}>
+      <section style={styles.stage} aria-label="Snapshot replay visualiser">
+        <header style={styles.header}>
           <div>
-            <h2>{snapshot.meta.homeTeam.name} {currentTick.score.home} - {currentTick.score.away} {snapshot.meta.awayTeam.name}</h2>
-            <p>Clock: {currentTick.matchClock.minute}:{currentTick.matchClock.seconds.toString().padStart(2, "0")} | Engine: {engineType.toUpperCase()}</p>
+            <p style={styles.eyebrow}>Match visualiser</p>
+            <h1 style={styles.title}>
+              {snapshot && currentTick
+                ? `${snapshot.meta.homeTeam.shortName} ${currentTick.score.home}-${currentTick.score.away} ${snapshot.meta.awayTeam.shortName}`
+                : "Load snapshot"}
+            </h1>
+            <p style={styles.clock}>{currentTick ? formatClock(currentTick) : "45:00"}</p>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <select value={engineType} onChange={e => {
-              setEngineType(e.target.value as any);
-              setSnapshot(null); // Force reload
-            }}>
-              <option value="custom">Custom Engine</option>
-              <option value="fse">Old Engine (FSE)</option>
-            </select>
-            <button onClick={() => void generateMatch()} disabled={isLoading}>Regenerate</button>
-            <button onClick={() => setIsPlaying(!isPlaying)}>{isPlaying ? "Pause" : "Play"}</button>
-          </div>
+          <label style={styles.fileButton}>
+            JSON
+            <input
+              aria-label="Load snapshot JSON"
+              type="file"
+              accept="application/json,.json"
+              style={styles.fileInput}
+              onChange={(event) => void handleFile(event.currentTarget.files?.[0])}
+            />
+          </label>
         </header>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 15, marginBottom: 20 }}>
-          <input 
-            type="range" 
-            min="0" 
-            max={snapshot.ticks.length - 1} 
-            value={tickIndex} 
-            onChange={(e) => {
-              setIsPlaying(false);
-              setTickIndex(parseInt(e.target.value, 10));
-            }}
-            style={{ flex: 1 }}
-          />
+        {error ? <p style={styles.error}>{error}</p> : null}
+
+        <div
+          style={styles.dropZone}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            void handleFile(event.dataTransfer.files[0]);
+          }}
+        >
+          {snapshot && currentTick ? (
+            <Pitch snapshot={snapshot} tick={currentTick} />
+          ) : (
+            <p style={styles.empty}>Drop a MatchSnapshot JSON file here.</p>
+          )}
         </div>
 
-        <div style={{ flex: 1, display: "flex", justifyContent: "center", minHeight: 0 }}>
-          <svg viewBox={`0 0 ${PITCH_W} ${PITCH_H}`} style={{ height: "100%", background: "#2e7d32", border: "2px solid #fff" }}>
-            {/* Simple Pitch lines */}
-            <rect x="0" y="0" width={PITCH_W} height={PITCH_H} fill="none" stroke="#fff" strokeWidth="2" />
-            <line x1="0" y1={PITCH_H/2} x2={PITCH_W} y2={PITCH_H/2} stroke="#fff" strokeWidth="2" />
-            <circle cx={PITCH_W/2} cy={PITCH_H/2} r="90" fill="none" stroke="#fff" strokeWidth="2" />
-            
-            {/* Penalty boxes */}
-            <rect x={140} y="0" width={400} height={165} fill="none" stroke="#fff" strokeWidth="2" />
-            <rect x={248} y="0" width={183} height={55} fill="none" stroke="#fff" strokeWidth="2" />
-            <rect x={140} y={PITCH_H - 165} width={400} height={165} fill="none" stroke="#fff" strokeWidth="2" />
-            <rect x={248} y={PITCH_H - 55} width={183} height={55} fill="none" stroke="#fff" strokeWidth="2" />
-
-            {/* Players */}
-            {currentTick.players.map(p => {
-              if (!p.onPitch) return null;
-              const color = p.teamId === "home" ? "red" : "white";
-              const stroke = p.teamId === "home" ? "darkred" : "black";
-              return (
-                <circle 
-                  key={p.id} 
-                  cx={p.position[0]} 
-                  cy={p.position[1]} 
-                  r="12" 
-                  fill={color} 
-                  stroke={stroke} 
-                  strokeWidth="2" 
-                  style={{ transition: "cy 0.1s linear, cx 0.1s linear" }}
-                />
-              );
-            })}
-
-            {/* Ball */}
-            <circle 
-              cx={currentTick.ball.position[0]} 
-              cy={currentTick.ball.position[1]} 
-              r="6" 
-              fill="yellow" 
-              stroke="black"
-              style={{ transition: "cy 0.1s linear, cx 0.1s linear" }}
-            />
-          </svg>
+        <div style={styles.controls}>
+          <button
+            type="button"
+            onClick={() => setPlaying((value) => !value)}
+            disabled={!snapshot}
+            style={styles.button}
+          >
+            {playing ? "Pause" : "Play"}
+          </button>
+          <input
+            aria-label="Replay timeline"
+            type="range"
+            min={0}
+            max={snapshot ? snapshot.ticks.length - 1 : 0}
+            value={tickIndex}
+            disabled={!snapshot}
+            onChange={(event) => {
+              setPlaying(false);
+              setTickIndex(Number(event.currentTarget.value));
+            }}
+            style={styles.slider}
+          />
+          <span style={styles.clock}>{currentTick ? formatClock(currentTick) : "45:00"}</span>
+          <select
+            aria-label="Replay speed"
+            value={String(speed)}
+            onChange={(event) => setSpeed(parseSpeed(event.currentTarget.value))}
+            style={styles.select}
+          >
+            {SPEEDS.map((value) => (
+              <option key={String(value)} value={String(value)}>
+                {value === "instant" ? "Instant" : `${value}x`}
+              </option>
+            ))}
+          </select>
         </div>
       </section>
 
-      <aside style={{ width: 350, background: "#222", padding: 20, overflowY: "auto", borderLeft: "1px solid #444" }}>
-        <h3>Events (Max 50 recents)</h3>
-        {snapshot.ticks.slice(0, tickIndex + 1).flatMap(t => t.events).reverse().slice(0, 50).map((ev, i) => (
-          <div key={i} style={{ marginBottom: 10, padding: 10, background: "#333", borderRadius: 4, borderLeft: `4px solid ${ev.team === "home" ? "red" : "white"}` }}>
-            <strong>{ev.minute}:{ev.second.toString().padStart(2, "0")}</strong> - {ev.type.toUpperCase()}
-            {ev.playerId && <div style={{ fontSize: "0.85em", color: "#aaa" }}>{ev.playerId}</div>}
-          </div>
-        ))}
+      <aside style={styles.sidePanel}>
+        <section aria-label="Replay statistics" style={styles.panelSection}>
+          <h2 style={styles.panelTitle}>Stats</h2>
+          {snapshot && currentTick && stats ? (
+            <StatsPanel snapshot={snapshot} tick={currentTick} stats={stats} />
+          ) : (
+            <p style={styles.muted}>No snapshot loaded.</p>
+          )}
+        </section>
+        <section aria-label="Event log" style={styles.panelSection}>
+          <h2 style={styles.panelTitle}>Events</h2>
+          {snapshot ? (
+            <EventLog snapshot={snapshot} events={events} />
+          ) : (
+            <p style={styles.muted}>No events.</p>
+          )}
+        </section>
       </aside>
     </main>
   );
 }
+
+function Pitch({ snapshot, tick }: { snapshot: MatchSnapshot; tick: MatchTick }) {
+  return (
+    <svg
+      viewBox={`0 0 ${PITCH_WIDTH} ${PITCH_LENGTH}`}
+      style={styles.pitch}
+      role="img"
+      aria-label="Football pitch"
+    >
+      <rect x="0" y="0" width={PITCH_WIDTH} height={PITCH_LENGTH} fill="#2f7d48" />
+      <rect
+        x="8"
+        y="8"
+        width={PITCH_WIDTH - 16}
+        height={PITCH_LENGTH - 16}
+        fill="none"
+        stroke="#fff"
+        strokeWidth="3"
+      />
+      <line
+        x1="8"
+        y1={PITCH_LENGTH / 2}
+        x2={PITCH_WIDTH - 8}
+        y2={PITCH_LENGTH / 2}
+        stroke="#fff"
+        strokeWidth="3"
+      />
+      <circle
+        cx={PITCH_WIDTH / 2}
+        cy={PITCH_LENGTH / 2}
+        r="92"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="3"
+      />
+      <circle cx={PITCH_WIDTH / 2} cy={PITCH_LENGTH / 2} r="5" fill="#fff" />
+      <rect x="140" y="8" width="400" height="165" fill="none" stroke="#fff" strokeWidth="3" />
+      <rect x="248" y="8" width="184" height="56" fill="none" stroke="#fff" strokeWidth="3" />
+      <rect
+        x="140"
+        y={PITCH_LENGTH - 173}
+        width="400"
+        height="165"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="3"
+      />
+      <rect
+        x="248"
+        y={PITCH_LENGTH - 64}
+        width="184"
+        height="56"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="3"
+      />
+      <line x1="295" y1="0" x2="385" y2="0" stroke="#fff" strokeWidth="7" />
+      <line x1="295" y1={PITCH_LENGTH} x2="385" y2={PITCH_LENGTH} stroke="#fff" strokeWidth="7" />
+
+      {tick.players.map((player) => (
+        <PlayerCircle key={player.id} snapshot={snapshot} player={player} />
+      ))}
+      <circle
+        cx={tick.ball.position[0]}
+        cy={tick.ball.position[1]}
+        r="7"
+        fill="#fff"
+        stroke="#111"
+        strokeWidth="2"
+        style={styles.moving}
+      />
+    </svg>
+  );
+}
+
+function PlayerCircle({
+  snapshot,
+  player
+}: {
+  snapshot: MatchSnapshot;
+  player: MatchTick["players"][number];
+}) {
+  if (!player.onPitch) {
+    return null;
+  }
+
+  const rosterPlayer = snapshot.meta.rosters[player.teamId].find(
+    (candidate) => candidate.id === player.id
+  );
+  const isGoalkeeper = rosterPlayer?.position === "GK";
+  const fill = isGoalkeeper ? "#f4c542" : player.teamId === "home" ? "#c8102e" : "#f8f8f8";
+  const textFill = player.teamId === "home" || isGoalkeeper ? "#fff" : "#111";
+
+  return (
+    <g style={styles.moving}>
+      <circle
+        cx={player.position[0]}
+        cy={player.position[1]}
+        r={isGoalkeeper ? 15 : 13}
+        fill={fill}
+        stroke={player.teamId === "home" ? "#fff" : "#111"}
+        strokeWidth="3"
+      />
+      <text
+        x={player.position[0]}
+        y={player.position[1] + 5}
+        textAnchor="middle"
+        fontSize="12"
+        fontFamily="Arial, sans-serif"
+        fontWeight="700"
+        fill={textFill}
+      >
+        {rosterPlayer?.squadNumber ?? ""}
+      </text>
+    </g>
+  );
+}
+
+function StatsPanel({
+  snapshot,
+  tick,
+  stats
+}: {
+  snapshot: MatchSnapshot;
+  tick: MatchTick;
+  stats: ReplayStats;
+}) {
+  return (
+    <div style={styles.statsGrid}>
+      <strong>{snapshot.meta.homeTeam.shortName}</strong>
+      <strong>{tick.score.home}</strong>
+      <strong>{tick.score.away}</strong>
+      <strong>{snapshot.meta.awayTeam.shortName}</strong>
+      <span>Possession</span>
+      <span>
+        {stats.possession.home}% / {stats.possession.away}%
+      </span>
+      <span>Shots</span>
+      <span>
+        {stats.home.shots} / {stats.away.shots}
+      </span>
+      <span>Fouls</span>
+      <span>
+        {stats.home.fouls} / {stats.away.fouls}
+      </span>
+      <span>Cards</span>
+      <span>
+        {stats.home.cards} / {stats.away.cards}
+      </span>
+    </div>
+  );
+}
+
+function EventLog({ snapshot, events }: { snapshot: MatchSnapshot; events: SemanticEvent[] }) {
+  if (events.length === 0) {
+    return <p style={styles.muted}>No events yet.</p>;
+  }
+
+  return (
+    <ol style={styles.eventList}>
+      {events
+        .slice()
+        .reverse()
+        .map((event, index) => (
+          <li
+            key={`${event.minute}-${event.second}-${event.type}-${index}`}
+            style={styles.eventItem}
+          >
+            <strong>
+              {event.minute}:{String(event.second).padStart(2, "0")}
+            </strong>{" "}
+            {event.type.replace("_", " ")} · {teamName(snapshot, event.team)}
+            {event.playerId ? ` · ${playerName(snapshot, event.team, event.playerId)}` : ""}
+          </li>
+        ))}
+    </ol>
+  );
+}
+
+interface ReplayStats {
+  home: { shots: number; fouls: number; cards: number };
+  away: { shots: number; fouls: number; cards: number };
+  possession: { home: number; away: number };
+}
+
+function statsForReplay(ticks: MatchTick[]): ReplayStats {
+  const stats: ReplayStats = {
+    home: { shots: 0, fouls: 0, cards: 0 },
+    away: { shots: 0, fouls: 0, cards: 0 },
+    possession: { home: 50, away: 50 }
+  };
+
+  for (const tick of ticks) {
+    if (tick.possession.teamId) {
+      stats.possession[tick.possession.teamId] += 1;
+    }
+    for (const event of tick.events) {
+      if (event.type === "shot") {
+        stats[event.team].shots += 1;
+      } else if (event.type === "foul") {
+        stats[event.team].fouls += 1;
+      } else if (event.type === "yellow" || event.type === "red") {
+        stats[event.team].cards += 1;
+      }
+    }
+  }
+
+  const possessionTicks = stats.possession.home + stats.possession.away - 100;
+  if (possessionTicks > 0) {
+    const homeTicks = stats.possession.home - 50;
+    stats.possession.home = Math.round((homeTicks / possessionTicks) * 100);
+    stats.possession.away = 100 - stats.possession.home;
+  }
+
+  return stats;
+}
+
+function eventsUntil(ticks: MatchTick[], tickIndex: number): SemanticEvent[] {
+  return ticks.slice(0, tickIndex + 1).flatMap((tick) => tick.events);
+}
+
+function formatClock(tick: MatchTick): string {
+  return `${tick.matchClock.minute}:${String(tick.matchClock.seconds).padStart(2, "0")}`;
+}
+
+function playerName(snapshot: MatchSnapshot, team: TeamId, playerId: string): string {
+  return (
+    snapshot.meta.rosters[team].find((player) => player.id === playerId)?.shortName ?? playerId
+  );
+}
+
+function teamName(snapshot: MatchSnapshot, team: TeamId): string {
+  return team === "home" ? snapshot.meta.homeTeam.shortName : snapshot.meta.awayTeam.shortName;
+}
+
+function validateSnapshot(snapshot: MatchSnapshot): void {
+  if (!Array.isArray(snapshot.ticks) || snapshot.ticks.length === 0) {
+    throw new Error("Snapshot has no ticks");
+  }
+}
+
+function parseSpeed(value: string): ReplaySpeed {
+  if (value === "instant") {
+    return "instant";
+  }
+  if (value === "1" || value === "4" || value === "16") {
+    return Number(value) as ReplaySpeed;
+  }
+  return 4;
+}
+
+function clearReplayInterval(ref: MutableRefObject<number | null>): void {
+  if (ref.current !== null) {
+    window.clearInterval(ref.current);
+    ref.current = null;
+  }
+}
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) 360px",
+    background: "#17201b",
+    color: "#f5f7f5",
+    fontFamily: "Arial, sans-serif"
+  },
+  stage: { padding: "18px", minWidth: 0 },
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px" },
+  eyebrow: { margin: 0, color: "#aeb8b1", fontSize: "13px", textTransform: "uppercase" as const },
+  title: { margin: "4px 0", fontSize: "28px", lineHeight: 1.1 },
+  clock: { margin: 0, color: "#d8ded9", fontVariantNumeric: "tabular-nums" as const },
+  fileButton: {
+    position: "relative" as const,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "64px",
+    height: "36px",
+    border: "1px solid #d8ded9",
+    cursor: "pointer"
+  },
+  fileInput: { position: "absolute" as const, inset: 0, opacity: 0, cursor: "pointer" },
+  error: { color: "#ffb4a8" },
+  dropZone: {
+    marginTop: "16px",
+    height: "calc(100vh - 150px)",
+    minHeight: "520px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "1px solid #3f5045",
+    background: "#203027"
+  },
+  empty: { color: "#c7d0ca" },
+  pitch: { height: "100%", maxWidth: "100%", display: "block" },
+  moving: { transition: "cx 0.3s linear, cy 0.3s linear, x 0.3s linear, y 0.3s linear" },
+  controls: { marginTop: "12px", display: "flex", alignItems: "center", gap: "12px" },
+  button: { height: "34px", minWidth: "72px" },
+  slider: { flex: 1 },
+  select: { height: "34px" },
+  sidePanel: { borderLeft: "1px solid #3f5045", padding: "18px", overflowY: "auto" as const },
+  panelSection: { marginBottom: "24px" },
+  panelTitle: { margin: "0 0 10px", fontSize: "18px" },
+  statsGrid: { display: "grid", gridTemplateColumns: "1fr auto auto 1fr", gap: "8px 12px" },
+  muted: { color: "#aeb8b1" },
+  eventList: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" },
+  eventItem: { padding: "8px", background: "#23352a", borderLeft: "3px solid #d8ded9" }
+};
