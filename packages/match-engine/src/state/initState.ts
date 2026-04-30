@@ -45,6 +45,7 @@ export function buildInitState(config: MatchConfig): MutableMatchState {
     },
     possession: { teamId: "home", zone: "mid", pressureLevel: "low" },
     possessionTicks: { home: 0, away: 0 },
+    pendingRestartTeam: null,
     eventsThisTick: [],
     allEvents: []
   };

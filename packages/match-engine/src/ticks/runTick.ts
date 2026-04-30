@@ -5,6 +5,7 @@ import {
   isVulnerableAction,
   selectCarrierAction
 } from "../resolution/carrierAction";
+import { restartAfterGoal } from "../resolution/actions/shot";
 import { pressureLevel, rollPressureTackle } from "../resolution/pressure";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
 import type { SemanticEvent, TeamId } from "../types";
@@ -15,6 +16,15 @@ import { updateMovement } from "./movement";
 export function runTick(state: MutableMatchState): void {
   state.eventsThisTick = [];
   advanceClock(state);
+
+  if (state.pendingRestartTeam) {
+    restartAfterGoal(state, state.pendingRestartTeam);
+    determinePossessionState(state);
+    updatePossessionStats(state);
+    state.allEvents.push(...state.eventsThisTick);
+    return;
+  }
+
   updateBallPhysics(state);
   updateMovement(state);
   determinePossessionState(state);
@@ -28,6 +38,12 @@ export function runTick(state: MutableMatchState): void {
     if (!dispossessed) {
       executeCarrierAction(state, carrierForAction(state, carrier), action);
     }
+  }
+
+  if (state.pendingRestartTeam) {
+    updatePossessionStats(state);
+    state.allEvents.push(...state.eventsThisTick);
+    return;
   }
 
   determinePossessionState(state);

@@ -47,6 +47,7 @@ export interface MutableMatchState {
   stats: { home: TeamStatistics; away: TeamStatistics };
   possession: { teamId: TeamId | null; zone: Zone; pressureLevel: PressureLevel };
   possessionTicks: { home: number; away: number };
+  pendingRestartTeam: TeamId | null;
   eventsThisTick: SemanticEvent[];
   allEvents: SemanticEvent[];
 }

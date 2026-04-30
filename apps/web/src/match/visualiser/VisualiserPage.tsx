@@ -411,7 +411,14 @@ function formatEventDetail(event: SemanticEvent): string {
   }
 
   if (event.type === "shot") {
-    return event.detail.onTarget ? "(on target)" : "(off target)";
+    const outcome = event.detail.onTarget ? "on target" : "off target";
+    const distance =
+      typeof event.detail.distanceToGoalMetres === "number"
+        ? `, ${event.detail.distanceToGoalMetres}m`
+        : "";
+    const band =
+      typeof event.detail.distanceBand === "string" ? `, ${event.detail.distanceBand}` : "";
+    return `(${outcome}${distance}${band})`;
   }
 
   if (event.type === "throw_in") {
