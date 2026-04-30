@@ -23,6 +23,7 @@ import {
 } from "@the-ataturk/data";
 import {
   PROFILE_EXTRACTION_GENERATED_BY,
+  ProfileExtractionError,
   extractPlayerProfile,
   type ProfileExtractionInput,
   type ProfileExtractionResult
@@ -260,7 +261,11 @@ function sendSseEvent(reply: FastifyReply, eventName: string, data: unknown): vo
 async function extractWithRetry(input: ProfileExtractionInput): Promise<ProfileExtractionResult> {
   try {
     return await extractPlayerProfile(input);
-  } catch {
+  } catch (error) {
+    if (!(error instanceof ProfileExtractionError) || !error.transient) {
+      throw error;
+    }
+
     return await extractPlayerProfile(input);
   }
 }
@@ -418,6 +423,7 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive"
     });
+    let clientDisconnected = false;
 
     const summary: ExtractionSummary = {
       total: 0,
@@ -426,13 +432,22 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
       failed_player_ids: []
     };
 
+    request.raw.on("close", () => {
+      clientDisconnected = true;
+    });
+
     try {
       const researchDocument = readFileSync(RESEARCH_DOCUMENT_PATH, "utf8");
       const candidates = listProfileExtractionCandidates(input.profile_version, input.player_ids);
 
       summary.total = candidates.length;
 
-      for (const candidate of candidates) {
+      for (const [index, candidate] of candidates.entries()) {
+        if (clientDisconnected) {
+          app.log.info(`Profile extraction aborted by client at ${index} of ${summary.total}`);
+          break;
+        }
+
         sendSseEvent(reply, "player", {
           player_id: candidate.player.id,
           player_name: candidate.player.name,

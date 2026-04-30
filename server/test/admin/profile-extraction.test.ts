@@ -1,4 +1,5 @@
 import { getDb } from "@the-ataturk/data";
+import { ProfileExtractionError } from "@the-ataturk/data/llm/gemini";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const geminiMocks = vi.hoisted(() => ({
@@ -7,6 +8,15 @@ const geminiMocks = vi.hoisted(() => ({
 
 vi.mock("@the-ataturk/data/llm/gemini", () => ({
   PROFILE_EXTRACTION_GENERATED_BY: "llm-gemini-3-flash",
+  ProfileExtractionError: class extends Error {
+    readonly transient: boolean;
+
+    constructor(message: string, options: { transient?: boolean } = {}) {
+      super(message);
+      this.name = "ProfileExtractionError";
+      this.transient = options.transient ?? false;
+    }
+  },
   extractPlayerProfile: geminiMocks.extractPlayerProfile
 }));
 
@@ -107,7 +117,9 @@ describe("admin profile extraction route", () => {
   it("retries once after a Gemini failure and persists the retry result", async () => {
     testDatabase = createServerTestDatabase("profile-extraction-retry");
     geminiMocks.extractPlayerProfile
-      .mockRejectedValueOnce(new Error("temporary Gemini failure"))
+      .mockRejectedValueOnce(
+        new ProfileExtractionError("temporary Gemini failure", { transient: true })
+      )
       .mockResolvedValueOnce({
         tier: "A",
         role_2004_05: "First-choice centre-back after retry.",
@@ -132,6 +144,45 @@ describe("admin profile extraction route", () => {
         data: { total: 1, succeeded: 1, failed: 0 }
       });
       expect(profileRow("sami-hyypia")?.role_2004_05).toBe("First-choice centre-back after retry.");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("does not retry deterministic extraction failures", async () => {
+    testDatabase = createServerTestDatabase("profile-extraction-no-retry");
+    geminiMocks.extractPlayerProfile.mockRejectedValueOnce(
+      new ProfileExtractionError("Gemini returned invalid JSON for profile extraction", {
+        transient: false
+      })
+    );
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/profile-extraction/run",
+        payload: {
+          profile_version: "v0-empty",
+          player_ids: ["sami-hyypia"]
+        }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(geminiMocks.extractPlayerProfile).toHaveBeenCalledTimes(1);
+      expect(parseSse(response.body).at(-1)).toMatchObject({
+        event: "summary",
+        data: {
+          total: 1,
+          succeeded: 0,
+          failed: 1,
+          failed_player_ids: ["sami-hyypia"]
+        }
+      });
+      expect(profileRow("sami-hyypia")).toMatchObject({
+        generated_by: "llm-extraction-failed",
+        edited: 0
+      });
     } finally {
       await app.close();
     }

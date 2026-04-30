@@ -19,9 +19,12 @@ export interface ProfileExtractionResult {
 }
 
 export class ProfileExtractionError extends Error {
-  constructor(message: string, options?: { cause?: unknown }) {
+  readonly transient: boolean;
+
+  constructor(message: string, options: { cause?: unknown; transient?: boolean } = {}) {
     super(message, options);
     this.name = "ProfileExtractionError";
+    this.transient = options.transient ?? false;
   }
 }
 
@@ -98,7 +101,10 @@ export async function extractPlayerProfile(
       throw error;
     }
 
-    throw new ProfileExtractionError("Gemini profile extraction failed", { cause: error });
+    throw new ProfileExtractionError("Gemini profile extraction failed", {
+      cause: error,
+      transient: isTransientGeminiError(error)
+    });
   }
 }
 
@@ -169,4 +175,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isPlayerProfileTier(value: unknown): value is PlayerProfileTier {
   return PLAYER_PROFILE_TIERS.includes(value as PlayerProfileTier);
+}
+
+function isTransientGeminiError(error: unknown): boolean {
+  if (isErrorWithStatus(error)) {
+    return error.status === 429 || error.status >= 500;
+  }
+
+  if (error instanceof Error) {
+    return (
+      error.name === "APIConnectionError" ||
+      error.name === "APIConnectionTimeoutError" ||
+      error.name === "TimeoutError" ||
+      error.name === "AbortError" ||
+      error.message.toLowerCase().includes("timeout")
+    );
+  }
+
+  return false;
+}
+
+function isErrorWithStatus(error: unknown): error is { status: number } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof (error as { status?: unknown }).status === "number"
+  );
 }
