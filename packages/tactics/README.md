@@ -1,7 +1,10 @@
 # @the-ataturk/tactics
 
-This package will eventually contain formations, mentality, tempo, pressing, and per-player role translation for the match engine.
+This package contains the tactical translation layer between game-level choices and the football simulation engine.
 
-It is intentionally empty for v0.1 scaffolding.
+For this vertical slice it only translates supported formations into engine pitch coordinates. Future work will add mentality, tempo, pressing, and per-player role modifiers as described in [docs/ARCHITECTURE.md § Tactics layer](../../docs/ARCHITECTURE.md#tactics-layer-we-build-this).
 
-Do not implement here yet - see [docs/ARCHITECTURE.md § Tactics layer](../../docs/ARCHITECTURE.md#tactics-layer-we-build-this).
+Supported formations in this slice:
+
+- `4-4-2`
+- `4-3-1-2`

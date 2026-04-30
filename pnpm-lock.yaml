@@ -101,7 +101,15 @@ importers:
         specifier: 4.0.13
         version: 4.0.13(@types/node@24.10.1)(jsdom@29.1.0)(lightningcss@1.32.0)(tsx@4.21.0)
 
-  packages/tactics: {}
+  packages/tactics:
+    dependencies:
+      '@the-ataturk/engine':
+        specifier: workspace:*
+        version: link:../engine
+    devDependencies:
+      vitest:
+        specifier: 4.0.13
+        version: 4.0.13(@types/node@24.10.1)(jsdom@29.1.0)(lightningcss@1.32.0)(tsx@4.21.0)
 
   packages/tts: {}
 
