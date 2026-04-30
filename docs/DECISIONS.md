@@ -4,6 +4,15 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-04-30 — Attribute derivation reads rubric from disk at runtime, not embedded
+The LLM system prompt for attribute derivation is the contents of
+docs/prompt_rubric_draft.md, loaded at the start of each derivation
+run. This means rubric revisions don't require code changes — edit
+the doc, fork to a new dataset version, re-derive. Rejected:
+embedding the rubric in TypeScript (would couple rubric edits to
+deploys; would require tests to be rewritten on every rubric
+revision).
+
 ## 2026-04-29 — v0.1 includes Player Manager mode (single mode, mandatory player creation)
 v0.1's core gameplay is "Player Manager": user creates their own player upfront with a budget-constrained attribute spread (5% above best player's total, configurable), picks from 8 archetype presets or blank slate, and joins Liverpool's squad. Tactical control depends on whether the user-player is on the pitch — full manager mode when off, frozen tactics + sub-self-off as the only action when on. There is no separate "manager only" mode; users who don't want to play themselves simply don't pick themselves in the XI or come off the bench. Rejected: two parallel modes (would have doubled UI surface for marginal benefit). Rejected: optional player creation (would have added branching everywhere for a feature most users would engage with). Scope expansion accepted: v0.1 ships ~30-40% later than manager-only would have. See PLAYER_MANAGER_MODE.md.
 

@@ -20,5 +20,8 @@ Useful routes:
 - `/admin/dataset-versions`
 - `/admin/profile-versions`
 - `/admin/extract-profiles`
+- `/admin/derive-attributes`
 
 The profile extraction page calls the local backend, which calls Gemini using `GEMINI_API_KEY`. Each full run costs roughly $0.10-0.30 in API credits.
+
+The attribute derivation page derives engine attributes from curated profiles into a non-stub dataset version. Each full run costs roughly $0.20-0.50 in API credits.
