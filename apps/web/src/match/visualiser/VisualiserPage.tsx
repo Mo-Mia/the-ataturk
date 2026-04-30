@@ -20,21 +20,35 @@ function createMockTeam(id: string, name: string): Team {
 }
 
 export function VisualiserPage() {
+  const [engineType, setEngineType] = useState<"custom" | "fse">("custom");
   const [snapshot, setSnapshot] = useState<MatchSnapshot | null>(null);
   const [tickIndex, setTickIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const animationRef = useRef<number | null>(null);
 
-  const generateMatch = () => {
+  const generateMatch = async () => {
     setIsPlaying(false);
+    setIsLoading(true);
     setTickIndex(0);
-    const snap = simulateMatch({
-      homeTeam: createMockTeam("home-1", "Liverpool"),
-      awayTeam: createMockTeam("away-1", "Milan"),
-      duration: "second_half",
-      seed: Date.now()
-    });
-    setSnapshot(snap);
+    
+    try {
+      if (engineType === "custom") {
+        const snap = simulateMatch({
+          homeTeam: createMockTeam("home-1", "Liverpool"),
+          awayTeam: createMockTeam("away-1", "Milan"),
+          duration: "second_half",
+          seed: Date.now()
+        });
+        setSnapshot(snap);
+      } else {
+        const response = await fetch("/api/match/snapshot/fse");
+        const snap = await response.json();
+        setSnapshot(snap);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -60,7 +74,15 @@ export function VisualiserPage() {
     return (
       <main style={{ padding: 20 }}>
         <h1>Match Visualiser</h1>
-        <button onClick={generateMatch}>Generate Match</button>
+        <div style={{ marginBottom: 20 }}>
+          <select value={engineType} onChange={e => setEngineType(e.target.value as any)}>
+            <option value="custom">Custom Match Engine (Local)</option>
+            <option value="fse">FootballSimulationEngine (Server FSE)</option>
+          </select>
+        </div>
+        <button onClick={() => void generateMatch()} disabled={isLoading}>
+          {isLoading ? "Generating..." : "Generate Match"}
+        </button>
       </main>
     );
   }
@@ -76,10 +98,17 @@ export function VisualiserPage() {
         <header style={{ marginBottom: 20, display: "flex", justifyContent: "space-between" }}>
           <div>
             <h2>{snapshot.meta.homeTeam.name} {currentTick.score.home} - {currentTick.score.away} {snapshot.meta.awayTeam.name}</h2>
-            <p>Clock: {currentTick.matchClock.minute}:{currentTick.matchClock.seconds.toString().padStart(2, "0")}</p>
+            <p>Clock: {currentTick.matchClock.minute}:{currentTick.matchClock.seconds.toString().padStart(2, "0")} | Engine: {engineType.toUpperCase()}</p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <button onClick={generateMatch}>Regenerate</button>
+            <select value={engineType} onChange={e => {
+              setEngineType(e.target.value as any);
+              setSnapshot(null); // Force reload
+            }}>
+              <option value="custom">Custom Engine</option>
+              <option value="fse">Old Engine (FSE)</option>
+            </select>
+            <button onClick={() => void generateMatch()} disabled={isLoading}>Regenerate</button>
             <button onClick={() => setIsPlaying(!isPlaying)}>{isPlaying ? "Pause" : "Play"}</button>
           </div>
         </header>

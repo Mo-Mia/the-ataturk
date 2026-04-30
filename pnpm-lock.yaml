@@ -35,6 +35,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.100.6
         version: 5.100.6(react@19.2.5)
+      '@the-ataturk/match-engine':
+        specifier: workspace:*
+        version: link:../../packages/match-engine
       '@vitejs/plugin-react':
         specifier: 6.0.1
         version: 6.0.1(vite@8.0.10(@types/node@24.10.1)(esbuild@0.27.7)(tsx@4.21.0))
@@ -101,6 +104,12 @@ importers:
         specifier: 4.0.13
         version: 4.0.13(@types/node@24.10.1)(jsdom@29.1.0)(lightningcss@1.32.0)(tsx@4.21.0)
 
+  packages/match-engine:
+    devDependencies:
+      vitest:
+        specifier: 4.0.13
+        version: 4.0.13(@types/node@24.10.1)(jsdom@29.1.0)(lightningcss@1.32.0)(tsx@4.21.0)
+
   packages/tactics:
     dependencies:
       '@the-ataturk/engine':
@@ -121,6 +130,9 @@ importers:
       '@the-ataturk/engine':
         specifier: workspace:*
         version: link:../packages/engine
+      '@the-ataturk/match-engine':
+        specifier: workspace:*
+        version: link:../packages/match-engine
       '@the-ataturk/tactics':
         specifier: workspace:*
         version: link:../packages/tactics
