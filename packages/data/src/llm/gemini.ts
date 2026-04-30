@@ -1,9 +1,19 @@
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-import { PLAYER_PROFILE_TIERS, type PlayerProfileTier, type Position } from "../types";
+import {
+  PLAYER_ATTRIBUTE_NAMES,
+  PLAYER_PROFILE_TIERS,
+  type PlayerAttributeName,
+  type PlayerAttributeValues,
+  type PlayerProfileTier,
+  type Position
+} from "../types";
+import { isTransientGeminiError, statusFromGeminiError } from "./transient-detection";
 
 export const PROFILE_EXTRACTION_MODEL = "gemini-3-flash-preview";
 export const PROFILE_EXTRACTION_GENERATED_BY = "llm-gemini-3-flash";
+export const ATTRIBUTE_DERIVATION_MODEL = "gemini-3-flash-preview";
+export const DERIVATION_GENERATED_BY = "llm-gemini-3-flash";
 
 export interface ProfileExtractionInput {
   researchDocument: string;
@@ -18,6 +28,18 @@ export interface ProfileExtractionResult {
   qualitative_descriptor: string;
 }
 
+export interface AttributeDerivationInput {
+  rubricDocument: string;
+  playerName: string;
+  position: Position;
+  ageAtMatch: number;
+  tier: PlayerProfileTier;
+  role_2004_05: string;
+  qualitative_descriptor: string;
+}
+
+export type AttributeDerivationResult = PlayerAttributeValues;
+
 export class ProfileExtractionError extends Error {
   readonly transient: boolean;
   readonly status: number | null;
@@ -28,6 +50,21 @@ export class ProfileExtractionError extends Error {
   ) {
     super(message, options);
     this.name = "ProfileExtractionError";
+    this.transient = options.transient ?? false;
+    this.status = options.status ?? null;
+  }
+}
+
+export class AttributeDerivationError extends Error {
+  readonly transient: boolean;
+  readonly status: number | null;
+
+  constructor(
+    message: string,
+    options: { cause?: unknown; status?: number | null; transient?: boolean } = {}
+  ) {
+    super(message, options);
+    this.name = "AttributeDerivationError";
     this.transient = options.transient ?? false;
     this.status = options.status ?? null;
   }
@@ -74,6 +111,22 @@ const PROFILE_EXTRACTION_RESPONSE_SCHEMA = {
   required: ["tier", "role_2004_05", "qualitative_descriptor"]
 } as const;
 
+const ATTRIBUTE_DERIVATION_RESPONSE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: Object.fromEntries(
+    PLAYER_ATTRIBUTE_NAMES.map((attributeName) => [
+      attributeName,
+      {
+        type: "integer",
+        minimum: 0,
+        maximum: 100
+      }
+    ])
+  ),
+  required: PLAYER_ATTRIBUTE_NAMES
+} as const;
+
 export async function extractPlayerProfile(
   input: ProfileExtractionInput
 ): Promise<ProfileExtractionResult> {
@@ -107,6 +160,61 @@ export async function extractPlayerProfile(
     }
 
     throw new ProfileExtractionError("Gemini profile extraction failed", {
+      cause: error,
+      status: statusFromGeminiError(error),
+      transient: isTransientGeminiError(error)
+    });
+  }
+}
+
+export async function derivePlayerAttributes(
+  input: AttributeDerivationInput
+): Promise<AttributeDerivationResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new AttributeDerivationError("GEMINI_API_KEY is required for attribute derivation");
+  }
+
+  if (input.rubricDocument.trim().length === 0) {
+    throw new AttributeDerivationError("Attribute derivation rubric is empty");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: ATTRIBUTE_DERIVATION_MODEL,
+      contents: JSON.stringify(
+        {
+          name: input.playerName,
+          position: input.position,
+          age_at_match: input.ageAtMatch,
+          tier: input.tier,
+          role_2004_05: input.role_2004_05,
+          qualitative_descriptor: input.qualitative_descriptor
+        },
+        null,
+        2
+      ),
+      config: {
+        systemInstruction: input.rubricDocument,
+        temperature: 1.0,
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.LOW
+        },
+        responseMimeType: "application/json",
+        responseJsonSchema: ATTRIBUTE_DERIVATION_RESPONSE_SCHEMA
+      }
+    });
+
+    return parseAttributeDerivationResponse(response.text);
+  } catch (error) {
+    if (error instanceof AttributeDerivationError) {
+      throw error;
+    }
+
+    throw new AttributeDerivationError("Gemini attribute derivation failed", {
       cause: error,
       status: statusFromGeminiError(error),
       transient: isTransientGeminiError(error)
@@ -175,6 +283,52 @@ function parseProfileExtractionResponse(rawText: string | undefined): ProfileExt
   };
 }
 
+function parseAttributeDerivationResponse(rawText: string | undefined): AttributeDerivationResult {
+  if (!rawText) {
+    throw new AttributeDerivationError("Gemini returned an empty attribute derivation response");
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(rawText);
+  } catch (error) {
+    throw new AttributeDerivationError("Gemini returned invalid JSON for attribute derivation", {
+      cause: error
+    });
+  }
+
+  if (!isRecord(parsed)) {
+    throw new AttributeDerivationError("Gemini attribute derivation response must be an object");
+  }
+
+  const keys = Object.keys(parsed);
+  const unknownKeys = keys.filter((key) => !isPlayerAttributeName(key));
+  const missingKeys = PLAYER_ATTRIBUTE_NAMES.filter((attributeName) => !(attributeName in parsed));
+
+  if (unknownKeys.length > 0 || missingKeys.length > 0 || keys.length !== PLAYER_ATTRIBUTE_NAMES.length) {
+    throw new AttributeDerivationError(
+      "Gemini attribute derivation response must contain exactly the 10 engine attributes"
+    );
+  }
+
+  const result = {} as AttributeDerivationResult;
+
+  for (const attributeName of PLAYER_ATTRIBUTE_NAMES) {
+    const value = parsed[attributeName];
+
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 0 || value > 100) {
+      throw new AttributeDerivationError(
+        `Gemini attribute '${attributeName}' must be an integer from 0 to 100`
+      );
+    }
+
+    result[attributeName] = value;
+  }
+
+  return result;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -183,40 +337,6 @@ function isPlayerProfileTier(value: unknown): value is PlayerProfileTier {
   return PLAYER_PROFILE_TIERS.includes(value as PlayerProfileTier);
 }
 
-function isTransientGeminiError(error: unknown): boolean {
-  const status = statusFromGeminiError(error);
-
-  if (status !== null) {
-    return status === 429 || status >= 500;
-  }
-
-  if (error instanceof Error) {
-    return (
-      error.name === "APIConnectionError" ||
-      error.name === "APIConnectionTimeoutError" ||
-      error.name === "TimeoutError" ||
-      error.name === "AbortError" ||
-      error.message.toLowerCase().includes("timeout")
-    );
-  }
-
-  return false;
-}
-
-function statusFromGeminiError(error: unknown): number | null {
-  if (typeof error !== "object" || error === null) {
-    return null;
-  }
-
-  const directStatus = (error as { status?: unknown }).status;
-  if (typeof directStatus === "number") {
-    return directStatus;
-  }
-
-  const statusCode = (error as { statusCode?: unknown }).statusCode;
-  if (typeof statusCode === "number") {
-    return statusCode;
-  }
-
-  return null;
+function isPlayerAttributeName(value: string): value is PlayerAttributeName {
+  return PLAYER_ATTRIBUTE_NAMES.includes(value as PlayerAttributeName);
 }

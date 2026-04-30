@@ -34,6 +34,7 @@ export const PLAYER_ATTRIBUTE_NAMES = [
 ] as const;
 export type PlayerAttributeName = (typeof PLAYER_ATTRIBUTE_NAMES)[number];
 export type PlayerAttributeChanges = Partial<Record<PlayerAttributeName, number>>;
+export type PlayerAttributeValues = Record<PlayerAttributeName, number>;
 
 export const PLAYER_PROFILE_TIERS = ["S", "A", "B", "C", "D"] as const;
 export type PlayerProfileTier = (typeof PLAYER_PROFILE_TIERS)[number];
@@ -211,6 +212,8 @@ export interface UpdatePlayerAttributesInput {
   changes: PlayerAttributeChanges;
   changedBy?: string;
   changedAt?: string;
+  generatedBy?: string;
+  generatedAt?: string;
 }
 
 export interface PlayerProfile {
@@ -252,6 +255,18 @@ export interface UpdatePlayerProfileInput {
 export interface PlayerProfileExtractionCandidate {
   player: Player;
   profile: PlayerProfile;
+}
+
+export interface PlayerAttributeDerivationCandidate {
+  player: Player;
+  profile: PlayerProfile;
+  attributes: PlayerAttributes;
+}
+
+export interface PlayerProfileDerivationBlocker {
+  player_id: string;
+  player_name: string;
+  reason: string;
 }
 
 export interface Fixture {

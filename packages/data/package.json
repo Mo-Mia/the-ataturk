@@ -11,6 +11,10 @@
     "./llm/gemini": {
       "types": "./src/llm/gemini.ts",
       "default": "./src/llm/gemini.ts"
+    },
+    "./llm/attribute-validation": {
+      "types": "./src/llm/attribute-validation.ts",
+      "default": "./src/llm/attribute-validation.ts"
     }
   },
   "scripts": {
