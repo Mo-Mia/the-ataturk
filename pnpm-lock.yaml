@@ -121,6 +121,9 @@ importers:
       '@the-ataturk/engine':
         specifier: workspace:*
         version: link:../packages/engine
+      '@the-ataturk/tactics':
+        specifier: workspace:*
+        version: link:../packages/tactics
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2

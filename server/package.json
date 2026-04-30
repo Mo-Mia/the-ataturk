@@ -12,6 +12,7 @@
   "dependencies": {
     "@the-ataturk/data": "workspace:*",
     "@the-ataturk/engine": "workspace:*",
+    "@the-ataturk/tactics": "workspace:*",
     "dotenv": "^17.4.2",
     "fastify": "5.6.2"
   },
