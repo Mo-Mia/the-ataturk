@@ -116,10 +116,6 @@ export function AdminPlayerDetailPage() {
       return "A player profile is required before attributes can be derived.";
     }
 
-    if (!profileQuery.data.edited) {
-      return "Curate this player profile before deriving attributes.";
-    }
-
     if (
       profileQuery.data.generated_by === "llm-extraction-failed" ||
       !profileQuery.data.role_2004_05 ||

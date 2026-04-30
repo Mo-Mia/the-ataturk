@@ -327,7 +327,7 @@ describe("admin attribute derivation route", () => {
     }
   });
 
-  it("refuses when the profile version has un-curated entries", async () => {
+  it("refuses when the profile version has incomplete entries", async () => {
     testDatabase = createServerTestDatabase("attribute-derivation-uncurated");
     createDatasetVersion({
       id: "v1-derived",
@@ -345,7 +345,7 @@ describe("admin attribute derivation route", () => {
       expect(response.statusCode).toBe(200);
       const body = response.json<PreflightResponse>();
       expect(body.ready).toBe(false);
-      expect(body.errors?.some((error) => error.includes("profile is un-curated"))).toBe(true);
+      expect(body.errors?.some((error) => error.includes("role_2004_05 is missing"))).toBe(true);
     } finally {
       await app.close();
     }

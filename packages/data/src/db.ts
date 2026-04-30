@@ -877,10 +877,6 @@ export function listPlayerProfileDerivationBlockers(
         reasons.push("profile extraction failed");
       }
 
-      if (row.edited === 0) {
-        reasons.push("profile is un-curated");
-      }
-
       if (row.role_2004_05 === null || row.role_2004_05.trim().length === 0) {
         reasons.push("role_2004_05 is missing");
       }
