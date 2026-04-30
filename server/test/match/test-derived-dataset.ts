@@ -1,9 +1,6 @@
 import { createDatasetVersion, getDb } from "@the-ataturk/data";
 
-import {
-  LIVERPOOL_SECOND_HALF_XI,
-  MILAN_SECOND_HALF_XI
-} from "../../src/match/half-time-state";
+import { LIVERPOOL_SECOND_HALF_XI, MILAN_SECOND_HALF_XI } from "../../src/match/half-time-state";
 
 export const TEST_DERIVED_DATASET_VERSION = "v2-llm-derived-final";
 

@@ -32,8 +32,16 @@ describe("buildHalfTimeMatchState", () => {
     testDatabase = createServerTestDatabase("half-time-state");
     setupTestDerivedDataset(testDatabase.path);
 
-    const first = await buildHalfTimeMatchState("liverpool", "ac-milan", TEST_DERIVED_DATASET_VERSION);
-    const second = await buildHalfTimeMatchState("liverpool", "ac-milan", TEST_DERIVED_DATASET_VERSION);
+    const first = await buildHalfTimeMatchState(
+      "liverpool",
+      "ac-milan",
+      TEST_DERIVED_DATASET_VERSION
+    );
+    const second = await buildHalfTimeMatchState(
+      "liverpool",
+      "ac-milan",
+      TEST_DERIVED_DATASET_VERSION
+    );
 
     expect(first).toEqual(second);
     expect(first.matchID).toBe("final-2005:liverpool-v-ac-milan:v2-llm-derived-final:second-half");
@@ -50,9 +58,7 @@ describe("buildHalfTimeMatchState", () => {
     expect(first.kickOffTeam.players.map((player) => player.playerID)).toEqual(
       LIVERPOOL_SECOND_HALF_XI
     );
-    expect(first.secondTeam.players.map((player) => player.playerID)).toEqual(
-      MILAN_SECOND_HALF_XI
-    );
+    expect(first.secondTeam.players.map((player) => player.playerID)).toEqual(MILAN_SECOND_HALF_XI);
     expect(allSkillsAreNonZero(first)).toBe(true);
 
     for (const player of allPlayers(first)) {

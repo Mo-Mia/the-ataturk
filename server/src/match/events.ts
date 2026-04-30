@@ -203,7 +203,10 @@ function numeric(value: TeamStatistics[keyof TeamStatistics]): number {
   return value.total;
 }
 
-export function findPlayerName(matchDetails: MatchDetails, playerId: string | undefined): string | null {
+export function findPlayerName(
+  matchDetails: MatchDetails,
+  playerId: string | undefined
+): string | null {
   if (!playerId) {
     return null;
   }

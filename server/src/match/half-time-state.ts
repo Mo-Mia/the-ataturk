@@ -5,7 +5,15 @@ import {
   type Player as DataPlayer,
   type PlayerAttributes
 } from "@the-ataturk/data";
-import { initiateGame, startSecondHalf, type MatchDetails, type Player, type Pitch, type PlayerInput, type PlayerStats, type TeamInput } from "@the-ataturk/engine";
+import {
+  initiateGame,
+  startSecondHalf,
+  type MatchDetails,
+  type Player,
+  type Pitch,
+  type PlayerInput,
+  type TeamInput
+} from "@the-ataturk/engine";
 import {
   LIVERPOOL_FORMATION,
   MILAN_FORMATION,
@@ -242,7 +250,11 @@ function hasNonZeroAttributes(attributes: PlayerAttributes): boolean {
   ].some((value) => value > 0);
 }
 
-function normaliseTeamIds(matchDetails: MatchDetails, homeClubId: string, awayClubId: string): void {
+function normaliseTeamIds(
+  matchDetails: MatchDetails,
+  homeClubId: string,
+  awayClubId: string
+): void {
   matchDetails.kickOffTeam.teamID = homeClubId;
   matchDetails.secondTeam.teamID = awayClubId;
 

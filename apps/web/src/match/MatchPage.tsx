@@ -63,13 +63,15 @@ export function MatchPage() {
           if (streamEvent.event === "tick") {
             setCurrentTick(streamEvent.data);
             if (streamEvent.data.events.length > 0) {
-              setEventLog((items) => [
-                ...streamEvent.data.events.map((event, index) => ({
-                  id: `${streamEvent.data.iteration}-${index}-${event.type}`,
-                  text: formatEvent(event, streamEvent.data.matchDetails)
-                })),
-                ...items
-              ].slice(0, 200));
+              setEventLog((items) =>
+                [
+                  ...streamEvent.data.events.map((event, index) => ({
+                    id: `${streamEvent.data.iteration}-${index}-${event.type}`,
+                    text: formatEvent(event, streamEvent.data.matchDetails)
+                  })),
+                  ...items
+                ].slice(0, 200)
+              );
             }
           }
 
@@ -116,7 +118,11 @@ export function MatchPage() {
 
       <section className="controls" aria-label="Match controls">
         <button type="button" onClick={() => void kickOff()} disabled={runState === "running"}>
-          {runState === "running" ? "Match running..." : runState === "finished" ? "Replay" : "Kick off"}
+          {runState === "running"
+            ? "Match running..."
+            : runState === "finished"
+              ? "Replay"
+              : "Kick off"}
         </button>
         <label className="match-toggle">
           <input
@@ -138,7 +144,8 @@ export function MatchPage() {
             Liverpool {finalSummary.finalScore.home}-{finalSummary.finalScore.away} AC Milan
           </p>
           <p>
-            Final clock: {formatClock(finalSummary.finalClock.minute, finalSummary.finalClock.seconds)};{" "}
+            Final clock:{" "}
+            {formatClock(finalSummary.finalClock.minute, finalSummary.finalClock.seconds)};{" "}
             iterations: {finalSummary.iterations}
           </p>
         </section>

@@ -57,7 +57,9 @@ describe("MatchPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Kick off" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/match/run", expect.any(Object)));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith("/api/match/run", expect.any(Object))
+    );
     await waitFor(() => expect(screen.queryByText("Liverpool 1-3 AC Milan")).not.toBeNull());
   });
 });
