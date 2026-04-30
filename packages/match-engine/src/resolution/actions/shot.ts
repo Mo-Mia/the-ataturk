@@ -21,6 +21,7 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
 
   if (!onTarget) {
     teamStats.shots.off += 1;
+    emitEvent(state, "goal_kick", otherTeam(shooter.teamId), undefined, { shooterId: shooter.id });
     giveGoalKick(state, otherTeam(shooter.teamId), shooter.teamId);
     return;
   }

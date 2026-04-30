@@ -31,13 +31,33 @@ function commitFoul(
 
   if (state.rng.next() <= SUCCESS_PROBABILITIES.yellowOnFoul) {
     state.stats[tackler.teamId].yellowCards += 1;
+    tackler.yellowCards += 1;
     emitEvent(state, "yellow", tackler.teamId, tackler.id, { on: carrier.id });
+
+    if (tackler.yellowCards >= 2) {
+      sendOff(state, tackler, carrier, "second_yellow");
+      return;
+    }
   }
 
   if (state.rng.next() <= SUCCESS_PROBABILITIES.redOnFoul) {
-    state.stats[tackler.teamId].redCards += 1;
-    tackler.onPitch = false;
-    tackler.hasBall = false;
-    emitEvent(state, "red", tackler.teamId, tackler.id, { on: carrier.id });
+    sendOff(state, tackler, carrier, "straight_red");
   }
+}
+
+function sendOff(
+  state: MutableMatchState,
+  tackler: MutablePlayer,
+  carrier: MutablePlayer,
+  reason: "second_yellow" | "straight_red"
+): void {
+  if (tackler.redCard) {
+    return;
+  }
+
+  state.stats[tackler.teamId].redCards += 1;
+  tackler.redCard = true;
+  tackler.onPitch = false;
+  tackler.hasBall = false;
+  emitEvent(state, "red", tackler.teamId, tackler.id, { on: carrier.id, reason });
 }

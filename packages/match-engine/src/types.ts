@@ -127,6 +127,7 @@ export interface SemanticEvent {
     | "yellow"
     | "red"
     | "corner"
+    | "goal_kick"
     | "throw_in"
     | "free_kick"
     | "possession_change"

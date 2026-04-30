@@ -65,6 +65,8 @@ function mutablePlayer(
     anchorPosition: [0, 0],
     hasBall: false,
     onPitch: true,
+    yellowCards: 0,
+    redCard: false,
     baseInput: player
   };
 }

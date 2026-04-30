@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildInitState } from "../../src/state/initState";
 import { pressureLevel, rollPressureTackle } from "../../src/resolution/pressure";
+import { resolveTackleAttempt } from "../../src/resolution/actions/tackle";
 import { createTestConfig } from "../helpers";
 
 describe("pressure and tackle resolution", () => {
@@ -36,5 +37,22 @@ describe("pressure and tackle resolution", () => {
 
     expect(rollPressureTackle(weak, weakCarrier)).toBe(false);
     expect(() => rollPressureTackle(strong, strongCarrier)).not.toThrow();
+  });
+
+  it("sends a player off for a second yellow card", () => {
+    const state = buildInitState(createTestConfig(4));
+    const carrier = state.players.find((player) => player.hasBall)!;
+    const tackler = state.players.find((player) => player.teamId !== carrier.teamId)!;
+    tackler.yellowCards = 1;
+    state.possession.pressureLevel = "high";
+    state.rng.next = () => 0;
+
+    const outcome = resolveTackleAttempt(state, tackler, carrier);
+
+    expect(outcome).toBe("foul");
+    expect(tackler.onPitch).toBe(false);
+    expect(tackler.redCard).toBe(true);
+    expect(state.eventsThisTick.map((event) => event.type)).toEqual(["foul", "yellow", "red"]);
+    expect(state.eventsThisTick.at(-1)?.detail?.reason).toBe("second_yellow");
   });
 });

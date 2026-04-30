@@ -37,4 +37,17 @@ describe("runTick", () => {
     expect(state.ball.inFlight).toBe(false);
     expect(state.ball.position[0]).toBeGreaterThanOrEqual(0);
   });
+
+  it("keeps off-ball players moving across a sequence of ticks", () => {
+    const state = buildInitState(createTestConfig(14));
+    const tracked = state.players.find((player) => player.id === "home-5")!;
+    const positions = new Set<string>();
+
+    for (let tick = 0; tick < 30; tick += 1) {
+      runTick(state);
+      positions.add(`${tracked.position[0].toFixed(2)},${tracked.position[1].toFixed(2)}`);
+    }
+
+    expect(positions.size).toBeGreaterThan(10);
+  });
 });

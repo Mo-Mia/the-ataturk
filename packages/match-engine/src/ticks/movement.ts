@@ -56,7 +56,7 @@ function targetForPlayer(
   let target: Coordinate2D = [anchorX, player.anchorPosition[1] + lineShift + mentalityShift];
 
   if (teamInPossession === player.teamId) {
-    target = supportingTarget(player, target, carrier, direction);
+    target = supportingTarget(state, player, target, carrier, direction);
   } else if (
     teamInPossession &&
     distanceSquared(player.position, ballPosition) < BALL_PRESS_DISTANCE ** 2
@@ -68,18 +68,21 @@ function targetForPlayer(
 }
 
 function supportingTarget(
+  state: MutableMatchState,
   player: MutablePlayer,
   anchorTarget: Coordinate2D,
   carrier: MutablePlayer | null,
   direction: 1 | -1
 ): Coordinate2D {
   if (!carrier) {
-    return anchorTarget;
+    return addOffBallPulse(state, player, anchorTarget, 0.45);
   }
 
   const supportY = carrier.position[1] - direction * supportDepth(player);
   const supportX = anchorTarget[0] + (carrier.position[0] - PITCH_WIDTH / 2) * 0.12;
-  return [supportX, anchorTarget[1] * 0.55 + supportY * 0.45];
+  const supportTarget: Coordinate2D = [supportX, anchorTarget[1] * 0.55 + supportY * 0.45];
+
+  return addOffBallPulse(state, player, channelRunTarget(player, supportTarget, direction), 1);
 }
 
 function defensiveTarget(
@@ -149,4 +152,53 @@ function supportDepth(player: MutablePlayer): number {
     return 105;
   }
   return clamp(140, 80, 180);
+}
+
+function channelRunTarget(
+  player: MutablePlayer,
+  target: Coordinate2D,
+  direction: 1 | -1
+): Coordinate2D {
+  if (["LW", "RW", "LB", "RB"].includes(player.baseInput.position)) {
+    const touchlineX = player.anchorPosition[0] < PITCH_WIDTH / 2 ? 55 : PITCH_WIDTH - 55;
+    return [touchlineX, target[1] + direction * 18];
+  }
+
+  if (player.baseInput.position === "ST" || player.baseInput.position === "AM") {
+    return [
+      target[0] + (player.anchorPosition[0] - PITCH_WIDTH / 2) * 0.18,
+      target[1] + direction * 28
+    ];
+  }
+
+  return target;
+}
+
+function addOffBallPulse(
+  state: MutableMatchState,
+  player: MutablePlayer,
+  target: Coordinate2D,
+  intensity: number
+): Coordinate2D {
+  if (player.baseInput.position === "GK") {
+    return target;
+  }
+
+  const phase = hashPlayerId(player.id) % 17;
+  const wave = Math.sin((state.iteration + phase) / 9);
+  const lateral = Math.cos((state.iteration + phase) / 13);
+  const roleMultiplier = ["LW", "RW", "ST", "AM"].includes(player.baseInput.position) ? 1.35 : 0.8;
+
+  return [
+    target[0] + lateral * 14 * intensity * roleMultiplier,
+    target[1] + wave * 18 * intensity * roleMultiplier
+  ];
+}
+
+function hashPlayerId(playerId: string): number {
+  let hash = 0;
+  for (const char of playerId) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash;
 }

@@ -20,6 +20,8 @@ export interface MutablePlayer {
   anchorPosition: Coordinate2D;
   hasBall: boolean;
   onPitch: boolean;
+  yellowCards: number;
+  redCard: boolean;
   baseInput: PlayerInput;
 }
 
