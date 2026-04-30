@@ -1,4 +1,9 @@
 export const queryKeys = {
+  attributeDerivationPreflight: (
+    datasetVersion: string | undefined,
+    profileVersion: string | undefined
+  ) =>
+    ["attributeDerivationPreflight", datasetVersion ?? "none", profileVersion ?? "active"] as const,
   attributeHistory: (playerId: string, version: string | undefined, limit: number) =>
     ["attributeHistory", playerId, version ?? "active", limit] as const,
   clubSquad: (clubId: string) => ["clubSquad", clubId] as const,

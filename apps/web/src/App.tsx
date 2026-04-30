@@ -6,6 +6,7 @@ import { AdminLayout } from "./admin/components/AdminLayout";
 import { AdminClubDetailPage } from "./admin/pages/AdminClubDetailPage";
 import { AdminClubsPage } from "./admin/pages/AdminClubsPage";
 import { AdminDatasetVersionsPage } from "./admin/pages/AdminDatasetVersionsPage";
+import { AdminDeriveAttributesPage } from "./admin/pages/AdminDeriveAttributesPage";
 import { AdminExtractProfilesPage } from "./admin/pages/AdminExtractProfilesPage";
 import { AdminHomePage } from "./admin/pages/AdminHomePage";
 import { AdminPlayerDetailPage } from "./admin/pages/AdminPlayerDetailPage";
@@ -193,6 +194,7 @@ export function App() {
             <Route path="dataset-versions" element={<AdminDatasetVersionsPage />} />
             <Route path="profile-versions" element={<AdminProfileVersionsPage />} />
             <Route path="extract-profiles" element={<AdminExtractProfilesPage />} />
+            <Route path="derive-attributes" element={<AdminDeriveAttributesPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 
 import { AttributeEditor } from "../components/AttributeEditor";
+import { DerivePlayerAttributesButton } from "../components/DerivePlayerAttributesButton";
 import { ProfileEditor } from "../components/ProfileEditor";
 import {
   getPlayer,
@@ -92,6 +93,44 @@ export function AdminPlayerDetailPage() {
     await queryClient.invalidateQueries({ queryKey: queryKeys.profileVersions });
   }
 
+  async function handleAttributeDerivationFinished(): Promise<void> {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.playerAttributes(playerId, activeVersion?.id)
+    });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.attributeHistory(playerId, activeVersion?.id, 50)
+    });
+    await queryClient.invalidateQueries({ queryKey: ["clubSquad", playerQuery.data?.club_id] });
+  }
+
+  function attributeDerivationDisabledReason(): string | undefined {
+    if (!activeVersion || !activeProfileVersion) {
+      return "Both active versions are required.";
+    }
+
+    if (activeVersion.id === "v0-stub") {
+      return "Create and activate a non-stub attribute dataset version first.";
+    }
+
+    if (!profileQuery.data) {
+      return "A player profile is required before attributes can be derived.";
+    }
+
+    if (!profileQuery.data.edited) {
+      return "Curate this player profile before deriving attributes.";
+    }
+
+    if (
+      profileQuery.data.generated_by === "llm-extraction-failed" ||
+      !profileQuery.data.role_2004_05 ||
+      !profileQuery.data.qualitative_descriptor
+    ) {
+      return "The active player profile is incomplete.";
+    }
+
+    return undefined;
+  }
+
   if (playerQuery.isLoading || versionsQuery.isLoading || profileVersionsQuery.isLoading) {
     return <p>Loading player...</p>;
   }
@@ -146,6 +185,21 @@ export function AdminPlayerDetailPage() {
         >
           Extract this player profile
         </button>
+      </div>
+
+      <div className="admin-panel">
+        <h2>Attribute derivation</h2>
+        <p className="admin-muted">
+          Derive this player's engine attributes from the active curated profile into the active
+          attribute dataset version.
+        </p>
+        <DerivePlayerAttributesButton
+          datasetVersion={activeVersion?.id}
+          disabledReason={attributeDerivationDisabledReason()}
+          onFinished={() => void handleAttributeDerivationFinished()}
+          playerId={playerId}
+          profileVersion={activeProfileVersion?.id}
+        />
       </div>
 
       {profileQuery.data ? (

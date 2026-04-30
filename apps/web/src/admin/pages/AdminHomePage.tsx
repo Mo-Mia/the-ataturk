@@ -31,6 +31,12 @@ export function AdminHomePage() {
               </td>
               <td>Run Gemini profile extraction over un-curated profiles.</td>
             </tr>
+            <tr>
+              <td>
+                <Link to="/admin/derive-attributes">Derive attributes</Link>
+              </td>
+              <td>Generate engine attributes from curated player profiles.</td>
+            </tr>
           </tbody>
         </table>
       </div>

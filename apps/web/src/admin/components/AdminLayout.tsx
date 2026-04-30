@@ -17,6 +17,7 @@ export function AdminLayout() {
           <Link to="/admin/dataset-versions">Dataset versions</Link>
           <Link to="/admin/profile-versions">Profile versions</Link>
           <Link to="/admin/extract-profiles">Extract profiles</Link>
+          <Link to="/admin/derive-attributes">Derive attributes</Link>
         </nav>
       </header>
       <ActiveVersionBanner />

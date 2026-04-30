@@ -212,6 +212,40 @@ export type ProfileExtractionEvent =
   | { event: "summary"; data: ProfileExtractionSummary }
   | { event: "error"; data: ApiErrorResponse };
 
+export interface AttributeDerivationRequest {
+  dataset_version: string;
+  profile_version?: string;
+  player_ids?: string[];
+}
+
+export interface AttributeDerivationPreflight {
+  ready: boolean;
+  candidate_count: number;
+  errors?: string[];
+  blocking_player_ids?: string[];
+}
+
+export interface AttributeDerivationProgressEvent {
+  player_id: string;
+  player_name: string;
+  status: "started" | "succeeded" | "failed";
+  error?: string;
+}
+
+export interface AttributeDerivationSummary {
+  total: number;
+  succeeded: number;
+  failed: number;
+  failed_player_ids: string[];
+  aborted?: boolean;
+  abort_reason?: string;
+}
+
+export type AttributeDerivationEvent =
+  | { event: "player"; data: AttributeDerivationProgressEvent }
+  | { event: "summary"; data: AttributeDerivationSummary }
+  | { event: "error"; data: ApiErrorResponse };
+
 interface ApiErrorResponse {
   error: string;
 }
@@ -351,6 +385,21 @@ export function getPlayerProfileHistory(
   );
 }
 
+export function getAttributeDerivationPreflight(
+  datasetVersion: string,
+  profileVersion?: string
+): Promise<AttributeDerivationPreflight> {
+  const params = new URLSearchParams({ dataset_version: datasetVersion });
+
+  if (profileVersion) {
+    params.set("profile_version", profileVersion);
+  }
+
+  return requestJson<AttributeDerivationPreflight>(
+    `/api/attribute-derivation/preflight?${params.toString()}`
+  );
+}
+
 export async function runProfileExtraction(
   body: ProfileExtractionRequest,
   onEvent: (event: ProfileExtractionEvent) => void
@@ -397,7 +446,7 @@ export async function runProfileExtraction(
     buffer = frames.pop() ?? "";
 
     for (const frame of frames) {
-      const event = parseSseFrame(frame);
+      const event = parseProfileExtractionSseFrame(frame);
       if (!event) {
         continue;
       }
@@ -415,7 +464,7 @@ export async function runProfileExtraction(
   }
 
   if (buffer.trim().length > 0) {
-    const event = parseSseFrame(buffer);
+    const event = parseProfileExtractionSseFrame(buffer);
     if (event) {
       onEvent(event);
       if (event.event === "summary") {
@@ -431,7 +480,95 @@ export async function runProfileExtraction(
   return summary;
 }
 
-function parseSseFrame(frame: string): ProfileExtractionEvent | null {
+export async function runAttributeDerivation(
+  body: AttributeDerivationRequest,
+  onEvent: (event: AttributeDerivationEvent) => void
+): Promise<AttributeDerivationSummary> {
+  const response = await fetch("/api/attribute-derivation/run", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    let message = `Request failed with ${response.status}`;
+
+    try {
+      const errorBody = (await response.json()) as ApiErrorResponse;
+      message = errorBody.error ?? message;
+    } catch {
+      // Keep the status-based fallback if the response body is not JSON.
+    }
+
+    throw new Error(message);
+  }
+
+  if (!response.body) {
+    throw new Error("Attribute derivation response did not include a stream");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let summary: AttributeDerivationSummary | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const frames = buffer.split("\n\n");
+    buffer = frames.pop() ?? "";
+
+    for (const frame of frames) {
+      const event = parseAttributeDerivationSseFrame(frame);
+      if (!event) {
+        continue;
+      }
+
+      onEvent(event);
+
+      if (event.event === "summary") {
+        summary = event.data;
+      }
+
+      if (event.event === "error") {
+        throw new Error(event.data.error);
+      }
+    }
+  }
+
+  if (buffer.trim().length > 0) {
+    const event = parseAttributeDerivationSseFrame(buffer);
+    if (event) {
+      onEvent(event);
+      if (event.event === "summary") {
+        summary = event.data;
+      }
+    }
+  }
+
+  if (!summary) {
+    throw new Error("Attribute derivation finished without a summary");
+  }
+
+  return summary;
+}
+
+function parseProfileExtractionSseFrame(frame: string): ProfileExtractionEvent | null {
+  return parseSseFrame(frame) as ProfileExtractionEvent | null;
+}
+
+function parseAttributeDerivationSseFrame(frame: string): AttributeDerivationEvent | null {
+  return parseSseFrame(frame) as AttributeDerivationEvent | null;
+}
+
+function parseSseFrame(frame: string): ProfileExtractionEvent | AttributeDerivationEvent | null {
   const eventLine = frame
     .split("\n")
     .find((line) => line.startsWith("event: "))
