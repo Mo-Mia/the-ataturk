@@ -44,6 +44,8 @@ Thumbs.db
 audio-cache/
 *.mp3
 *.wav
+packages/match-engine/artifacts/
+visualiser-loaded-snapshot*.png
 
 # Local working files
 .scratch/

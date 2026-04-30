@@ -5,3 +5,4 @@ docs/
 data/
 pnpm-lock.yaml
 .playwright-mcp/
+packages/match-engine/artifacts/
