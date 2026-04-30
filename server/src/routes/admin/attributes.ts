@@ -325,7 +325,11 @@ async function deriveValidatedWithRetry(
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      const derived = await derivePlayerAttributes(input);
+      const derived = await derivePlayerAttributes(
+        lastValidationReasons.length === 0
+          ? input
+          : { ...input, validationFeedback: lastValidationReasons }
+      );
       const validation = validateAttributesAgainstPosition(derived, input.position, input.tier);
 
       if (validation.ok) {

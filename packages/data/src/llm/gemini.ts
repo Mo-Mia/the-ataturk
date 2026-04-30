@@ -36,6 +36,7 @@ export interface AttributeDerivationInput {
   tier: PlayerProfileTier;
   role_2004_05: string;
   qualitative_descriptor: string;
+  validationFeedback?: string[];
 }
 
 export type AttributeDerivationResult = PlayerAttributeValues;
@@ -185,18 +186,7 @@ export async function derivePlayerAttributes(
   try {
     const response = await ai.models.generateContent({
       model: ATTRIBUTE_DERIVATION_MODEL,
-      contents: JSON.stringify(
-        {
-          name: input.playerName,
-          position: input.position,
-          age_at_match: input.ageAtMatch,
-          tier: input.tier,
-          role_2004_05: input.role_2004_05,
-          qualitative_descriptor: input.qualitative_descriptor
-        },
-        null,
-        2
-      ),
+      contents: buildAttributeDerivationPrompt(input),
       config: {
         systemInstruction: input.rubricDocument,
         temperature: 1.0,
@@ -220,6 +210,32 @@ export async function derivePlayerAttributes(
       transient: isTransientGeminiError(error)
     });
   }
+}
+
+function buildAttributeDerivationPrompt(input: AttributeDerivationInput): string {
+  const profileJson = JSON.stringify(
+    {
+      name: input.playerName,
+      position: input.position,
+      age_at_match: input.ageAtMatch,
+      tier: input.tier,
+      role_2004_05: input.role_2004_05,
+      qualitative_descriptor: input.qualitative_descriptor
+    },
+    null,
+    2
+  );
+
+  if (!input.validationFeedback || input.validationFeedback.length === 0) {
+    return profileJson;
+  }
+
+  return `${profileJson}
+
+The previous output failed local validation for these reasons:
+${input.validationFeedback.map((reason) => `- ${reason}`).join("\n")}
+
+Return a corrected JSON object that satisfies the rubric and these validation constraints.`;
 }
 
 function buildUserPrompt(input: ProfileExtractionInput): string {

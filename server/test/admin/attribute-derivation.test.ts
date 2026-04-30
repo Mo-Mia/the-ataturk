@@ -248,6 +248,9 @@ describe("admin attribute derivation route", () => {
 
       expect(response.statusCode).toBe(200);
       expect(geminiMocks.derivePlayerAttributes).toHaveBeenCalledTimes(2);
+      expect(geminiMocks.derivePlayerAttributes.mock.calls[1]?.[0]).toMatchObject({
+        validationFeedback: ["Outfield players must have saving of 25 or lower"]
+      });
       expect(attributeRow("sami-hyypia")).toMatchObject({
         passing: 82,
         generated_by: "llm-gemini-3-flash"
