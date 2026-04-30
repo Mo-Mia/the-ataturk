@@ -340,6 +340,9 @@ function EventLog({ snapshot, events }: { snapshot: MatchSnapshot; events: Seman
             </strong>{" "}
             {event.type.replace("_", " ")} · {teamName(snapshot, event.team)}
             {event.playerId ? ` · ${playerName(snapshot, event.team, event.playerId)}` : ""}
+            {event.detail ? (
+              <span style={styles.eventDetail}> {formatEventDetail(event)}</span>
+            ) : null}
           </li>
         ))}
     </ol>
@@ -400,6 +403,34 @@ function playerName(snapshot: MatchSnapshot, team: TeamId, playerId: string): st
 
 function teamName(snapshot: MatchSnapshot, team: TeamId): string {
   return team === "home" ? snapshot.meta.homeTeam.shortName : snapshot.meta.awayTeam.shortName;
+}
+
+function formatEventDetail(event: SemanticEvent): string {
+  if (!event.detail) {
+    return "";
+  }
+
+  if (event.type === "shot") {
+    return event.detail.onTarget ? "(on target)" : "(off target)";
+  }
+
+  if (event.type === "throw_in") {
+    return `(${detailString(event.detail.reason, "out of play")})`;
+  }
+
+  if (event.type === "red") {
+    return `(${detailString(event.detail.reason, "sent off")})`;
+  }
+
+  if (event.type === "possession_change") {
+    return `(${detailString(event.detail.from, "?")} to ${detailString(event.detail.to, "?")})`;
+  }
+
+  return "";
+}
+
+function detailString(value: unknown, fallback: string): string {
+  return typeof value === "string" || typeof value === "number" ? String(value) : fallback;
 }
 
 function validateSnapshot(snapshot: MatchSnapshot): void {
@@ -474,5 +505,6 @@ const styles = {
   statsGrid: { display: "grid", gridTemplateColumns: "1fr auto auto 1fr", gap: "8px 12px" },
   muted: { color: "#aeb8b1" },
   eventList: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" },
-  eventItem: { padding: "8px", background: "#23352a", borderLeft: "3px solid #d8ded9" }
+  eventItem: { padding: "8px", background: "#23352a", borderLeft: "3px solid #d8ded9" },
+  eventDetail: { color: "#aeb8b1" }
 };
