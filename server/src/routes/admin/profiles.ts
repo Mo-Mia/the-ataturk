@@ -432,8 +432,10 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
       failed_player_ids: []
     };
 
-    request.raw.on("close", () => {
-      clientDisconnected = true;
+    reply.raw.on("close", () => {
+      if (!reply.raw.writableEnded) {
+        clientDisconnected = true;
+      }
     });
 
     try {
