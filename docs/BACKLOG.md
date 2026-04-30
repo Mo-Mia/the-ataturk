@@ -109,3 +109,14 @@ and establish a baseline before we start applying tactics modifiers.
 Trigger to address: when we begin patching engine internals OR when
 the tactics layer is functional and we want to verify our modifiers
 don't push the engine into unrealistic territory.
+
+## Visualization
+
+### Reference: GallagherAiden's existing visualisers
+Two repos that visualise footballsimulationengine matches:
+- github.com/GallagherAiden/footballsimulationexample (basic demo)
+- github.com/GallagherAiden/worldcup2018simulator (richer, with
+  pre-match flow)
+Both 2019-vintage vanilla JS. Useful as architectural reference for
+the eventual 2D pitch renderer (engine→canvas coordinate mapping,
+basic player/ball rendering). Don't lift code directly.
