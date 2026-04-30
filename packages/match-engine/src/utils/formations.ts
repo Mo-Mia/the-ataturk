@@ -1,62 +1,87 @@
-import { PITCH_WIDTH, PITCH_LENGTH } from "../calibration/constants";
+import { PITCH_LENGTH, PITCH_WIDTH } from "../calibration/constants";
+import type { Coordinate2D } from "../types";
 import type { MutablePlayer } from "../state/matchState";
 
-// Using the coordinates known from politics layer (assumes starting at y=0, x=0 bottom-left or top-left)
-// We will flip the Away team to start at y=1050 facing y=0.
-
-export const FORMATIONS: Record<string, [number, number][]> = {
+const KNOWN_FORMATIONS: Record<string, readonly Coordinate2D[]> = {
   "4-4-2": [
-    [340, 20],   // GK
-    [600, 150],  // RB
-    [430, 150],  // CB
-    [250, 150],  // CB
-    [80,  150],  // LB
-    [600, 350],  // RM
-    [420, 310],  // CM
-    [260, 310],  // CM
-    [80,  350],  // LM
-    [420, 500],  // ST
-    [260, 500]   // ST
+    [340, 35],
+    [600, 150],
+    [430, 150],
+    [250, 150],
+    [80, 150],
+    [600, 350],
+    [420, 320],
+    [260, 320],
+    [80, 350],
+    [420, 505],
+    [260, 505]
   ],
   "4-3-1-2": [
-    [340, 20],   // GK
-    [600, 150],  // RB
-    [430, 150],  // CB
-    [250, 150],  // CB
-    [80,  150],  // LB
-    [470, 300],  // DM/RCM
-    [340, 270],  // DM
-    [210, 300],  // DM/LCM
-    [340, 420],  // AM
-    [275, 525],  // ST
-    [405, 525]   // ST
+    [340, 35],
+    [600, 150],
+    [430, 150],
+    [250, 150],
+    [80, 150],
+    [470, 300],
+    [340, 275],
+    [210, 300],
+    [340, 430],
+    [275, 525],
+    [405, 525]
   ]
 };
 
-// Fallback to 4-4-2 if not found
-export function getFormationPositions(formationName: string): [number, number][] {
-  return FORMATIONS[formationName] || FORMATIONS["4-4-2"]!;
+export function positionTeam(players: MutablePlayer[], formationName: string): void {
+  const template = formationTemplate(formationName, players.length);
+
+  for (let index = 0; index < players.length; index += 1) {
+    const player = players[index]!;
+    const base = template[index] ??
+      template[template.length - 1] ?? [PITCH_WIDTH / 2, PITCH_LENGTH / 2];
+    const anchor: Coordinate2D =
+      player.teamId === "home"
+        ? [base[0], base[1]]
+        : [PITCH_WIDTH - base[0], PITCH_LENGTH - base[1]];
+
+    player.anchorPosition = anchor;
+    player.position = anchor;
+    player.targetPosition = anchor;
+  }
 }
 
-export function positionTeam(players: MutablePlayer[], formationName: string) {
-  const template = getFormationPositions(formationName);
-  
-  for (let i = 0; i < players.length; i++) {
-    const p = players[i]!;
-    // Default assignment if length > 11 fallback gracefully
-    const pos = template[i] || template[template.length - 1]!;
-    
-    // Base template coordinates
-    let tx = pos[0];
-    let ty = pos[1];
-
-    if (p.teamId === "away") {
-      // Mirror vertically and horizontally
-      tx = PITCH_WIDTH - tx;
-      ty = PITCH_LENGTH - ty;
-    }
-
-    p.position = [tx, ty];
-    p.targetPosition = [tx, ty];
+function formationTemplate(formationName: string, playerCount: number): readonly Coordinate2D[] {
+  const known = KNOWN_FORMATIONS[formationName];
+  if (known) {
+    return known;
   }
+
+  const lines = parseFormation(formationName);
+  if (!lines) {
+    return KNOWN_FORMATIONS["4-4-2"]!;
+  }
+
+  const template: Coordinate2D[] = [[PITCH_WIDTH / 2, 35]];
+  const yBands = lines.length === 3 ? [155, 330, 510] : [150, 280, 405, 525];
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const count = lines[lineIndex]!;
+    const y = yBands[lineIndex] ?? 500;
+
+    for (let slot = 0; slot < count; slot += 1) {
+      const x = ((slot + 1) * PITCH_WIDTH) / (count + 1);
+      template.push([x, y]);
+    }
+  }
+
+  while (template.length < playerCount) {
+    template.push([PITCH_WIDTH / 2, 500]);
+  }
+
+  return template.slice(0, playerCount);
+}
+
+function parseFormation(formationName: string): number[] | null {
+  const parts = formationName.split("-").map((part) => Number(part));
+  const valid = parts.length >= 3 && parts.every((part) => Number.isInteger(part) && part > 0);
+  return valid ? parts : null;
 }

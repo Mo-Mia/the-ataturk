@@ -1,3 +1,24 @@
+export type TeamId = "home" | "away";
+export type Position = "GK" | "CB" | "LB" | "RB" | "DM" | "CM" | "AM" | "LW" | "RW" | "ST";
+export type Zone = "def" | "mid" | "att";
+export type PressureLevel = "low" | "medium" | "high";
+export type MatchDuration = "full_90" | "second_half";
+export type Coordinate2D = [x: number, y: number];
+export type Coordinate3D = [x: number, y: number, z: number];
+
+export interface PlayerAttributes {
+  passing: number;
+  shooting: number;
+  tackling: number;
+  saving: number;
+  agility: number;
+  strength: number;
+  penaltyTaking: number;
+  perception: number;
+  jumping: number;
+  control: number;
+}
+
 export interface Team {
   id: string;
   name: string;
@@ -13,19 +34,8 @@ export interface PlayerInput {
   name: string;
   shortName: string;
   squadNumber?: number;
-  position: "GK" | "CB" | "LB" | "RB" | "DM" | "CM" | "AM" | "LW" | "RW" | "ST";
-  attributes: {
-    passing: number;
-    shooting: number;
-    tackling: number;
-    saving: number;
-    agility: number;
-    strength: number;
-    penaltyTaking: number;
-    perception: number;
-    jumping: number;
-    control: number;
-  };
+  position: Position;
+  attributes: PlayerAttributes;
   overrides?: PlayerOverrides;
 }
 
@@ -50,10 +60,10 @@ export interface PlayerOverrides {
 export interface MatchConfig {
   homeTeam: Team;
   awayTeam: Team;
-  duration: "full_90" | "second_half";
+  duration: MatchDuration;
   seed: number;
   preMatchScore?: { home: number; away: number };
-  preMatchStats?: TeamStatistics & {
+  preMatchStats?: {
     home?: TeamStatistics;
     away?: TeamStatistics;
   };
@@ -63,16 +73,15 @@ export interface MatchSnapshot {
   meta: {
     homeTeam: { id: string; name: string; shortName: string };
     awayTeam: { id: string; name: string; shortName: string };
+    rosters: {
+      home: SnapshotRosterPlayer[];
+      away: SnapshotRosterPlayer[];
+    };
     seed: number;
     duration: MatchConfig["duration"];
     preMatchScore: { home: number; away: number };
     generatedAt: string;
-    targets: {
-      shotsTarget: [number, number];
-      goalsTarget: [number, number];
-      foulsTarget: [number, number];
-      cardsTarget: [number, number];
-    };
+    targets: CalibrationTargets;
   };
   ticks: MatchTick[];
   finalSummary: {
@@ -81,23 +90,31 @@ export interface MatchSnapshot {
   };
 }
 
+export interface SnapshotRosterPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  squadNumber?: number;
+  position: Position;
+}
+
 export interface MatchTick {
   iteration: number;
   matchClock: { half: 1 | 2; minute: number; seconds: number };
   ball: {
-    position: [x: number, y: number, z: number];
+    position: Coordinate3D;
     inFlight: boolean;
     carrierPlayerId: string | null;
   };
   players: Array<{
     id: string;
-    teamId: "home" | "away";
-    position: [x: number, y: number];
+    teamId: TeamId;
+    position: Coordinate2D;
     hasBall: boolean;
     onPitch: boolean;
   }>;
   score: { home: number; away: number };
-  possession: { teamId: "home" | "away" | null; zone: "def" | "mid" | "att" };
+  possession: { teamId: TeamId | null; zone: Zone };
   events: SemanticEvent[];
 }
 
@@ -114,7 +131,7 @@ export interface SemanticEvent {
     | "free_kick"
     | "possession_change"
     | "kick_off";
-  team: "home" | "away";
+  team: TeamId;
   playerId?: string;
   minute: number;
   second: number;
@@ -129,4 +146,12 @@ export interface TeamStatistics {
   redCards: number;
   corners: number;
   possession: number;
+}
+
+export interface CalibrationTargets {
+  shotsTarget: [number, number];
+  goalsTarget: [number, number];
+  foulsTarget: [number, number];
+  cardsTarget: [number, number];
+  maxSingleScoreShare: number;
 }

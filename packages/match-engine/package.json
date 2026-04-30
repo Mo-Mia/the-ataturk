@@ -11,9 +11,11 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "characterise": "tsx scripts/characterise.ts"
   },
   "devDependencies": {
+    "tsx": "4.21.0",
     "vitest": "4.0.13"
   }
 }

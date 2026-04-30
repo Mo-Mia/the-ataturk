@@ -1,22 +1,63 @@
-export const PROBABILITIES = {
-  ZONE_ACTION_WEIGHTS: {
-    def: { pass: 150, hold: 100, clear: 50, shoot: 0 },
-    mid: { pass: 150, hold: 80,  clear: 10, shoot: 3 },
-    att: { pass: 100, hold: 40,  clear: 0,  shoot: 25 }
-  },
+import type { PressureLevel, TeamTactics, Zone } from "../types";
 
-  MENTALITY_MODIFIERS: {
-    attacking: { shoot: 1.2, pass: 1.2, clear: 0.8 },
-    defensive: { shoot: 0.8, pass: 0.8, clear: 1.5 },
-    balanced:  { shoot: 1.0, pass: 1.0, clear: 1.0 }
-  },
+export type CarrierAction = "pass" | "shoot" | "dribble" | "hold" | "clear";
 
-  ACTION_SUCCESS: {
-    pass_base: 0.80,
-    shot_on_target_base: 0.45,
-    tackle_attempt_base: 0.10,
-    foul_on_tackle_base: 0.80,
-    yellow_card_base: 0.35,
-    red_card_base: 0.015
+export const ACTION_WEIGHTS: Record<Zone, Record<PressureLevel, Record<CarrierAction, number>>> = {
+  def: {
+    low: { pass: 0.55, dribble: 0.04, hold: 0.26, clear: 0.15, shoot: 0 },
+    medium: { pass: 0.45, dribble: 0.03, hold: 0.22, clear: 0.3, shoot: 0 },
+    high: { pass: 0.34, dribble: 0.02, hold: 0.14, clear: 0.5, shoot: 0 }
+  },
+  mid: {
+    low: { pass: 0.58, dribble: 0.12, hold: 0.28, clear: 0.015, shoot: 0.002 },
+    medium: { pass: 0.52, dribble: 0.1, hold: 0.31, clear: 0.05, shoot: 0.006 },
+    high: { pass: 0.44, dribble: 0.07, hold: 0.32, clear: 0.13, shoot: 0.012 }
+  },
+  att: {
+    low: { pass: 0.56, dribble: 0.12, hold: 0.25, clear: 0.005, shoot: 0.025 },
+    medium: { pass: 0.5, dribble: 0.1, hold: 0.29, clear: 0.01, shoot: 0.04 },
+    high: { pass: 0.42, dribble: 0.07, hold: 0.34, clear: 0.02, shoot: 0.06 }
   }
+};
+
+export const TACTIC_MODIFIERS = {
+  mentality: {
+    defensive: { pass: 0.95, shoot: 0.78, dribble: 0.82, hold: 1.1, clear: 1.35 },
+    balanced: { pass: 1, shoot: 1, dribble: 1, hold: 1, clear: 1 },
+    attacking: { pass: 1.06, shoot: 1.3, dribble: 1.1, hold: 0.85, clear: 0.7 }
+  } satisfies Record<TeamTactics["mentality"], Record<CarrierAction, number>>,
+  tempo: {
+    slow: { pass: 0.95, shoot: 0.85, dribble: 0.85, hold: 1.25, clear: 0.95 },
+    normal: { pass: 1, shoot: 1, dribble: 1, hold: 1, clear: 1 },
+    fast: { pass: 1.1, shoot: 1.15, dribble: 1.08, hold: 0.72, clear: 1.05 }
+  } satisfies Record<TeamTactics["tempo"], Record<CarrierAction, number>>,
+  pressing: {
+    low: 0.75,
+    medium: 1,
+    high: 1.3
+  } satisfies Record<TeamTactics["pressing"], number>
+};
+
+export const SUCCESS_PROBABILITIES = {
+  passByZone: { def: 1.02, mid: 0.94, att: 0.86 } satisfies Record<Zone, number>,
+  pressureModifier: { low: 1, medium: 0.9, high: 0.78 } satisfies Record<PressureLevel, number>,
+  dribbleBase: 0.82,
+  dribblePressureModifier: { low: 0.95, medium: 0.75, high: 0.55 } satisfies Record<
+    PressureLevel,
+    number
+  >,
+  shotOnTargetByZone: { def: 0, mid: 0.32, att: 0.58 } satisfies Record<Zone, number>,
+  shotPressureModifier: { low: 1, medium: 0.86, high: 0.7 } satisfies Record<PressureLevel, number>,
+  saveBase: 0.62,
+  tackleAttemptByPressure: { low: 0.008, medium: 0.016, high: 0.028 } satisfies Record<
+    PressureLevel,
+    number
+  >,
+  tackleSuccessBase: 0.62,
+  foulOnTackleByPressure: { low: 0.12, medium: 0.15, high: 0.2 } satisfies Record<
+    PressureLevel,
+    number
+  >,
+  yellowOnFoul: 0.19,
+  redOnFoul: 0.012
 };

@@ -1,16 +1,27 @@
-import type { MatchConfig, MatchSnapshot, MatchTick } from "./types";
+import {
+  CALIBRATION_TARGETS,
+  DETERMINISTIC_GENERATED_AT,
+  TICKS_PER_FULL_MATCH,
+  TICKS_PER_HALF
+} from "./calibration/constants";
 import { buildInitState } from "./state/initState";
-import { runTick } from "./ticks/runTick";
-import { TICKS_PER_HALF, TICKS_PER_FULL_MATCH } from "./calibration/constants";
 import type { MutableMatchState } from "./state/matchState";
+import type {
+  MatchConfig,
+  MatchSnapshot,
+  MatchTick,
+  SnapshotRosterPlayer,
+  Team,
+  TeamStatistics
+} from "./types";
+import { runTick } from "./ticks/runTick";
 
 export function simulateMatch(config: MatchConfig): MatchSnapshot {
   const state = buildInitState(config);
   const ticks: MatchTick[] = [];
-  
-  const totalTicks = config.duration === "second_half" ? TICKS_PER_HALF : TICKS_PER_FULL_MATCH;
+  const totalTicks = tickCount(config.duration);
 
-  for (let i = 0; i < totalTicks; i++) {
+  for (let count = 0; count < totalTicks; count += 1) {
     runTick(state);
     ticks.push(toMatchTick(state));
   }
@@ -23,18 +34,13 @@ export async function* simulateMatchStream(
   options?: { signal?: AbortSignal }
 ): AsyncIterable<MatchTick> {
   const state = buildInitState(config);
-  const totalTicks = config.duration === "second_half" ? TICKS_PER_HALF : TICKS_PER_FULL_MATCH;
+  const totalTicks = tickCount(config.duration);
 
-  for (let i = 0; i < totalTicks; i++) {
-    if (options?.signal?.aborted) {
-      break;
-    }
-
+  for (let count = 0; count < totalTicks; count += 1) {
+    throwIfAborted(options?.signal);
     runTick(state);
     yield toMatchTick(state);
-    
-    // minimal yield to event loop for stream
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await Promise.resolve();
   }
 }
 
@@ -42,47 +48,89 @@ function toMatchTick(state: MutableMatchState): MatchTick {
   return {
     iteration: state.iteration,
     matchClock: { ...state.matchClock },
-    ball: { 
+    ball: {
+      position: [...state.ball.position],
       inFlight: state.ball.inFlight,
-      carrierPlayerId: state.ball.carrierPlayerId,
-      position: [...state.ball.position]
+      carrierPlayerId: state.ball.carrierPlayerId
     },
-    players: state.players.map(p => ({
-      id: p.id,
-      teamId: p.teamId,
-      position: [...p.position],
-      hasBall: p.hasBall,
-      onPitch: p.onPitch
+    players: state.players.map((player) => ({
+      id: player.id,
+      teamId: player.teamId,
+      position: [...player.position],
+      hasBall: player.hasBall,
+      onPitch: player.onPitch
     })),
     score: { ...state.score },
-    possession: { ...state.possession },
-    events: [...state.eventsThisTick]
+    possession: { teamId: state.possession.teamId, zone: state.possession.zone },
+    events: state.eventsThisTick.map(cloneEvent)
   };
 }
 
-function buildSnapshot(state: MutableMatchState, config: MatchConfig, ticks: MatchTick[]): MatchSnapshot {
+function buildSnapshot(
+  state: MutableMatchState,
+  config: MatchConfig,
+  ticks: MatchTick[]
+): MatchSnapshot {
   return {
     meta: {
-      homeTeam: { id: config.homeTeam.id, name: config.homeTeam.name, shortName: config.homeTeam.shortName },
-      awayTeam: { id: config.awayTeam.id, name: config.awayTeam.name, shortName: config.awayTeam.shortName },
+      homeTeam: teamMeta(config.homeTeam),
+      awayTeam: teamMeta(config.awayTeam),
+      rosters: {
+        home: roster(config.homeTeam),
+        away: roster(config.awayTeam)
+      },
       seed: config.seed,
       duration: config.duration,
-      preMatchScore: config.preMatchScore ?? { home: 0, away: 0 },
-      generatedAt: new Date().toISOString(),
-      targets: {
-        shotsTarget: [8, 12],
-        goalsTarget: [1, 3],
-        foulsTarget: [4, 8],
-        cardsTarget: [1, 3]
-      }
+      preMatchScore: config.preMatchScore ? { ...config.preMatchScore } : { home: 0, away: 0 },
+      generatedAt: DETERMINISTIC_GENERATED_AT,
+      targets: CALIBRATION_TARGETS
     },
     ticks,
     finalSummary: {
       finalScore: { ...state.score },
       statistics: {
-        home: structuredClone(state.stats.home),
-        away: structuredClone(state.stats.away)
+        home: cloneStats(state.stats.home),
+        away: cloneStats(state.stats.away)
       }
     }
   };
+}
+
+function tickCount(duration: MatchConfig["duration"]): number {
+  return duration === "second_half" ? TICKS_PER_HALF : TICKS_PER_FULL_MATCH;
+}
+
+function teamMeta(team: Team): { id: string; name: string; shortName: string } {
+  return { id: team.id, name: team.name, shortName: team.shortName };
+}
+
+function roster(team: Team): SnapshotRosterPlayer[] {
+  return team.players.map((player) => ({
+    id: player.id,
+    name: player.name,
+    shortName: player.shortName,
+    ...(player.squadNumber === undefined ? {} : { squadNumber: player.squadNumber }),
+    position: player.position
+  }));
+}
+
+function cloneStats(stats: TeamStatistics): TeamStatistics {
+  return structuredClone(stats);
+}
+
+function cloneEvent(event: import("./types").SemanticEvent): import("./types").SemanticEvent {
+  return {
+    type: event.type,
+    team: event.team,
+    minute: event.minute,
+    second: event.second,
+    ...(event.playerId ? { playerId: event.playerId } : {}),
+    ...(event.detail ? { detail: structuredClone(event.detail) } : {})
+  };
+}
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+  if (signal?.aborted) {
+    throw new DOMException("Match simulation aborted", "AbortError");
+  }
 }

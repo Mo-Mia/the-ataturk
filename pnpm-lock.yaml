@@ -106,6 +106,9 @@ importers:
 
   packages/match-engine:
     devDependencies:
+      tsx:
+        specifier: 4.21.0
+        version: 4.21.0
       vitest:
         specifier: 4.0.13
         version: 4.0.13(@types/node@24.10.1)(jsdom@29.1.0)(lightningcss@1.32.0)(tsx@4.21.0)
@@ -130,9 +133,6 @@ importers:
       '@the-ataturk/engine':
         specifier: workspace:*
         version: link:../packages/engine
-      '@the-ataturk/match-engine':
-        specifier: workspace:*
-        version: link:../packages/match-engine
       '@the-ataturk/tactics':
         specifier: workspace:*
         version: link:../packages/tactics

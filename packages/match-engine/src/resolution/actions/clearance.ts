@@ -1,14 +1,30 @@
+import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
-import { PITCH_LENGTH } from "../../calibration/constants";
+import { attackDirection } from "../../zones/pitchZones";
 
-export function performClearance(state: MutableMatchState, carrier: MutablePlayer, rng: () => number): void {
+export function performClearance(state: MutableMatchState, carrier: MutablePlayer): void {
+  const direction = attackDirection(carrier.teamId);
+  const targetY = Math.max(80, Math.min(PITCH_LENGTH - 80, carrier.position[1] + direction * 280));
+  const targetX = Math.max(
+    35,
+    Math.min(PITCH_WIDTH - 35, carrier.position[0] + (state.rng.next() - 0.5) * 260)
+  );
+  const possibleReceiver = state.players
+    .filter(
+      (player) => player.teamId === carrier.teamId && player.onPitch && player.id !== carrier.id
+    )
+    .sort((a, b) => Math.abs(a.position[1] - targetY) - Math.abs(b.position[1] - targetY))[0];
+
   carrier.hasBall = false;
-  
-  // A clearance pushes the ball ~40 meters forward.
-  const yDir = carrier.teamId === "home" ? 1 : -1;
-  const targetY = state.ball.position[1] + (yDir * 400); // 400 ~ 40m roughly inside 1050 scale
-  
-  state.ball.position[1] = Math.max(0, Math.min(PITCH_LENGTH, targetY));
-  state.possession.teamId = null;
-  state.ball.carrierPlayerId = null;
+  if (possibleReceiver && state.rng.next() < 0.42) {
+    possibleReceiver.hasBall = true;
+    state.ball.carrierPlayerId = possibleReceiver.id;
+    state.ball.targetCarrierPlayerId = possibleReceiver.id;
+    state.ball.targetPosition = [possibleReceiver.position[0], possibleReceiver.position[1], 0];
+  } else {
+    state.ball.carrierPlayerId = null;
+    state.ball.targetCarrierPlayerId = null;
+    state.ball.targetPosition = [targetX, targetY, 0];
+  }
+  state.ball.inFlight = true;
 }
