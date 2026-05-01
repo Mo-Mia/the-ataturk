@@ -1,12 +1,12 @@
 # Session Status — Match Engine Post-v2 Refinement And Responsiveness Gate
 
-Last updated: 2026-05-01 15:47 SAST
+Last updated: 2026-05-01 16:30 SAST
 
 ## Executive Summary
 
 Since the v2 attribute bridge sprint shipped, the standalone TypeScript match engine has moved through several UAT-driven refinement loops and then cleared the responsiveness gate. The engine remains independent from the old `footballsimulationengine` path and The Atatürk's existing `/match` route.
 
-Current state: the engine is watchable, deterministic, calibrated on both v1 and v2 input paths, instrumented for visual/statistical UAT, and responsive to tactical and player-quality changes. The 100-seed v2 stress test reduced the previous `0-3` score-share watch item from 40% to 33%, giving distribution headroom. The standalone engine is ready for Atatürk integration planning.
+Current state: the engine is watchable, deterministic, calibrated on both v1 and v2 input paths, instrumented for visual/statistical UAT, and responsive to tactical and player-quality changes. The 100-seed v2 stress test reduced the previous `0-3` score-share watch item from 40% to 33%, giving distribution headroom. One final diagnostic UAT pass is being prepared before Atatürk integration planning is locked.
 
 ## Baseline At Last Senior Architect Report
 
@@ -86,6 +86,22 @@ This document covers the work after `807c46c`.
   - Added the test-only `__testApplyMidMatchAttributeSwap` mechanism for scripted 60-minute substitution-style checks.
   - Added 100-seed v2 stress reporting.
   - Added report-only weak-foot compounding comparison without changing committed mechanics.
+
+Pre-UAT diagnostic sprint now in progress:
+
+- Snapshot ticks include derived team-shape diagnostics:
+  - active players
+  - line heights
+  - width/depth/compactness
+  - thirds occupation
+  - opposition-half players
+  - ball-side players
+- Visualiser heatmap mode can show ball, home-player, away-player, or all-player heatmaps.
+- Added model-gap audit: `docs/MATCH_ENGINE_MODEL_GAPS.md`.
+- Added UAT handoff: `docs/UAT_HANDOFF_2026-05-01_PRE_INTEGRATION.md`.
+- Added forced scenario artefacts:
+  - `forced-early-goal-v2.json(.gz)`
+  - `forced-high-momentum-attack-v2.json(.gz)`
 
 ## UAT Findings And Fixes Since v2 Bridge
 
@@ -185,20 +201,37 @@ Notes:
 - `packages/match-engine/artifacts/representative-seed-1-v2.json.gz`
 - `packages/match-engine/artifacts/responsiveness-report.json`
 - `packages/match-engine/artifacts/visualiser-momentum-heatmap.png`
+- `packages/match-engine/artifacts/forced-early-goal-v2.json`
+- `packages/match-engine/artifacts/forced-early-goal-v2.json.gz`
+- `packages/match-engine/artifacts/forced-high-momentum-attack-v2.json`
+- `packages/match-engine/artifacts/forced-high-momentum-attack-v2.json.gz`
 - `packages/match-engine/artifacts/forced-second-yellow-v2.json`
 - `packages/match-engine/artifacts/forced-second-yellow-v2.json.gz`
 
 Latest representative seed summary:
 
-- Final score: LIV 1-3 MIL
-- Shots: 7 total, LIV 6 / MIL 1
-- Fouls: 4 total
-- Cards: 2 yellows
-- Carries: 16
-- Crosses: 3
+- Final score: LIV 1-5 MIL
+- Shots: 9 total, LIV 4 / MIL 5
+- Fouls: 4 total, LIV 3 / MIL 1
+- Cards: 3 total, LIV 2 / MIL 1
+- Carries: 29
+- Crosses: 6
 - Cutbacks: 4
-- Attacking-third ball touches: 9
-- Tick diagnostics include `attackMomentum` and `possessionStreak`.
+- Tick diagnostics include `attackMomentum`, `possessionStreak`, and team-shape diagnostics.
+
+Forced early-goal artefact summary:
+
+- Final score: LIV 1-4 MIL
+- Forced goal: LIV `home-9`, 48:00
+- Restart: MIL kick-off, 48:15
+- Purpose: inspect goal overlay, reset, momentum/streak reset, and shape recovery.
+
+Forced high-momentum artefact summary:
+
+- Final score: LIV 1-4 MIL
+- Max LIV momentum: 87
+- High-momentum support ticks: 38
+- Purpose: inspect midfield/full-back support beyond halfway without swarming.
 
 Forced second-yellow artefact summary:
 
@@ -210,13 +243,15 @@ Forced second-yellow artefact summary:
 
 ## Verification Status
 
-Latest verification after responsiveness work:
+Latest verification after pre-UAT diagnostic work:
 
 - `pnpm test` — passed
 - `pnpm typecheck` — passed
 - `pnpm lint` — passed
 - `pnpm --filter @the-ataturk/match-engine responsiveness` — passed
-- `pnpm --filter @the-ataturk/match-engine characterise -- --seeds 100 --schema v2 --preferred-foot rated` — passed
+- `pnpm --filter @the-ataturk/match-engine characterise -- --seeds 100 --schema v2 --preferred-foot rated` — passed during responsiveness close-out
+- `pnpm --filter @the-ataturk/match-engine characterise -- --seeds 50 --schema v2 --preferred-foot rated` — passed after diagnostics, unchanged metrics
+- No behaviour drift for seeds `1`, `17`, and `99` when comparing final score, stats, and event summaries while ignoring the new diagnostics field.
 
 ## Files Most Relevant For SA Review
 
