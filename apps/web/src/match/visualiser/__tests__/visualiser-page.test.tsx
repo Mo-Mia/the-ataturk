@@ -48,7 +48,38 @@ describe("VisualiserPage", () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => expect(screen.getByText(/GOAL!/)).toBeTruthy());
-    expect(screen.getByText(/scored by HF at 45:03/)).toBeTruthy();
+    const overlay = screen.getByRole("status");
+    expect(overlay.textContent).toContain("LIV 1-3 MIL");
+    expect(overlay.textContent).toContain("LIV scored by HF at 45:03");
+  });
+
+  it("keeps goal overlay score in home-away order when the away team scores", async () => {
+    const snapshot = createSnapshot();
+    snapshot.ticks[0]!.score = { home: 1, away: 4 };
+    snapshot.ticks[0]!.events = [
+      {
+        type: "goal_scored",
+        team: "away",
+        playerId: "a1",
+        minute: 49,
+        second: 12,
+        detail: { score: { home: 1, away: 4 } }
+      }
+    ];
+    const file = new File([JSON.stringify(snapshot)], "snapshot.json", {
+      type: "application/json"
+    });
+
+    render(<VisualiserPage />);
+
+    const input = screen.getByLabelText("Load snapshot JSON");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText(/GOAL!/)).toBeTruthy());
+    const overlay = screen.getByRole("status");
+    expect(overlay.textContent).toContain("LIV 1-4 MIL");
+    expect(overlay.textContent).toContain("MIL scored by AF at 49:12");
+    expect(overlay.textContent).not.toContain("MIL 1-4 LIV");
   });
 
   it("renders rich event detail fields and legacy possession changes", async () => {

@@ -386,13 +386,12 @@ function GoalOverlay({
   event: SemanticEvent;
   score: { home: number; away: number };
 }) {
-  const opponent =
-    event.team === "home" ? snapshot.meta.awayTeam.shortName : snapshot.meta.homeTeam.shortName;
-
   return (
     <div style={styles.goalOverlay} role="status" aria-live="polite">
-      <strong>GOAL!</strong> {teamName(snapshot, event.team)} {score.home}-{score.away} {opponent}
-      {" | scored by "}
+      <strong>GOAL!</strong> {snapshot.meta.homeTeam.shortName} {score.home}-{score.away}{" "}
+      {snapshot.meta.awayTeam.shortName}
+      {" | "}
+      {teamName(snapshot, event.team)} scored by{" "}
       {event.playerId ? playerName(snapshot, event.team, event.playerId) : "unknown"} at{" "}
       {event.minute}:{String(event.second).padStart(2, "0")}
     </div>
