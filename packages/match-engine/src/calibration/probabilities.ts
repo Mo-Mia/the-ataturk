@@ -20,8 +20,17 @@ export const SHOT_WEAK_FOOT_MULTIPLIER_BY_RATING: Record<StarRating, number> = {
 };
 
 export const PASS_TARGET_WEIGHTS = {
-  strikerToStrikerPenalty: 16
+  strikerToStrikerPenalty: 16,
+  sameFlankWideSupportBonus: 34,
+  attackingCrossBonus: 18,
+  wideToCentralBouncePenalty: 28
 };
+
+export const WIDE_CARRIER_ACTION_MODIFIERS = {
+  def: { pass: 0.96, dribble: 1.1, hold: 1.08, clear: 1, shoot: 1 },
+  mid: { pass: 0.86, dribble: 1.45, hold: 1.25, clear: 1, shoot: 1 },
+  att: { pass: 0.88, dribble: 1.38, hold: 1.18, clear: 1, shoot: 0.98 }
+} satisfies Record<Zone, Record<CarrierAction, number>>;
 
 export const ACTION_WEIGHTS: Record<Zone, Record<PressureLevel, Record<CarrierAction, number>>> = {
   def: {

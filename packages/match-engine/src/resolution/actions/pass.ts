@@ -5,6 +5,7 @@ import { otherTeam } from "../../state/matchState";
 import { emitEvent } from "../../ticks/runTick";
 import type { PassType } from "../../types";
 import { distance, distanceSquared } from "../../utils/geometry";
+import { flankSide, isWideCarrier, isWideChannelX, isWidePosition } from "../../utils/playerRoles";
 import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
 import { awardThrowIn } from "../setPieces";
@@ -62,6 +63,7 @@ function selectPassTarget(state: MutableMatchState, carrier: MutablePlayer): Mut
         player.baseInput.attributes.perception -
         Math.sqrt(distanceSquared(player.position, carrier.position)) / 6 +
         widePassBonus(carrier, player, direction) +
+        wideCarrierTargetAdjustment(carrier, player, direction) +
         forwardRunBonus(carrier, player, direction) -
         strikerToStrikerPenalty(carrier, player)
     }))
@@ -123,7 +125,7 @@ function widePassBonus(
   candidate: MutablePlayer,
   direction: 1 | -1
 ): number {
-  const wideCandidate = ["LB", "RB", "LW", "RW"].includes(candidate.baseInput.position);
+  const wideCandidate = isWidePosition(candidate.baseInput.position);
   const centralCarrier = Math.abs(carrier.position[0] - PITCH_WIDTH / 2) < 150;
   const progressive = (candidate.position[1] - carrier.position[1]) * direction > -60;
 
@@ -132,6 +134,37 @@ function widePassBonus(
   }
 
   return candidate.baseInput.position === "LW" || candidate.baseInput.position === "RW" ? 42 : 26;
+}
+
+function wideCarrierTargetAdjustment(
+  carrier: MutablePlayer,
+  candidate: MutablePlayer,
+  direction: 1 | -1
+): number {
+  if (!isWideCarrier(carrier)) {
+    return 0;
+  }
+
+  const carrierSide = flankSide(carrier.position[0]);
+  const candidateSameFlank =
+    flankSide(candidate.position[0]) === carrierSide &&
+    (isWideChannelX(candidate.position[0]) || isWidePosition(candidate.baseInput.position));
+  const targetCentral = candidate.position[0] > 220 && candidate.position[0] < PITCH_WIDTH - 220;
+  const progress = (candidate.position[1] - carrier.position[1]) * direction;
+  const targetAttackingZone = zoneForPosition(candidate.teamId, candidate.position) === "att";
+
+  let adjustment = 0;
+  if (candidateSameFlank && progress > -45) {
+    adjustment += PASS_TARGET_WEIGHTS.sameFlankWideSupportBonus;
+  }
+  if (targetCentral && progress < 95 && !targetAttackingZone) {
+    adjustment -= PASS_TARGET_WEIGHTS.wideToCentralBouncePenalty;
+  }
+  if (targetCentral && targetAttackingZone && progress > 25) {
+    adjustment += PASS_TARGET_WEIGHTS.attackingCrossBonus;
+  }
+
+  return adjustment;
 }
 
 function forwardRunBonus(

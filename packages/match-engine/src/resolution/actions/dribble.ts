@@ -3,6 +3,7 @@ import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
 import { clamp2D } from "../../utils/geometry";
+import { flankSide, isWideCarrier } from "../../utils/playerRoles";
 import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
 
@@ -14,11 +15,10 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
 
   if (state.rng.next() <= successProbability) {
     const direction = attackDirection(carrier.teamId);
-    carrier.position = clamp2D(
-      [carrier.position[0] + (state.rng.next() - 0.5) * 34, carrier.position[1] + direction * 34],
-      PITCH_WIDTH,
-      PITCH_LENGTH
-    );
+    const nextPosition: [number, number] = isWideCarrier(carrier)
+      ? wideDribbleTarget(state, carrier, direction)
+      : [carrier.position[0] + (state.rng.next() - 0.5) * 34, carrier.position[1] + direction * 34];
+    carrier.position = clamp2D(nextPosition, PITCH_WIDTH, PITCH_LENGTH);
     state.ball.position = [carrier.position[0], carrier.position[1], 0];
     return;
   }
@@ -47,4 +47,18 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
     previousPossessor: carrier.id,
     zone: zoneForPosition(opponent.teamId, opponent.position)
   });
+}
+
+function wideDribbleTarget(
+  state: MutableMatchState,
+  carrier: MutablePlayer,
+  direction: 1 | -1
+): [number, number] {
+  const side = flankSide(carrier.position[0]);
+  const channelX = side === "left" ? 72 : PITCH_WIDTH - 72;
+  const channelPull = (channelX - carrier.position[0]) * 0.42;
+  const insideJitter = (state.rng.next() - 0.5) * 18;
+  const forwardCarry = direction * 44;
+
+  return [carrier.position[0] + channelPull + insideJitter, carrier.position[1] + forwardCarry];
 }

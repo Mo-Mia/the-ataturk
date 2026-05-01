@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { selectCarrierAction } from "../../src/resolution/carrierAction";
+import { performDribble } from "../../src/resolution/actions/dribble";
 import { performPass } from "../../src/resolution/actions/pass";
 import { performShot } from "../../src/resolution/actions/shot";
 import { shotDistanceContext } from "../../src/resolution/shotDistance";
@@ -121,6 +122,78 @@ describe("carrier action selection", () => {
 
     expect(midfielder.hasBall).toBe(true);
     expect(otherStriker.hasBall).toBe(false);
+  });
+
+  it("encourages wide carriers to carry instead of immediately bouncing inside", () => {
+    const central = buildInitState(createTestConfig(18));
+    const wide = buildInitState(createTestConfig(18));
+    const centralCarrier = central.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "CM"
+    )!;
+    const wideCarrier = wide.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "RW"
+    )!;
+
+    central.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+    wide.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+    centralCarrier.position = [340, 520];
+    wideCarrier.position = [610, 520];
+    central.rng.next = () => 0.62;
+    wide.rng.next = () => 0.62;
+
+    expect(selectCarrierAction(central, centralCarrier)).toBe("pass");
+    expect(selectCarrierAction(wide, wideCarrier)).toBe("dribble");
+  });
+
+  it("keeps successful wide dribbles in the flank channel", () => {
+    const state = buildInitState(createTestConfig(19));
+    const carrier = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "RW"
+    )!;
+    carrier.position = [610, 520];
+    carrier.baseInput.attributes.control = 100;
+    state.players.forEach((player) => {
+      player.hasBall = player.id === carrier.id;
+    });
+    state.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+    const rolls = [0, 0.5];
+    state.rng.next = () => rolls.shift() ?? 0.5;
+
+    performDribble(state, carrier);
+
+    expect(carrier.position[1]).toBeGreaterThan(550);
+    expect(carrier.position[0]).toBeGreaterThan(500);
+    expect(state.ball.position).toEqual([carrier.position[0], carrier.position[1], 0]);
+  });
+
+  it("prefers same-flank support over low-value central bounce passes from wide areas", () => {
+    const state = buildInitState(createTestConfig(20));
+    const carrier = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "RW"
+    )!;
+    const fullBack = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "RB"
+    )!;
+    const midfielder = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "CM"
+    )!;
+
+    state.players.forEach((player) => {
+      player.onPitch = [carrier.id, fullBack.id, midfielder.id].includes(player.id);
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [610, 520];
+    fullBack.position = [600, 590];
+    midfielder.position = [340, 570];
+    carrier.baseInput.attributes.passing = 100;
+    state.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+    state.rng.int = () => 0;
+    state.rng.next = () => 0;
+
+    performPass(state, carrier);
+
+    expect(fullBack.hasBall).toBe(true);
+    expect(midfielder.hasBall).toBe(false);
   });
 
   it("penalises long-range shot selection", () => {

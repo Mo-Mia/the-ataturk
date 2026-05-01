@@ -1,5 +1,11 @@
-import { ACTION_WEIGHTS, type CarrierAction, TACTIC_MODIFIERS } from "../calibration/probabilities";
+import {
+  ACTION_WEIGHTS,
+  type CarrierAction,
+  TACTIC_MODIFIERS,
+  WIDE_CARRIER_ACTION_MODIFIERS
+} from "../calibration/probabilities";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
+import { isWideCarrier } from "../utils/playerRoles";
 import { performClearance } from "./actions/clearance";
 import { performDribble } from "./actions/dribble";
 import { performPass } from "./actions/pass";
@@ -27,6 +33,15 @@ export function selectCarrierAction(
     mentality.dribble * tempo.dribble * (carrier.baseInput.attributes.control / 100);
   weights.hold *= mentality.hold * tempo.hold * (carrier.baseInput.attributes.perception / 100);
   weights.clear *= mentality.clear * tempo.clear;
+
+  if (isWideCarrier(carrier)) {
+    const wideModifiers = WIDE_CARRIER_ACTION_MODIFIERS[zone];
+    weights.pass *= wideModifiers.pass;
+    weights.shoot *= wideModifiers.shoot;
+    weights.dribble *= wideModifiers.dribble;
+    weights.hold *= wideModifiers.hold;
+    weights.clear *= wideModifiers.clear;
+  }
 
   const total = weights.pass + weights.shoot + weights.dribble + weights.hold + weights.clear;
   if (total <= 0) {
