@@ -115,6 +115,46 @@ describe("runTick", () => {
     expect(rightBack.targetPosition[0]).toBeGreaterThan(rightWing.targetPosition[0]);
   });
 
+  it("lets midfielders and full-backs support beyond halfway when attack momentum is high", () => {
+    const state = buildInitState(createTestConfig(20));
+    const carrier = state.players.find((player) => player.id === "home-9")!;
+    const centralMidfielder = state.players.find((player) => player.id === "home-6")!;
+    const rightBack = state.players.find((player) => player.id === "home-1")!;
+
+    state.players.forEach((player) => {
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [390, 650];
+    state.ball.position = [390, 650, 0];
+    state.ball.carrierPlayerId = carrier.id;
+    state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+    state.attackMomentum.home = 75;
+
+    updateMovement(state);
+
+    expect(centralMidfielder.targetPosition[1]).toBeGreaterThan(525);
+    expect(rightBack.targetPosition[1]).toBeGreaterThan(525);
+  });
+
+  it("keeps defensive centre-backs conservative during high attacking momentum", () => {
+    const state = buildInitState(createTestConfig(21));
+    const carrier = state.players.find((player) => player.id === "home-9")!;
+    const centreBack = state.players.find((player) => player.id === "home-2")!;
+
+    state.players.forEach((player) => {
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [390, 650];
+    state.ball.position = [390, 650, 0];
+    state.ball.carrierPlayerId = carrier.id;
+    state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+    state.attackMomentum.home = 85;
+
+    updateMovement(state);
+
+    expect(centreBack.targetPosition[1]).toBeLessThan(525);
+  });
+
   it("caps player movement to sixty pitch units per tick", () => {
     const state = buildInitState(createTestConfig(17));
     const player = state.players.find((candidate) => candidate.id === "away-10")!;

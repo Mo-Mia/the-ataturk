@@ -6,6 +6,7 @@ import {
 } from "../calibration/constants";
 import { setPieceTargetForPlayer } from "../resolution/setPieces";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
+import { attackingThirdProgress } from "../state/momentum";
 import type { Coordinate2D, TeamId } from "../types";
 import { clamp, clamp2D, distanceSquared, moveTowards } from "../utils/geometry";
 import { attackDirection } from "../zones/pitchZones";
@@ -115,14 +116,21 @@ function supportingTarget(
     return addOffBallPulse(state, player, anchorTarget, 0.45);
   }
 
-  const supportY = carrier.position[1] - direction * supportDepth(player);
+  const momentum = state.attackMomentum[player.teamId];
+  const progress = attackingThirdProgress(carrier.teamId, carrier.position[1]);
+  const supportY =
+    carrier.position[1] + direction * verticalSupportOffset(player, momentum, progress, carrier);
   const supportX = anchorTarget[0] + (carrier.position[0] - PITCH_WIDTH / 2) * 0.12;
-  const supportTarget: Coordinate2D = [supportX, anchorTarget[1] * 0.55 + supportY * 0.45];
+  const supportInfluence = supportInfluenceForPlayer(player, momentum, progress);
+  const supportTarget: Coordinate2D = [
+    supportX,
+    anchorTarget[1] * (1 - supportInfluence) + supportY * supportInfluence
+  ];
 
   return addOffBallPulse(
     state,
     player,
-    channelRunTarget(player, supportTarget, direction, ballPosition, carrier),
+    channelRunTarget(state, player, supportTarget, direction, ballPosition, carrier),
     1
   );
 }
@@ -271,20 +279,64 @@ function widePosition(player: MutablePlayer): boolean {
   return ["LB", "RB", "LM", "RM", "LW", "RW"].includes(player.baseInput.position);
 }
 
-function supportDepth(player: MutablePlayer): number {
+function verticalSupportOffset(
+  player: MutablePlayer,
+  momentum: number,
+  progress: number,
+  carrier: MutablePlayer
+): number {
+  if (player.baseInput.position === "GK") {
+    return -360;
+  }
   if (player.baseInput.position === "ST") {
-    return 45;
+    return -45;
   }
-  if (["AM", "LW", "RW"].includes(player.baseInput.position)) {
-    return 75;
+  if (player.baseInput.position === "AM") {
+    return momentum >= 22 && progress >= 0.5 ? 10 : -75;
   }
-  if (["CM", "DM"].includes(player.baseInput.position)) {
-    return 105;
+  if (["LW", "RW", "LM", "RM"].includes(player.baseInput.position)) {
+    return momentum >= 22 && progress >= 0.52 ? 36 : -75;
   }
-  return clamp(140, 80, 180);
+  if (["LB", "RB"].includes(player.baseInput.position)) {
+    return shouldFullBackOverlap(player, carrier, momentum, progress) ? 62 : -140;
+  }
+  if (player.baseInput.position === "CM") {
+    return momentum >= 26 && progress >= 0.5 ? 10 : -105;
+  }
+  if (player.baseInput.position === "DM") {
+    return momentum >= 45 && progress >= 0.62 ? -38 : -115;
+  }
+  return -150;
+}
+
+function supportInfluenceForPlayer(
+  player: MutablePlayer,
+  momentum: number,
+  progress: number
+): number {
+  if (player.baseInput.position === "GK") {
+    return 0.1;
+  }
+  if (player.baseInput.position === "ST" || player.baseInput.position === "AM") {
+    return momentum >= 22 && progress >= 0.5 ? 0.58 : 0.45;
+  }
+  if (["LW", "RW", "LM", "RM"].includes(player.baseInput.position)) {
+    return momentum >= 22 && progress >= 0.52 ? 0.64 : 0.45;
+  }
+  if (["LB", "RB"].includes(player.baseInput.position)) {
+    return momentum >= 24 && progress >= 0.5 ? 0.6 : 0.35;
+  }
+  if (player.baseInput.position === "CM") {
+    return momentum >= 26 && progress >= 0.5 ? 0.56 : 0.45;
+  }
+  if (player.baseInput.position === "DM") {
+    return momentum >= 45 && progress >= 0.62 ? 0.42 : 0.28;
+  }
+  return 0.22;
 }
 
 function channelRunTarget(
+  state: MutableMatchState,
   player: MutablePlayer,
   target: Coordinate2D,
   direction: 1 | -1,
@@ -292,7 +344,7 @@ function channelRunTarget(
   carrier: MutablePlayer | null
 ): Coordinate2D {
   if (["LW", "RW", "LM", "RM", "LB", "RB"].includes(player.baseInput.position)) {
-    return wideRunTarget(player, target, direction, ballPosition, carrier);
+    return wideRunTarget(state, player, target, direction, ballPosition, carrier);
   }
 
   if (player.baseInput.position === "ST" || player.baseInput.position === "AM") {
@@ -360,6 +412,7 @@ function clampWideChannel(player: MutablePlayer, x: number): number {
 }
 
 function wideRunTarget(
+  state: MutableMatchState,
   player: MutablePlayer,
   target: Coordinate2D,
   direction: 1 | -1,
@@ -371,15 +424,24 @@ function wideRunTarget(
   const centralCarrier = carrier ? Math.abs(carrier.position[0] - PITCH_WIDTH / 2) < 145 : false;
   const nearSide = side !== "centre" && side === ownSide;
   const farSide = side !== "centre" && side !== ownSide;
+  const momentum = state.attackMomentum[player.teamId];
+  const progress = carrier ? attackingThirdProgress(carrier.teamId, carrier.position[1]) : 0;
+  const verticalBoost = momentum >= 24 && progress >= 0.5 ? 24 : 0;
 
   if (nearSide && centralCarrier && ["LW", "RW", "LM", "RM"].includes(player.baseInput.position)) {
     const channelX = ownSide === "left" ? 82 : PITCH_WIDTH - 82;
-    return [channelX, target[1] + direction * 58];
+    return [channelX, target[1] + direction * (58 + verticalBoost)];
   }
 
-  if (nearSide && centralCarrier && ["LB", "RB"].includes(player.baseInput.position)) {
+  if (
+    nearSide &&
+    centralCarrier &&
+    ["LB", "RB"].includes(player.baseInput.position) &&
+    carrier &&
+    shouldFullBackOverlap(player, carrier, momentum, progress)
+  ) {
     const overlapX = ownSide === "left" ? 42 : PITCH_WIDTH - 42;
-    return [overlapX, target[1] + direction * 72];
+    return [overlapX, target[1] + direction * (72 + verticalBoost)];
   }
 
   if (farSide && ["LW", "RW", "LM", "RM"].includes(player.baseInput.position)) {
@@ -388,6 +450,22 @@ function wideRunTarget(
   }
 
   return [target[0], target[1] + direction * 18];
+}
+
+function shouldFullBackOverlap(
+  player: MutablePlayer,
+  carrier: MutablePlayer,
+  momentum: number,
+  progress: number
+): boolean {
+  if (!["LB", "RB"].includes(player.baseInput.position)) {
+    return false;
+  }
+
+  const sameSideCarrier =
+    Math.abs(carrier.position[0] - PITCH_WIDTH / 2) <= 145 ||
+    playerSide(player.anchorPosition[0]) === playerSide(carrier.position[0]);
+  return momentum >= 24 && progress >= 0.5 && sameSideCarrier;
 }
 
 function addOffBallPulse(

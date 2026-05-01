@@ -70,6 +70,8 @@ export interface MutableMatchState {
   stats: { home: TeamStatistics; away: TeamStatistics };
   possession: { teamId: TeamId | null; zone: Zone; pressureLevel: PressureLevel };
   possessionTicks: { home: number; away: number };
+  possessionStreak: { teamId: TeamId | null; ticks: number };
+  attackMomentum: { home: number; away: number };
   pendingGoal: PendingGoal | null;
   pendingSetPiece: PendingSetPiece | null;
   pendingLooseBallCause: PossessionChangeCause | null;

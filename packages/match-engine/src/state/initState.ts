@@ -52,6 +52,8 @@ export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatc
     },
     possession: { teamId: "home", zone: "mid", pressureLevel: "low" },
     possessionTicks: { home: 0, away: 0 },
+    possessionStreak: { teamId: null, ticks: 0 },
+    attackMomentum: { home: 0, away: 0 },
     pendingGoal: null,
     pendingSetPiece: null,
     pendingLooseBallCause: null,

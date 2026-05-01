@@ -9,6 +9,7 @@ import { restartAfterGoal } from "../resolution/actions/shot";
 import { pressureLevel, rollPressureTackle } from "../resolution/pressure";
 import { continuePendingSetPiece } from "../resolution/setPieces";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
+import { updateAttackMomentum } from "../state/momentum";
 import type { SemanticEvent, TeamId } from "../types";
 import { zoneForPosition } from "../zones/pitchZones";
 import { updateBallPhysics } from "./ballPhysics";
@@ -19,6 +20,7 @@ export function runTick(state: MutableMatchState): void {
   advanceClock(state);
 
   if (continuePendingGoal(state)) {
+    updateAttackMomentum(state);
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
     return;
@@ -26,6 +28,8 @@ export function runTick(state: MutableMatchState): void {
   if (state.pendingSetPiece) {
     updateMovement(state);
     continuePendingSetPiece(state);
+    determinePossessionState(state);
+    updateAttackMomentum(state);
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
     return;
@@ -50,17 +54,20 @@ export function runTick(state: MutableMatchState): void {
 
   if (state.pendingGoal) {
     state.ball.position = [GOAL_CENTRE_X, PITCH_LENGTH / 2, 0];
+    updateAttackMomentum(state);
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
     return;
   }
   if (state.pendingSetPiece) {
+    updateAttackMomentum(state);
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
     return;
   }
 
   determinePossessionState(state);
+  updateAttackMomentum(state);
   updatePossessionStats(state);
   state.allEvents.push(...state.eventsThisTick);
 }
