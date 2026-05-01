@@ -15,6 +15,11 @@ const BALL_PRESS_DISTANCE = 230;
 const TACKLE_INVOLVEMENT_DISTANCE = 74;
 const WIDE_ANCHOR_WEIGHT = 0.85;
 const CENTRAL_ANCHOR_WEIGHT = 0.55;
+const BALL_SIDE_DEAD_ZONE = 45;
+const WIDE_TUCK_IN_POSSESSION = 70;
+const WIDE_TUCK_OUT_OF_POSSESSION = 72;
+const WIDE_CHANNEL_INNER_LEFT = 245;
+const WIDE_CHANNEL_INNER_RIGHT = PITCH_WIDTH - WIDE_CHANNEL_INNER_LEFT;
 
 export function updateMovement(state: MutableMatchState): void {
   const carrier = currentCarrier(state);
@@ -71,10 +76,19 @@ function targetForPlayer(
     mentalityShiftForTeam(tactics.mentality, player.teamId, teamInPossession) * direction;
   const widthScale = widthScaleForTeam(tactics.width);
   const anchorX = PITCH_WIDTH / 2 + (player.anchorPosition[0] - PITCH_WIDTH / 2) * widthScale;
-  let target: Coordinate2D = [anchorX, player.anchorPosition[1] + lineShift + mentalityShift];
+  const dynamicAnchorX = dynamicLateralAnchor(
+    player,
+    anchorX,
+    ballPosition,
+    teamInPossession === player.teamId
+  );
+  let target: Coordinate2D = [
+    dynamicAnchorX,
+    player.anchorPosition[1] + lineShift + mentalityShift
+  ];
 
   if (teamInPossession === player.teamId) {
-    target = supportingTarget(state, player, target, carrier, direction);
+    target = supportingTarget(state, player, target, carrier, direction, ballPosition);
   } else if (
     teamInPossession &&
     distanceSquared(player.position, ballPosition) < BALL_PRESS_DISTANCE ** 2
@@ -82,7 +96,11 @@ function targetForPlayer(
     target = defensiveTarget(player, ballPosition, tactics.pressing);
   }
 
-  return clamp2D(applyLateralDiscipline(state, player, carrier, target), PITCH_WIDTH, PITCH_LENGTH);
+  return clamp2D(
+    applyLateralDiscipline(state, player, carrier, target, dynamicAnchorX),
+    PITCH_WIDTH,
+    PITCH_LENGTH
+  );
 }
 
 function supportingTarget(
@@ -90,7 +108,8 @@ function supportingTarget(
   player: MutablePlayer,
   anchorTarget: Coordinate2D,
   carrier: MutablePlayer | null,
-  direction: 1 | -1
+  direction: 1 | -1,
+  ballPosition: Coordinate2D
 ): Coordinate2D {
   if (!carrier) {
     return addOffBallPulse(state, player, anchorTarget, 0.45);
@@ -100,7 +119,12 @@ function supportingTarget(
   const supportX = anchorTarget[0] + (carrier.position[0] - PITCH_WIDTH / 2) * 0.12;
   const supportTarget: Coordinate2D = [supportX, anchorTarget[1] * 0.55 + supportY * 0.45];
 
-  return addOffBallPulse(state, player, channelRunTarget(player, supportTarget, direction), 1);
+  return addOffBallPulse(
+    state,
+    player,
+    channelRunTarget(player, supportTarget, direction, ballPosition, carrier),
+    1
+  );
 }
 
 function defensiveTarget(
@@ -201,14 +225,15 @@ function applyLateralDiscipline(
   state: MutableMatchState,
   player: MutablePlayer,
   carrier: MutablePlayer | null,
-  target: Coordinate2D
+  target: Coordinate2D,
+  dynamicAnchorX: number
 ): Coordinate2D {
   if (!carrier || directlyInvolvedInPlay(state, player, carrier)) {
     return target;
   }
 
   const weight = widePosition(player) ? WIDE_ANCHOR_WEIGHT : CENTRAL_ANCHOR_WEIGHT;
-  return [target[0] * (1 - weight) + player.lateralAnchor * weight, target[1]];
+  return [target[0] * (1 - weight) + dynamicAnchorX * weight, target[1]];
 }
 
 function directlyInvolvedInPlay(
@@ -262,11 +287,12 @@ function supportDepth(player: MutablePlayer): number {
 function channelRunTarget(
   player: MutablePlayer,
   target: Coordinate2D,
-  direction: 1 | -1
+  direction: 1 | -1,
+  ballPosition: Coordinate2D,
+  carrier: MutablePlayer | null
 ): Coordinate2D {
   if (["LW", "RW", "LM", "RM", "LB", "RB"].includes(player.baseInput.position)) {
-    const touchlineX = player.anchorPosition[0] < PITCH_WIDTH / 2 ? 55 : PITCH_WIDTH - 55;
-    return [touchlineX, target[1] + direction * 18];
+    return wideRunTarget(player, target, direction, ballPosition, carrier);
   }
 
   if (player.baseInput.position === "ST" || player.baseInput.position === "AM") {
@@ -277,6 +303,91 @@ function channelRunTarget(
   }
 
   return target;
+}
+
+function dynamicLateralAnchor(
+  player: MutablePlayer,
+  baseAnchorX: number,
+  ballPosition: Coordinate2D,
+  inPossession: boolean
+): number {
+  if (player.baseInput.position === "GK") {
+    return baseAnchorX;
+  }
+
+  const side = ballSide(ballPosition[0]);
+  if (side === "centre") {
+    return baseAnchorX;
+  }
+
+  const shift = ballSideShift(player, inPossession) * (side === "left" ? -1 : 1);
+  let dynamicX = baseAnchorX + shift;
+
+  if (widePosition(player) && playerSide(baseAnchorX) !== side) {
+    const tuck = inPossession ? WIDE_TUCK_IN_POSSESSION : WIDE_TUCK_OUT_OF_POSSESSION;
+    dynamicX += baseAnchorX < PITCH_WIDTH / 2 ? tuck : -tuck;
+    dynamicX = clampWideChannel(player, dynamicX);
+  }
+
+  return dynamicX;
+}
+
+function ballSide(x: number): "left" | "right" | "centre" {
+  if (Math.abs(x - PITCH_WIDTH / 2) <= BALL_SIDE_DEAD_ZONE) {
+    return "centre";
+  }
+  return x < PITCH_WIDTH / 2 ? "left" : "right";
+}
+
+function playerSide(x: number): "left" | "right" {
+  return x < PITCH_WIDTH / 2 ? "left" : "right";
+}
+
+function ballSideShift(player: MutablePlayer, inPossession: boolean): number {
+  if (["CB", "LB", "RB", "GK"].includes(player.baseInput.position)) {
+    return inPossession ? 22 : 26;
+  }
+  if (["DM", "CM", "AM", "LM", "RM"].includes(player.baseInput.position)) {
+    return inPossession ? 34 : 32;
+  }
+  return inPossession ? 24 : 22;
+}
+
+function clampWideChannel(player: MutablePlayer, x: number): number {
+  return player.anchorPosition[0] < PITCH_WIDTH / 2
+    ? clamp(x, 35, WIDE_CHANNEL_INNER_LEFT)
+    : clamp(x, WIDE_CHANNEL_INNER_RIGHT, PITCH_WIDTH - 35);
+}
+
+function wideRunTarget(
+  player: MutablePlayer,
+  target: Coordinate2D,
+  direction: 1 | -1,
+  ballPosition: Coordinate2D,
+  carrier: MutablePlayer | null
+): Coordinate2D {
+  const side = ballSide(ballPosition[0]);
+  const ownSide = playerSide(player.anchorPosition[0]);
+  const centralCarrier = carrier ? Math.abs(carrier.position[0] - PITCH_WIDTH / 2) < 145 : false;
+  const nearSide = side !== "centre" && side === ownSide;
+  const farSide = side !== "centre" && side !== ownSide;
+
+  if (nearSide && centralCarrier && ["LW", "RW", "LM", "RM"].includes(player.baseInput.position)) {
+    const channelX = ownSide === "left" ? 82 : PITCH_WIDTH - 82;
+    return [channelX, target[1] + direction * 58];
+  }
+
+  if (nearSide && centralCarrier && ["LB", "RB"].includes(player.baseInput.position)) {
+    const overlapX = ownSide === "left" ? 42 : PITCH_WIDTH - 42;
+    return [overlapX, target[1] + direction * 72];
+  }
+
+  if (farSide && ["LW", "RW", "LM", "RM"].includes(player.baseInput.position)) {
+    const backPostX = ownSide === "left" ? WIDE_CHANNEL_INNER_LEFT : WIDE_CHANNEL_INNER_RIGHT;
+    return [backPostX, target[1] + direction * 34];
+  }
+
+  return [target[0], target[1] + direction * 18];
 }
 
 function addOffBallPulse(

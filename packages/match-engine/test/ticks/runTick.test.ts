@@ -75,6 +75,46 @@ describe("runTick", () => {
     expect(Math.abs(leftWing.position[0] - leftWing.lateralAnchor)).toBeLessThanOrEqual(90);
   });
 
+  it("tucks far-side wide players in when the ball is on the opposite flank", () => {
+    const state = buildInitState(createTestConfig(18));
+    const carrier = state.players.find((player) => player.id === "home-6")!;
+    const leftWing = state.players.find((player) => player.id === "home-8")!;
+
+    state.players.forEach((player) => {
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [560, 590];
+    state.ball.position = [560, 590, 0];
+    state.ball.carrierPlayerId = carrier.id;
+    state.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+
+    updateMovement(state);
+
+    expect(leftWing.targetPosition[0]).toBeGreaterThan(leftWing.lateralAnchor);
+    expect(leftWing.targetPosition[0]).toBeLessThanOrEqual(245);
+  });
+
+  it("sends near-side wide players on forward runs when a central player carries", () => {
+    const state = buildInitState(createTestConfig(19));
+    const carrier = state.players.find((player) => player.id === "home-6")!;
+    const rightWing = state.players.find((player) => player.id === "home-5")!;
+    const rightBack = state.players.find((player) => player.id === "home-1")!;
+
+    state.players.forEach((player) => {
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [390, 590];
+    state.ball.position = [390, 590, 0];
+    state.ball.carrierPlayerId = carrier.id;
+    state.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+
+    updateMovement(state);
+
+    expect(rightWing.targetPosition[1]).toBeGreaterThan(rightWing.anchorPosition[1] + 20);
+    expect(rightBack.targetPosition[1]).toBeGreaterThan(rightBack.anchorPosition[1] + 20);
+    expect(rightBack.targetPosition[0]).toBeGreaterThan(rightWing.targetPosition[0]);
+  });
+
   it("caps player movement to sixty pitch units per tick", () => {
     const state = buildInitState(createTestConfig(17));
     const player = state.players.find((candidate) => candidate.id === "away-10")!;
