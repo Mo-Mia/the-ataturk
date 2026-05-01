@@ -1,6 +1,7 @@
 # The Atatürk — Project Status Reference
 
-**Snapshot date:** 30 April 2026, 14:50 SAST  
+**Snapshot date:** 30 April – 1 May 2026 (multi-session arc)
+**Initial snapshot:** 30 April 14:50 SAST. **Last updated:** 1 May 11:25 SAST.
 **Purpose:** Reference doc for post-compaction context. Captures all material decisions, current state, and active work as of this moment.
 
 ---
@@ -11,6 +12,17 @@ A hobby football management game centred on the 2005 UEFA Champions League final
 
 Repo (public): `github.com/Mo-Mia/the-ataturk`  
 Local dev: `/media/mo/Projects/Active_Dev_Projects/2026-the-ataturk` (Linux Mint)
+
+## Major architectural decisions (newest first)
+
+- **1 May 2026**: v2 attribute bridge sprint completed (full FC25-mirror schema accepted, v2→v1 adapter, engine internals stay on v1, weak-foot-aware preferred-foot logic added)
+- **1 May 2026**: Event vocabulary expansion completed (cause taxonomy on possession_change, new pass event type, shot/save/foul detail enrichment)
+- **30 April 2026**: Custom match engine built and calibrated (multi-stage stochastic, possession-zone state, 3-second ticks)
+- **30 April 2026**: Path B chosen (custom engine, not fork-and-tune existing) after two senior-architect investigations
+- **30 April 2026**: Engine treated as standalone work, decoupled from The Atatürk's game-specific layers
+- **30 April 2026**: 5-sub bend agreed for v0.1 (modern UEFA rule, acknowledged in lore with a wink)
+- **30 April 2026**: Second-half-only pivot (game starts at half-time whistle, score 0-3, 90 seconds at HT for tactics)
+
 
 ## v0.1 game concept (locked)
 
@@ -31,7 +43,7 @@ Substitution bank: **5 subs (modern UEFA rule)**, with one already used historic
 - Frontend: Vite + React on port 5175
 - LLM: Gemini 3 Flash (`gemini-3-flash-preview`) via `@google/genai`, temp 1.0, ThinkingLevel.LOW
 - TTS: planned (Gemini TTS or ElevenLabs, provider-swappable, not yet built)
-- Patches managed via `patch-package` for the engine (until replacement lands)
+- Patches managed via `patch-package` for FOOTBALLSIMULATIONENGINE only — the new custom engine doesn't need patches
 
 ## Phases completed
 
@@ -62,6 +74,36 @@ Substitution bank: **5 subs (modern UEFA rule)**, with one already used historic
 - DEV-only `?speed=fast` toggle for development; production real-time pace
 - Reuses Step 2A/2B SSE+abort patterns
 
+### Custom match engine + visualiser (built 30 April – 1 May)
+- Standalone `packages/match-engine/` workspace package, written from scratch in TypeScript
+- Possession-zone-based state model, 3-second fixed ticks, 900 ticks/half
+- Multi-stage stochastic action resolution per tick (movement → possession → pressure/tackle → carrier action → events)
+- Linear attribute scaling, 6 tactical levers (formation/mentality/tempo/pressing/lineHeight/width)
+- Central calibration file at `packages/match-engine/src/calibration/probabilities.ts`
+- 5-pass calibration converged to all targets:
+  - Shots 8.38 (target 8-12)
+  - Goals 1.34 (target 1-3)
+  - Fouls 4.80 (target 4-8)
+  - Cards 1.20 (target 1-3)
+  - No outcome >40% in score distribution; healthy variance across 50 seeds
+- Snapshot-replay visualiser at `/visualise` route, plain SVG, no animation polish
+- Goal celebration state machine (4-tick pause, ball reset, conceding team kicks off)
+- Wing positioning discipline (lateral anchors, 85/15 wide players, 55/45 central)
+- Movement smoothing (60-pitch-unit cap per tick on player movement)
+- Dead-ball restarts with players migrating into shape before play resumes
+- Throw-ins and goal kicks emit as semantic events; second-yellow now sends off
+- Shot-distance bands (close/box/edge/far/speculative) with appropriate save weighting
+- Rich event vocabulary expansion (1 May): possession_change with cause taxonomy, shots with type/foot/distance/pressure, saves with quality/result, fouls with severity/location/tackleType, NEW pass event with selective emission
+- 0% match outcome drift across event vocabulary expansion (deterministic snapshots preserved)
+- v2 attribute bridge sprint (1 May): FC25-style PlayerInputV2 accepted at the engine boundary, adapted to v1 internally, v2 metadata preserved on snapshot rosters, preferred-foot/weak-foot logic applied only for v2 inputs
+- v1 compatibility verified byte-identical on representative snapshot diff and unchanged on 50-seed characterisation
+- v2 rated-foot characterisation passed targets: shots 8.18, goals 1.18, fouls 5.14, cards 1.26
+- Two UAT cycles run with Gemini UAT agent; structured feedback loop established
+
+### Atatürk integration: parked
+Existing v0.1 text-only `/match` route still uses old `footballsimulationengine` v4.0.0 with patch. New engine is decoupled. Atatürk's game-specific layers (half-time builder, intent toggles, lore framing, commentary, TTS) deferred until engine is responsiveness-tested and stable.
+
+
 ## Documentation state
 
 All canonical docs current as of last commit:
@@ -76,7 +118,7 @@ All canonical docs current as of last commit:
 - `docs/CHARACTERISATION_VARIANTS.md`
 - `docs/ENGINE_INTEGRATION_MAP.md` (Gemini's investigation report)
 
-## The engine problem (resolved direction, executing today)
+## The engine problem (history and resolution)
 
 ### What was discovered
 
@@ -113,7 +155,7 @@ The Atatürk's game-specific work (player creator, intent toggles, half-time tea
 
 1. **Output shape**: tick-based with kinematics (players move continuously, ball physics). Not abstract diagrams; not pure event-stream. Continuous motion punctuated by discrete events.
 2. **Engine scope**: mostly generic football engine, with a few Atatürk-leaning concessions (semantic event types compatible with our `extractEvents`, position numbering compatible with existing data).
-3. **Visualiser scope**: ugly-but-functional today (plain SVG rectangles, numbered circles, basic pitch lines, snapshot-replay only — no live SSE drive yet, no aesthetic polish). Pretty visualiser tomorrow as a focused styling sprint with Direction 2 BBC Sport restrained aesthetic.
+3. **Visualiser scope (built)**: ugly-but-functional — plain SVG, numbered circles, basic pitch lines, snapshot-replay only. Aesthetic polish (Direction 2 BBC Sport restrained) is a deferred future sprint.
 4. **Determinism**: seeded RNG, same approach as existing characterisation script
 5. **Targets** (across 50 seeds):
    - 8-12 shots per second-half
@@ -121,58 +163,66 @@ The Atatürk's game-specific work (player creator, intent toggles, half-time tea
    - 4-8 fouls per second-half
    - 1-3 cards per match
 
-## Engine adapter contract (currently)
+## Engine adapters (current state)
 
-The current adapter (`packages/engine/src/engine/adapter.ts`) exposes:
-```typescript
-initiateGame(team1: TeamInput, team2: TeamInput, pitch: Pitch): Promise<MatchDetails>
-playIteration(matchDetails: MatchDetails): Promise<MatchDetails>
-startSecondHalf(matchDetails: MatchDetails): Promise<MatchDetails>
-```
+### Old engine (still active in /match route)
+The legacy adapter (`packages/engine/src/engine/adapter.ts`) wraps third-party `footballsimulationengine` v4.0.0:
+- `initiateGame(team1, team2, pitch): Promise<MatchDetails>`
+- `playIteration(matchDetails): Promise<MatchDetails>`
+- `startSecondHalf(matchDetails): Promise<MatchDetails>`
 
-Per Gemini's integration map: most of the codebase is well-decoupled from the engine internals through this adapter. Three files have **behaviour-dependent** coupling that would need rework:
-- `server/src/match/half-time-state.ts` (mutates engine internals directly)
-- `server/src/match/events.ts` (diffs engine statistics structure for events)
-- `server/src/match/characterise.ts` (mutates `player.skill.tackling` etc.)
+Used by the existing /match route. Will be replaced when Atatürk integrates the new engine.
 
-These will need touching when the new engine lands, but the rest of the stack (adapter, orchestrator, SSE route, web frontend) is mostly adapter-shaped and will swap cleanly.
+### New custom engine
+The custom match engine (`packages/match-engine/`) public API:
+- `simulateMatch(config: MatchConfig): MatchSnapshot` — synchronous full-match simulation
+- `simulateMatchStream(config, options)` — async generator for live SSE
+- Accepts MatchConfig with Team[home, away], duration ('full_90' | 'second_half'), seed, optional preMatchScore, preMatchStats, rosters
+
+Per Gemini's integration map: three files in the existing codebase are behaviour-dependent on the OLD engine and would need rework when migrating Atatürk to the new engine:
+- `server/src/match/half-time-state.ts` (mutates old engine internals)
+- `server/src/match/events.ts` (diffs old engine statistics structure)
+- `server/src/match/characterise.ts` (mutates old engine player skills directly)
+
+Other coupling (orchestrator, SSE route, frontend) is largely adapter-shaped and will swap cleanly.
 
 ## Forum state
 
-Three posts live on SCM thread:
-1. Original pitch ("right, hear me out")
-2. Player Manager reveal ("what if you could add yourself")
-3. Second-half pivot ("the game starts at half-time")
+- Forum still mostly quiet; no actionable feedback to triage. Last visited 1 May 10:45 SAST.
 
-Plus the static player-ratings page shared. Forum is small, "a few people saying they would play it." No urgent feedback action needed.
+## What we're doing NOW (1 May 2026)
 
-## What we're doing NOW (after this doc lands)
+Engine refinement phase, deliberately deferring Atatürk integration. Specifically:
 
-Starting the **engine + visualiser design conversation** in this chat. Specifically:
+**Just completed (this morning):**
+- Rich event vocabulary expansion sprint (possession_change cause taxonomy, pass events with selective emission, shot/save/foul detail enrichment)
+- 0% outcome drift verified across 50 seeds
+- v2 attribute bridge sprint landed: FC25-style v2 schema, adapter, v2 snapshot metadata, weak-foot-aware shot modifiers, v1 byte-identical preservation
 
-1. Engine architecture design (phase model, tick model, probability framework, tactical hooks, position output strategy, calibration loop)
-2. Visualiser scope (snapshot replay, ugly but functional)
-3. Then drafting a comprehensive Codex implementation prompt
-4. Codex builds engine + visualiser today
-5. Tomorrow: aesthetic polish on the visualiser (Direction 2 styling)
+**Next engine work:**
+- Responsiveness testing (tactical config matrix, sub scenarios, "wonder player" buff test)
+- Commentary layer (LLM-driven, Marlow & Pearce voices)
+- TTS layer
+- Atatürk integration with new engine
+- Match HUD design (Direction 2 BBC Sport restrained styling)
+- Pre-match flow (dressing room, team talk, sub bank, sub-self-on)
 
-After that:
-- Re-integrate engine with The Atatürk's game-specific layers (half-time state builder, tactics, characterisation)
-- Then commentary layer (LLM-driven Marlow & Pearce voices)
-- Then TTS
-- Then match HUD design
-- Then pre-match flow (dressing room, team talk, sub bank, optional sub-self-on)
+**Pacing**: UAT-first discipline. Run UAT on the v2-capable engine before responsiveness testing. After responsiveness testing, decide whether more engine work or commentary work comes next.
 
-Realistic v0.1 ship: 1-2 weeks of focused work given current pace.
+**Realistic v0.1 ship**: still 1-2 weeks of focused work, contingent on engine work landing cleanly and Atatürk integration happening cleanly.
 
 ## Active backlog highlights
 
+- Engine responsiveness testing harness (next engine sprint)
+- Re-verify match-engine calibration when first real FC25-distributed v2 dataset lands
+- Commentary layer with Marlow & Pearce voices (deferred until responsiveness testing complete)
+- TTS layer (Gemini TTS or ElevenLabs) — provider-swappable
+- Visualiser polish (Direction 2 BBC Sport restrained aesthetic) — deferred styling sprint
 - Squad-swap mechanic as v0.1 unlock (after first canonical win, swap up to 3 Liverpool↔Milan players, no swap costs)
 - Diving/simulation toggle (v0.1.5+, requires wrapper-side contact-in-box detection)
 - Penalty shootout result fields in fixtures table
 - Pirlo penalty_taking calibration concern (LLM gave him 92, higher than real-world expectation)
 - Persistent player progression v0.2+
-- Engine realism characterisation test
 - SkillRating string→number normalisation
 - Half-time historical state (exact stats decision deferred)
 - Extract shared types package (when API duplication grows)
@@ -180,8 +230,8 @@ Realistic v0.1 ship: 1-2 weeks of focused work given current pace.
 
 ## Session-specific context worth preserving
 
-- Mo's pace: 22-26 hours from empty repo to current state. Realistic v0.1 ship is 1-2 weeks at this rate.
-- Style: plan-then-execute discipline, paste verbatim, single commits per logical unit, en-GB throughout
+- Mo's pace: ~30 hours from empty repo to current state including custom engine and visualiser. Realistic v0.1 ship: 1-2 weeks at this rate.
+- UAT workflow: Mo records gameplay sessions with Kazam (screen + microphone audio narration). Gemini 3.1 Pro Preview agent in AI Studio acts as UAT analyst, transcribing audio verbatim and producing structured feedback reports. Two cycles completed; reports valuable for triage.
 - Dev agents: Codex (primary), Gemini 3.1 Pro Preview in Antigravity Plan Mode (analysis/diagnostic tasks), Claude Code Sonnet 4 (backup). Gemini has shown a tendency to dive into edits without authorisation; mitigate via Plan Mode.
 - Repo recently flipped from public to private and back per Mo's preference
 
@@ -196,4 +246,12 @@ Realistic v0.1 ship: 1-2 weeks of focused work given current pace.
 
 ## Honest project status
 
-The hard part — orchestration plumbing, data, LLM derivation, admin tooling — is done and working. The next sprint (engine + visualiser today) is the make-or-break for whether v0.1 produces watchable football. After that, the path to v0.1 is clearer than it's been.
+Custom match engine is real, calibrated, and producing watchable football. Vocabulary is rich. UAT pipeline functional. Engine is reaching standalone-product quality independent of The Atatürk.
+
+Two paths remain converging:
+- v2-capable engine then responsiveness testing → engine maturity
+- Atatürk integration sprint sequence → v0.1 game ship
+
+Current decision: prioritise engine maturity. Atatürk waits.
+
+Mo has stayed disciplined throughout — plan-then-execute, no premature integration, willing to pivot when needed (engine standalone, FC25 schema, bridge approach).

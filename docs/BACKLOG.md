@@ -68,20 +68,14 @@ same match texture. When the first real v2/FC25-style dataset lands, rerun
 50-seed characterisation and recalibrate if shots, goals, fouls, cards or score
 distribution drift.
 
-### Engine v2.0 — FC25-compatible attribute schema
-Migrate from current 10-attribute model to ~36-attribute FC25-style schema.
-Enables direct FC25 data ingestion, modern team simulations, real-world match
-validation against FBref data.
+### ~~Engine v2.0 — FC25-compatible attribute bridge~~ ✅ Done
+Bridge landed in `packages/match-engine`: FC25-style v2 input types, v2→v1
+adapter, v2 snapshot metadata preservation, and weak-foot-aware preferred-foot
+shot logic. Engine probability internals remain on the calibrated v1 schema.
 
-Triggers consideration: The Atatürk v0.1 has shipped, engine is responsiveness-
-tested, integration with Atatürk is stable.
-
-Sub-tasks:
-- Define new attribute schema (mostly mirrors FC25)
-- Map engine probability rolls to multi-attribute combos
-- Separate goalkeeper attribute set
-- Build attribute conversion utility (v1 schema → v2 schema for backwards compat)
-- Optional Atatürk migration from v1 to v2 attribute schema
+Deferred follow-ups now tracked separately:
+- Re-verify calibration with the first real FC25-distributed v2 dataset
+- Optional Atatürk migration from v1 to v2 player data
 - FBref data ingestion module
 - Real-world match validation harness
 

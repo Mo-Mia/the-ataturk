@@ -7,7 +7,7 @@
 | Layer | Choice | Rationale |
 |---|---|---|
 | Frontend | Vite + React + TypeScript | Mo's daily stack; fastest dev loop |
-| Match engine | `footballsimulationengine` (npm) | Sophisticated existing engine; wrap, don't fork |
+| Match engine | Legacy `/match`: `footballsimulationengine`; standalone package: `@the-ataturk/match-engine` | Existing game route remains stable while the custom engine matures independently |
 | Backend | Node | Engine is Node-native; one language across stack |
 | Database | SQLite | Zero-config local dev; right shape for portable saves |
 | LLM (per-event commentary) | Gemini 3 Flash (`gemini-3-flash-preview`) | Pro intelligence, Flash price; free tier |
@@ -20,7 +20,16 @@
 | Lead dev agent | Codex CLI (GPT-5.4) | Primary implementer |
 | Backup dev agent | Claude Code 4.6 | Second-opinion / sanity checks |
 
-## Match engine: wrap, don't fork
+## Match engines
+
+The project currently has two match-engine paths:
+
+- **Legacy Atatürk route**: `/match` still uses `packages/engine`, the typed wrapper around `footballsimulationengine`. This keeps the playable vertical slice stable.
+- **New standalone engine**: `packages/match-engine` is the custom TypeScript engine used for snapshot generation, visualiser replay, calibration, and future Atatürk integration.
+
+Integration of the new engine into the game-specific `/match` route is deliberately parked until the standalone engine has passed responsiveness testing.
+
+### Legacy engine: wrap, don't fork
 
 `footballsimulationengine` (Aiden Gallagher, MIT, v5.0.0 March 2026) is the foundation. Three-function API:
 
@@ -41,6 +50,17 @@ Forking buys flexibility now at the cost of permanent maintenance debt. Wrapping
 The engine doesn't have a built-in 90-minute clock. We define the mapping ourselves. Initial proposal: **1 iteration = 6 seconds of match time, 900 iterations per match**. Tunable based on what produces good commentary pacing — too many iterations and commentary feels twitchy; too few and the sim loses fidelity.
 
 For v0.1, the match starts at half-time rather than kickoff. `ITERATIONS_PER_HALF` effectively becomes `ITERATIONS_FOR_MATCH`: the playable canonical segment is one 45-minute half, currently 450 iterations, plus extra time and penalties if the second half produces parity. The match state is pre-populated with the historical first-half score and context: Liverpool 0-3 Milan, Maldini 1', Crespo 39', Crespo 44', and plausible first-half shot/possession statistics. The engine still runs by repeated `playIteration` calls; the wrapper/orchestration layer owns the historical state injection.
+
+### Custom engine boundary
+
+The custom engine exposes `simulateMatch(config)` for deterministic snapshot generation and `simulateMatchStream(config, { signal })` for future SSE integration. It uses 3-second ticks, 900 ticks per half, possession-zone state, calibrated stochastic action resolution, and emits rich semantic events plus positional snapshots for the visualiser.
+
+The engine boundary accepts both:
+
+- **v1 players**: the current 10-attribute schema used by The Atatürk's existing data.
+- **v2 players**: FC25-style attributes, preferred foot, weak-foot rating, skill-moves rating, and GK-specific attributes.
+
+The bridge architecture keeps engine internals on the calibrated v1 schema. V2 inputs are adapted to v1 at initialisation, while full v2 metadata is preserved on snapshot rosters for future commentary/UI consumers. Preferred-foot logic is the only v2 field currently consumed directly by match resolution.
 
 ## Tactics layer (we build this)
 
