@@ -65,6 +65,8 @@ export function VisualiserPage() {
   }
 
   const events = snapshot ? eventsUntil(snapshot.ticks, tickIndex) : [];
+  const recentGoal =
+    snapshot && currentTick ? recentGoalEvent(snapshot.ticks, tickIndex, currentTick) : null;
 
   return (
     <main style={styles.page}>
@@ -102,7 +104,16 @@ export function VisualiserPage() {
           }}
         >
           {snapshot && currentTick ? (
-            <Pitch snapshot={snapshot} tick={currentTick} />
+            <div style={styles.pitchWrap}>
+              <Pitch snapshot={snapshot} tick={currentTick} />
+              {recentGoal ? (
+                <GoalOverlay
+                  snapshot={snapshot}
+                  event={recentGoal.event}
+                  score={recentGoal.score}
+                />
+              ) : null}
+            </div>
           ) : (
             <p style={styles.empty}>Drop a MatchSnapshot JSON file here.</p>
           )}
@@ -239,6 +250,28 @@ function Pitch({ snapshot, tick }: { snapshot: MatchSnapshot; tick: MatchTick })
         style={styles.moving}
       />
     </svg>
+  );
+}
+
+function GoalOverlay({
+  snapshot,
+  event,
+  score
+}: {
+  snapshot: MatchSnapshot;
+  event: SemanticEvent;
+  score: { home: number; away: number };
+}) {
+  const opponent =
+    event.team === "home" ? snapshot.meta.awayTeam.shortName : snapshot.meta.homeTeam.shortName;
+
+  return (
+    <div style={styles.goalOverlay} role="status" aria-live="polite">
+      <strong>GOAL!</strong> {teamName(snapshot, event.team)} {score.home}-{score.away} {opponent}
+      {" | scored by "}
+      {event.playerId ? playerName(snapshot, event.team, event.playerId) : "unknown"} at{" "}
+      {event.minute}:{String(event.second).padStart(2, "0")}
+    </div>
   );
 }
 
@@ -391,6 +424,45 @@ function eventsUntil(ticks: MatchTick[], tickIndex: number): SemanticEvent[] {
   return ticks.slice(0, tickIndex + 1).flatMap((tick) => tick.events);
 }
 
+function recentGoalEvent(
+  ticks: MatchTick[],
+  tickIndex: number,
+  currentTick: MatchTick
+): { event: SemanticEvent; score: { home: number; away: number } } | null {
+  const recentTicks = ticks.slice(Math.max(0, tickIndex - 4), tickIndex + 1);
+
+  for (let index = recentTicks.length - 1; index >= 0; index -= 1) {
+    const event = recentTicks[index]!.events.slice()
+      .reverse()
+      .find((candidate) => isGoalEvent(candidate));
+    if (event) {
+      return { event, score: scoreFromGoalEvent(event) ?? currentTick.score };
+    }
+  }
+
+  return null;
+}
+
+function isGoalEvent(event: SemanticEvent): boolean {
+  return event.type === "goal_scored" || event.type === "goal";
+}
+
+function scoreFromGoalEvent(event: SemanticEvent): { home: number; away: number } | null {
+  const score = event.detail?.score;
+  if (
+    typeof score === "object" &&
+    score !== null &&
+    "home" in score &&
+    "away" in score &&
+    typeof score.home === "number" &&
+    typeof score.away === "number"
+  ) {
+    return { home: score.home, away: score.away };
+  }
+
+  return null;
+}
+
 function formatClock(tick: MatchTick): string {
   return `${tick.matchClock.minute}:${String(tick.matchClock.seconds).padStart(2, "0")}`;
 }
@@ -421,6 +493,11 @@ function formatEventDetail(event: SemanticEvent): string {
     return `(${outcome}${distance}${band})`;
   }
 
+  if (isGoalEvent(event)) {
+    const score = event.detail?.score;
+    return score ? `(${detailScore(score)})` : "";
+  }
+
   if (event.type === "throw_in") {
     return `(${detailString(event.detail.reason, "out of play")})`;
   }
@@ -438,6 +515,21 @@ function formatEventDetail(event: SemanticEvent): string {
 
 function detailString(value: unknown, fallback: string): string {
   return typeof value === "string" || typeof value === "number" ? String(value) : fallback;
+}
+
+function detailScore(value: unknown): string {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "home" in value &&
+    "away" in value &&
+    typeof value.home === "number" &&
+    typeof value.away === "number"
+  ) {
+    return `${value.home}-${value.away}`;
+  }
+
+  return "";
 }
 
 function validateSnapshot(snapshot: MatchSnapshot): void {
@@ -500,7 +592,30 @@ const styles = {
     background: "#203027"
   },
   empty: { color: "#c7d0ca" },
+  pitchWrap: {
+    position: "relative" as const,
+    height: "100%",
+    maxWidth: "100%",
+    display: "flex",
+    justifyContent: "center"
+  },
   pitch: { height: "100%", maxWidth: "100%", display: "block" },
+  goalOverlay: {
+    position: "absolute" as const,
+    top: "20px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    minWidth: "320px",
+    maxWidth: "calc(100% - 32px)",
+    padding: "14px 18px",
+    textAlign: "center" as const,
+    background: "#f5f7f5",
+    color: "#111",
+    border: "3px solid #f4c542",
+    fontSize: "20px",
+    fontWeight: 700,
+    boxShadow: "0 8px 18px rgba(0, 0, 0, 0.35)"
+  },
   moving: { transition: "cx 0.3s linear, cy 0.3s linear, x 0.3s linear, y 0.3s linear" },
   controls: { marginTop: "12px", display: "flex", alignItems: "center", gap: "12px" },
   button: { height: "34px", minWidth: "72px" },

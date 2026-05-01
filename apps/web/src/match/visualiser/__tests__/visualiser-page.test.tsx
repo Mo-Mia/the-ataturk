@@ -24,6 +24,32 @@ describe("VisualiserPage", () => {
     expect(screen.getAllByText(/45:03/).length).toBeGreaterThan(0);
     expect(screen.getByText(/shot/)).toBeTruthy();
   });
+
+  it("shows a prominent goal overlay for recent goal events", async () => {
+    const snapshot = createSnapshot();
+    snapshot.ticks[0]!.score = { home: 1, away: 3 };
+    snapshot.ticks[0]!.events = [
+      {
+        type: "goal_scored",
+        team: "home",
+        playerId: "h1",
+        minute: 45,
+        second: 3,
+        detail: { score: { home: 1, away: 3 } }
+      }
+    ];
+    const file = new File([JSON.stringify(snapshot)], "snapshot.json", {
+      type: "application/json"
+    });
+
+    render(<VisualiserPage />);
+
+    const input = screen.getByLabelText("Load snapshot JSON");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText(/GOAL!/)).toBeTruthy());
+    expect(screen.getByText(/scored by HF at 45:03/)).toBeTruthy();
+  });
 });
 
 function createSnapshot(): MatchSnapshot {
