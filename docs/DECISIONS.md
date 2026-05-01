@@ -4,6 +4,11 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-01 — v2 attribute bridge preserves v1 calibration and isolates weak-foot behaviour
+The match engine now accepts FC25-style v2 player attributes, adapts them to the calibrated v1 schema internally, and preserves v2 metadata on snapshots. V1 inputs remain byte-identical on representative snapshot diff and unchanged across the 50-seed characterisation aggregate. The neutral v2 characterisation first exposed synthetic adapter-distribution drift (cards 0.96 vs target floor 1.0), so the synthetic v2 generator was tightened to preserve the original v1 bridge values before measuring weak-foot behaviour. Rated weak-foot v2 characterisation passed targets, with a small observed fouls/cards uptick (4.80 → 5.14 fouls, 1.20 → 1.26 cards) that is within bounds but unexplained; possible mechanism is altered shot/save outcomes creating more possession contests. Future shot-resolution calibration should watch that number.
+
+---
+
 ## 2026-04-30 — Patching `footballsimulationengine` upstream bug (truthiness in discovery)
 A critical null-reference crash was discovered in `lib/actions.js` where `index` results from `findIndex` were checked for truthiness (`if (index)`) instead of existence (`if (index > -1)`). This caused crashes on non-discovery (-1 is truthy) and silent failures for the first player in any roster (0 is falsy). Given the engine's age and our "wrap, don't fork" strategy, we have applied a direct local patch to `node_modules`. Long-term strategy: use `patch-package` to maintain the patch or fork if further stability issues arise. See `docs/CHARACTERISATION.md`.
 

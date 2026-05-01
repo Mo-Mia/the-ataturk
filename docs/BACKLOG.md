@@ -60,6 +60,14 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
+### Re-verify match-engine calibration with first real v2 dataset
+The v2 bridge was verified with a synthetic generator deliberately shaped to
+preserve v1 calibration values. That was correct for isolating preferred-foot
+behaviour, but it does not prove that real FC25-distributed inputs preserve the
+same match texture. When the first real v2/FC25-style dataset lands, rerun
+50-seed characterisation and recalibrate if shots, goals, fouls, cards or score
+distribution drift.
+
 ### Engine v2.0 — FC25-compatible attribute schema
 Migrate from current 10-attribute model to ~36-attribute FC25-style schema.
 Enables direct FC25 data ingestion, modern team simulations, real-world match
