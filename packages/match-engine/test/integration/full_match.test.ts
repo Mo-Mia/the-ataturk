@@ -14,6 +14,13 @@ describe("simulateMatch", () => {
     expect(first.ticks[0]?.attackMomentum).toEqual({ home: 0, away: 0 });
     expect(first.ticks[0]?.possessionStreak?.teamId).toMatch(/^(home|away)$/);
     expect(first.ticks[0]?.possessionStreak?.ticks).toBe(1);
+    const homeShape = first.ticks[0]?.diagnostics?.shape.home;
+    expect(homeShape?.activePlayers).toBe(11);
+    expect(typeof homeShape?.oppositionHalfPlayers).toBe("number");
+    expect(typeof homeShape?.ballSidePlayers).toBe("number");
+    expect(typeof homeShape?.lineHeight.team).toBe("number");
+    expect(typeof homeShape?.spread.compactness).toBe("number");
+    expect(typeof homeShape?.thirds.defensive).toBe("number");
     expect(first.ticks.at(-1)?.matchClock).toEqual({ half: 2, minute: 90, seconds: 0 });
     const fullTimeEvent = first.ticks.at(-1)?.events.at(-1);
     expect(fullTimeEvent?.type).toBe("full_time");
@@ -52,6 +59,13 @@ describe("simulateMatch", () => {
             tick.players.find((player) => player.id === playerId)?.onPitch,
             `seed ${seed}: ${playerId} stayed on the pitch`
           ).toBe(false);
+          const sentOffTeam = tick.players.find((player) => player.id === playerId)?.teamId;
+          if (sentOffTeam) {
+            expect(
+              tick.diagnostics?.shape[sentOffTeam].activePlayers,
+              `seed ${seed}: diagnostics did not exclude ${playerId}`
+            ).toBeLessThanOrEqual(10);
+          }
         });
       });
     }

@@ -226,7 +226,37 @@ export interface MatchTick {
   possession: { teamId: TeamId | null; zone: Zone };
   attackMomentum?: { home: number; away: number };
   possessionStreak?: { teamId: TeamId | null; ticks: number };
+  diagnostics?: MatchTickDiagnostics;
   events: SemanticEvent[];
+}
+
+export interface MatchTickDiagnostics {
+  shape: {
+    home: TeamShapeDiagnostics;
+    away: TeamShapeDiagnostics;
+  };
+}
+
+export interface TeamShapeDiagnostics {
+  activePlayers: number;
+  lineHeight: {
+    team: number;
+    defence: number | null;
+    midfield: number | null;
+    attack: number | null;
+  };
+  spread: {
+    width: number;
+    depth: number;
+    compactness: number;
+  };
+  thirds: {
+    defensive: number;
+    middle: number;
+    attacking: number;
+  };
+  oppositionHalfPlayers: number;
+  ballSidePlayers: number;
 }
 
 export interface SemanticEvent {

@@ -1,6 +1,8 @@
 import {
   CALIBRATION_TARGETS,
   DETERMINISTIC_GENERATED_AT,
+  PITCH_LENGTH,
+  PITCH_WIDTH,
   TICKS_PER_FULL_MATCH,
   TICKS_PER_HALF
 } from "./calibration/constants";
@@ -16,6 +18,8 @@ import type {
   PlayerInputV2,
   SnapshotRosterPlayer,
   Team,
+  TeamId,
+  TeamShapeDiagnostics,
   TeamStatistics,
   TeamV2
 } from "./types";
@@ -51,6 +55,12 @@ export function toMatchTick(state: MutableMatchState): MatchTick {
     possession: { teamId: state.possession.teamId, zone: state.possession.zone },
     attackMomentum: { ...state.attackMomentum },
     possessionStreak: { ...state.possessionStreak },
+    diagnostics: {
+      shape: {
+        home: teamShapeDiagnostics(state, "home"),
+        away: teamShapeDiagnostics(state, "away")
+      }
+    },
     events: state.eventsThisTick.map(cloneEvent)
   };
 }
@@ -136,4 +146,102 @@ function cloneEvent(event: import("./types").SemanticEvent): import("./types").S
     ...(event.playerId ? { playerId: event.playerId } : {}),
     ...(event.detail ? { detail: structuredClone(event.detail) } : {})
   };
+}
+
+function teamShapeDiagnostics(state: MutableMatchState, teamId: TeamId): TeamShapeDiagnostics {
+  const players = state.players.filter((player) => player.teamId === teamId && player.onPitch);
+  const normalisedY = players.map((player) => normaliseY(teamId, player.position[1]));
+  const xs = players.map((player) => player.position[0]);
+  const centroid = centroidFor(players.map((player) => player.position));
+  const ballSide = state.ball.position[0] < PITCH_WIDTH / 2 ? "left" : "right";
+
+  return {
+    activePlayers: players.length,
+    lineHeight: {
+      team: roundedAverage(normalisedY) ?? 0,
+      defence: roundedAverage(lineY(players, teamId, "defence")),
+      midfield: roundedAverage(lineY(players, teamId, "midfield")),
+      attack: roundedAverage(lineY(players, teamId, "attack"))
+    },
+    spread: {
+      width: roundedRange(xs),
+      depth: roundedRange(normalisedY),
+      compactness: Math.round(
+        average(
+          players.map(
+            (player) =>
+              ((player.position[0] - centroid[0]) ** 2 + (player.position[1] - centroid[1]) ** 2) **
+              0.5
+          )
+        )
+      )
+    },
+    thirds: thirdsFor(normalisedY),
+    oppositionHalfPlayers: normalisedY.filter((y) => y > PITCH_LENGTH / 2).length,
+    ballSidePlayers: players.filter((player) =>
+      ballSide === "left"
+        ? player.position[0] < PITCH_WIDTH / 2
+        : player.position[0] >= PITCH_WIDTH / 2
+    ).length
+  };
+}
+
+function lineY(
+  players: MutableMatchState["players"],
+  teamId: TeamId,
+  line: "defence" | "midfield" | "attack"
+): number[] {
+  return players
+    .filter((player) => playerLine(player.baseInput.position) === line)
+    .map((player) => normaliseY(teamId, player.position[1]));
+}
+
+function playerLine(position: import("./types").Position): "defence" | "midfield" | "attack" {
+  if (["GK", "CB", "LB", "RB"].includes(position)) {
+    return "defence";
+  }
+  if (["ST", "LW", "RW"].includes(position)) {
+    return "attack";
+  }
+  return "midfield";
+}
+
+function normaliseY(teamId: TeamId, y: number): number {
+  return teamId === "home" ? y : PITCH_LENGTH - y;
+}
+
+function thirdsFor(normalisedY: number[]): TeamShapeDiagnostics["thirds"] {
+  return {
+    defensive: normalisedY.filter((y) => y < PITCH_LENGTH / 3).length,
+    middle: normalisedY.filter((y) => y >= PITCH_LENGTH / 3 && y <= (PITCH_LENGTH * 2) / 3).length,
+    attacking: normalisedY.filter((y) => y > (PITCH_LENGTH * 2) / 3).length
+  };
+}
+
+function centroidFor(points: Array<[number, number]>): [number, number] {
+  if (points.length === 0) {
+    return [PITCH_WIDTH / 2, PITCH_LENGTH / 2];
+  }
+  return [
+    points.reduce((sum, point) => sum + point[0], 0) / points.length,
+    points.reduce((sum, point) => sum + point[1], 0) / points.length
+  ];
+}
+
+function roundedAverage(values: number[]): number | null {
+  return values.length === 0 ? null : Math.round(average(values));
+}
+
+function average(values: number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function roundedRange(values: number[]): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  return Math.round(Math.max(...values) - Math.min(...values));
 }
