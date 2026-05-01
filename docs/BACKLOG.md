@@ -60,6 +60,23 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
+### Engine v2.0 — FC25-compatible attribute schema
+Migrate from current 10-attribute model to ~36-attribute FC25-style schema.
+Enables direct FC25 data ingestion, modern team simulations, real-world match
+validation against FBref data.
+
+Triggers consideration: The Atatürk v0.1 has shipped, engine is responsiveness-
+tested, integration with Atatürk is stable.
+
+Sub-tasks:
+- Define new attribute schema (mostly mirrors FC25)
+- Map engine probability rolls to multi-attribute combos
+- Separate goalkeeper attribute set
+- Build attribute conversion utility (v1 schema → v2 schema for backwards compat)
+- Optional Atatürk migration from v1 to v2 attribute schema
+- FBref data ingestion module
+- Real-world match validation harness
+
 ### Normalise `SkillRating` at the engine boundary
 The engine's player skill values are typed as `number | string` because
 the engine README has loose typing in its examples. This propagates
