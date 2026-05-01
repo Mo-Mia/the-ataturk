@@ -1,10 +1,7 @@
 import { listFixtures } from "@the-ataturk/data";
 import type { FastifyInstance, FastifyReply } from "fastify";
-import { playIteration } from "@the-ataturk/engine";
-import { withEngineConsoleMuted } from "@the-ataturk/engine/internal/silence";
-import type { MatchSnapshot, MatchTick as CustomMatchTick } from "@the-ataturk/match-engine";
 
-import { FAST_FORWARD_ITERATION_DELAY_MS, ITERATIONS_PER_HALF } from "../config";
+import { FAST_FORWARD_ITERATION_DELAY_MS } from "../config";
 import { buildHalfTimeMatchState } from "../match/half-time-state";
 import { iterateMatch, toFinalMatchSummary, type MatchTick } from "../match/orchestrator";
 
@@ -25,74 +22,6 @@ const DEFAULT_FIXTURE_ID = "final-2005";
 const DEFAULT_DATASET_VERSION = "v2-llm-derived-final";
 
 export function registerMatchRoute(app: FastifyInstance): void {
-  app.get("/api/match/snapshot/fse", async (request, reply) => {
-    try {
-      const matchDetails = await buildHalfTimeMatchState("liverpool", "ac-milan", DEFAULT_DATASET_VERSION);
-      const ticks: CustomMatchTick[] = [];
-      let current = matchDetails;
-
-      for (let iteration = 1; iteration <= ITERATIONS_PER_HALF; iteration++) {
-        const mins = 45 + Math.floor((iteration * 3) / 60);
-        const secs = (iteration * 3) % 60;
-        
-        ticks.push({
-          iteration,
-          matchClock: { half: 2, minute: mins, seconds: secs },
-          ball: {
-            position: [current.ball.position[0], current.ball.position[1], current.ball.position[2] ?? 0],
-            inFlight: false,
-            carrierPlayerId: current.ball.withPlayer ? String(current.ball.Player) : null
-          },
-          players: [
-            ...current.kickOffTeam.players.map(p => ({
-              id: String(p.playerID),
-              teamId: "home" as const,
-              position: [p.currentPOS[0], p.currentPOS[1]] as [number, number],
-              hasBall: p.hasBall,
-              onPitch: !p.injured && p.stats.cards.red === 0
-            })),
-            ...current.secondTeam.players.map(p => ({
-              id: String(p.playerID),
-              teamId: "away" as const,
-              position: [p.currentPOS[0], p.currentPOS[1]] as [number, number],
-              hasBall: p.hasBall,
-              onPitch: !p.injured && p.stats.cards.red === 0
-            }))
-          ],
-          score: {
-            home: Number(current.kickOffTeamStatistics.goals),
-            away: Number(current.secondTeamStatistics.goals)
-          },
-          possession: {
-            teamId: current.ball.withPlayer ? (String(current.ball.withTeam) === String(current.kickOffTeam.teamID) ? "home" : "away") : null,
-            zone: "mid"
-          },
-          events: []
-        });
-
-        current = await withEngineConsoleMuted(() => playIteration(current));
-      }
-
-      const snap: MatchSnapshot = {
-        meta: {
-          homeTeam: { id: "home", name: "Liverpool", shortName: "LIV" },
-          awayTeam: { id: "away", name: "Milan", shortName: "MIL" },
-          seed: 1, duration: "second_half", preMatchScore: { home: 0, away: 3 }, generatedAt: new Date().toISOString(), targets: { shotsTarget: [0,0], goalsTarget: [0,0], foulsTarget: [0,0], cardsTarget: [0,0] }
-        },
-        ticks,
-        finalSummary: {
-          finalScore: { home: Number(current.kickOffTeamStatistics.goals), away: Number(current.secondTeamStatistics.goals) },
-          statistics: { home: {} as any, away: {} as any }
-        }
-      };
-
-      reply.send(snap);
-    } catch (e) {
-      app.log.error(e);
-      reply.code(500).send({ error: "FSE adapter failed" });
-    }
-  });
-
   app.post<{ Body: unknown; Querystring: MatchRunQuery }>(
     "/api/match/run",
     async (request, reply) => {
