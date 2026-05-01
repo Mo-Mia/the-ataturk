@@ -12,7 +12,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "characterise": "tsx scripts/characterise.ts"
+    "characterise": "tsx scripts/characterise.ts",
+    "forced-second-yellow": "tsx scripts/forcedSecondYellow.ts"
   },
   "devDependencies": {
     "tsx": "4.21.0",
