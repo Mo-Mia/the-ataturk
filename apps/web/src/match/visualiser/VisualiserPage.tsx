@@ -538,6 +538,16 @@ function formatEventDetail(snapshot: MatchSnapshot, event: SemanticEvent): strin
     return parts.length > 0 ? `(${parts.join(", ")})` : "";
   }
 
+  if (event.type === "carry") {
+    const parts = [
+      detailString(event.detail.carryType, ""),
+      event.detail.progressive === true ? "progressive" : "",
+      detailString(event.detail.flank, ""),
+      zoneLabel(event.detail.zone)
+    ].filter(Boolean);
+    return parts.length > 0 ? `(${parts.join(", ")})` : "";
+  }
+
   if (event.type === "throw_in") {
     return `(${detailString(event.detail.reason, "out of play")})`;
   }

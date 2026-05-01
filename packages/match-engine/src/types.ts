@@ -39,7 +39,7 @@ export type SaveQuality = "routine" | "good" | "spectacular";
 export type SaveResult = "caught" | "parried_safe" | "parried_dangerous";
 export type FoulSeverity = "minor" | "cynical" | "reckless";
 export type TackleType = "standing" | "sliding";
-export type PassType = "short" | "long" | "through_ball" | "cross" | "switch" | "back";
+export type PassType = "short" | "long" | "through_ball" | "cross" | "cutback" | "switch" | "back";
 
 export interface PlayerAttributes {
   passing: number;
@@ -232,6 +232,7 @@ export interface SemanticEvent {
     | "goal"
     | "goal_scored"
     | "shot"
+    | "carry"
     | "pass"
     | "save"
     | "foul"

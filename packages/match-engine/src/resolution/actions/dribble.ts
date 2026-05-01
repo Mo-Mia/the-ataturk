@@ -2,6 +2,7 @@ import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
+import { emitEvent } from "../../ticks/runTick";
 import { clamp2D } from "../../utils/geometry";
 import { flankSide, isWideCarrier } from "../../utils/playerRoles";
 import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
@@ -15,11 +16,15 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
 
   if (state.rng.next() <= successProbability) {
     const direction = attackDirection(carrier.teamId);
+    const previousPosition = carrier.position;
     const nextPosition: [number, number] = isWideCarrier(carrier)
       ? wideDribbleTarget(state, carrier, direction)
       : [carrier.position[0] + (state.rng.next() - 0.5) * 34, carrier.position[1] + direction * 34];
     carrier.position = clamp2D(nextPosition, PITCH_WIDTH, PITCH_LENGTH);
     state.ball.position = [carrier.position[0], carrier.position[1], 0];
+    if (isWideCarrier(carrier)) {
+      emitWideCarryEvent(state, carrier, direction, previousPosition);
+    }
     return;
   }
 
@@ -46,6 +51,26 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
     cause: "failed_dribble",
     previousPossessor: carrier.id,
     zone: zoneForPosition(opponent.teamId, opponent.position)
+  });
+}
+
+function emitWideCarryEvent(
+  state: MutableMatchState,
+  carrier: MutablePlayer,
+  direction: 1 | -1,
+  previousPosition: [number, number]
+): void {
+  const progress = (carrier.position[1] - previousPosition[1]) * direction;
+  const zone = zoneForPosition(carrier.teamId, carrier.position);
+  if (zone !== "att" && progress < 28) {
+    return;
+  }
+
+  emitEvent(state, "carry", carrier.teamId, carrier.id, {
+    carryType: zone === "att" ? "flank_drive" : "wide_progression",
+    progressive: progress >= 28,
+    zone,
+    flank: flankSide(carrier.position[0])
   });
 }
 

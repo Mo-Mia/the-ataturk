@@ -105,6 +105,19 @@ describe("VisualiserPage", () => {
         }
       },
       {
+        type: "carry",
+        team: "home",
+        playerId: "h1",
+        minute: 45,
+        second: 13,
+        detail: {
+          carryType: "flank_drive",
+          progressive: true,
+          flank: "right",
+          zone: "att"
+        }
+      },
+      {
         type: "foul",
         team: "away",
         playerId: "a1",
@@ -150,6 +163,7 @@ describe("VisualiserPage", () => {
     expect(screen.getByText(/intercepted/)).toBeTruthy();
     expect(screen.getByText(/parried safe/)).toBeTruthy();
     expect(screen.getByText(/key pass/)).toBeTruthy();
+    expect(screen.getByText(/flank_drive/)).toBeTruthy();
     expect(screen.getByText(/sliding/)).toBeTruthy();
     expect(screen.getByText(/second booking/)).toBeTruthy();
     expect(screen.getByText(/cause unknown/)).toBeTruthy();

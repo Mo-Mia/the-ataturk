@@ -51,8 +51,9 @@ function selectPassTarget(state: MutableMatchState, carrier: MutablePlayer): Mut
     return null;
   }
 
+  const minimumProgress = isWideFinalThirdCarrier(carrier) ? -135 : -35;
   const progressive = teammates.filter(
-    (player) => (player.position[1] - carrier.position[1]) * direction > -35
+    (player) => (player.position[1] - carrier.position[1]) * direction > minimumProgress
   );
   const pool = progressive.length > 0 ? progressive : teammates;
   const weighted = pool
@@ -152,6 +153,8 @@ function wideCarrierTargetAdjustment(
   const targetCentral = candidate.position[0] > 220 && candidate.position[0] < PITCH_WIDTH - 220;
   const progress = (candidate.position[1] - carrier.position[1]) * direction;
   const targetAttackingZone = zoneForPosition(candidate.teamId, candidate.position) === "att";
+  const targetDistanceBand = shotDistanceContext(candidate.teamId, candidate.position).band;
+  const shotCapableTarget = ["close", "box", "edge"].includes(targetDistanceBand);
 
   let adjustment = 0;
   if (candidateSameFlank && progress > -45) {
@@ -160,11 +163,18 @@ function wideCarrierTargetAdjustment(
   if (targetCentral && progress < 95 && !targetAttackingZone) {
     adjustment -= PASS_TARGET_WEIGHTS.wideToCentralBouncePenalty;
   }
-  if (targetCentral && targetAttackingZone && progress > 25) {
+  if (targetCentral && targetAttackingZone && progress >= -135 && progress <= 35) {
+    adjustment += PASS_TARGET_WEIGHTS.cutbackBonus;
+  }
+  if (targetCentral && targetAttackingZone && progress > 25 && shotCapableTarget) {
     adjustment += PASS_TARGET_WEIGHTS.attackingCrossBonus;
   }
 
   return adjustment;
+}
+
+function isWideFinalThirdCarrier(carrier: MutablePlayer): boolean {
+  return isWideCarrier(carrier) && zoneForPosition(carrier.teamId, carrier.position) === "att";
 }
 
 function forwardRunBonus(
@@ -237,12 +247,15 @@ function classifyPass(
   lateralDistance: number,
   passDistance: number
 ): PassType {
-  const carrierWide = carrier.position[0] < 150 || carrier.position[0] > PITCH_WIDTH - 150;
+  const carrierWide = isWideCarrier(carrier);
   const targetCentral = target.position[0] > 190 && target.position[0] < PITCH_WIDTH - 190;
   const targetAttackingZone = zoneForPosition(target.teamId, target.position) === "att";
   const attackingRole = ["ST", "AM", "LW", "RW", "LM", "RM"].includes(target.baseInput.position);
 
   if (progress < -35) {
+    if (carrierWide && targetCentral && targetAttackingZone && progress >= -135) {
+      return "cutback";
+    }
     return "back";
   }
   if (carrierWide && targetCentral && targetAttackingZone) {

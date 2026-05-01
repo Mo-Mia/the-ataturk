@@ -164,6 +164,13 @@ describe("carrier action selection", () => {
     expect(carrier.position[1]).toBeGreaterThan(550);
     expect(carrier.position[0]).toBeGreaterThan(500);
     expect(state.ball.position).toEqual([carrier.position[0], carrier.position[1], 0]);
+    expect(state.eventsThisTick.find((event) => event.type === "carry")?.detail).toEqual(
+      expect.objectContaining({
+        carryType: "wide_progression",
+        progressive: true,
+        flank: "right"
+      })
+    );
   });
 
   it("prefers same-flank support over low-value central bounce passes from wide areas", () => {
@@ -194,6 +201,43 @@ describe("carrier action selection", () => {
 
     expect(fullBack.hasBall).toBe(true);
     expect(midfielder.hasBall).toBe(false);
+  });
+
+  it("allows wide final-third cutbacks to trailing central runners", () => {
+    const state = buildInitState(createTestConfig(21));
+    const carrier = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "RW"
+    )!;
+    const striker = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "ST"
+    )!;
+    const midfielder = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "CM"
+    )!;
+
+    state.players.forEach((player) => {
+      player.onPitch = [carrier.id, striker.id, midfielder.id].includes(player.id);
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [610, 930];
+    striker.position = [340, 820];
+    midfielder.position = [330, 620];
+    carrier.baseInput.attributes.passing = 100;
+    state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+    state.rng.int = () => 0;
+    state.rng.next = () => 0;
+
+    performPass(state, carrier);
+
+    expect(striker.hasBall).toBe(true);
+    expect(midfielder.hasBall).toBe(false);
+    expect(state.eventsThisTick.find((event) => event.type === "pass")?.detail).toEqual(
+      expect.objectContaining({
+        passType: "cutback",
+        keyPass: true,
+        targetPlayerId: striker.id
+      })
+    );
   });
 
   it("penalises long-range shot selection", () => {
