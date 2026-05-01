@@ -1,11 +1,13 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MatchSnapshot } from "@the-ataturk/match-engine";
 
 import { VisualiserPage } from "../VisualiserPage";
 
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("VisualiserPage", () => {
@@ -239,12 +241,12 @@ describe("VisualiserPage", () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => expect(screen.getByText("LIV 0-3 MIL")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: "Heatmap" }));
+    selectHeatmapView();
 
     expect(screen.getByRole("img", { name: "Ball-position heatmap" })).toBeTruthy();
     expect(screen.getByText(/LIV momentum: 47/)).toBeTruthy();
     expect(screen.getByText(/streak: LIV 12 ticks/)).toBeTruthy();
-    expect(screen.getByText("Shape")).toBeTruthy();
+    expect(screen.getAllByText("Shape").length).toBeGreaterThan(0);
     expect(screen.getByText("LIV active")).toBeTruthy();
     expect(screen.getByText("LIV line")).toBeTruthy();
     expect(screen.getByText("Attacking third")).toBeTruthy();
@@ -269,12 +271,117 @@ describe("VisualiserPage", () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     await waitFor(() => expect(screen.getByText("LIV 0-3 MIL")).toBeTruthy());
-    fireEvent.click(screen.getByRole("button", { name: "Heatmap" }));
+    selectHeatmapView();
 
     expect(screen.getByText(/Momentum: unavailable/)).toBeTruthy();
     expect(screen.getByText(/Shape diagnostics unavailable/)).toBeTruthy();
   });
+
+  it("loads snapshots from the artifact browser", async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL): Promise<Response> => {
+      const url = requestUrl(input);
+
+      if (url === "/api/visualiser/artifacts") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              files: [
+                {
+                  filename: "representative-seed-1-v2.json",
+                  sizeBytes: 1024,
+                  modifiedAt: "2026-05-01T08:00:00.000Z"
+                }
+              ]
+            })
+          )
+        );
+      }
+
+      if (url === "/api/visualiser/artifacts/representative-seed-1-v2.json") {
+        return Promise.resolve(new Response(JSON.stringify(createSnapshot())));
+      }
+
+      return Promise.resolve(new Response("not found", { status: 404 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<VisualiserPage />);
+
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: /representative-seed-1-v2.json/ })).toBeTruthy()
+    );
+
+    fireEvent.change(screen.getByLabelText("Snapshot artifact"), {
+      target: { value: "representative-seed-1-v2.json" }
+    });
+
+    await waitFor(() => expect(screen.getByText("LIV 0-3 MIL")).toBeTruthy());
+    expect(fetchMock).toHaveBeenCalledWith("/api/visualiser/artifacts");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/visualiser/artifacts/representative-seed-1-v2.json"
+    );
+  });
+
+  it("renders player-relative heatmaps split by team possession", async () => {
+    const snapshot = createSnapshot();
+    snapshot.ticks.push({
+      iteration: 2,
+      matchClock: { half: 2, minute: 45, seconds: 6 },
+      ball: { position: [420, 540, 0], inFlight: false, carrierPlayerId: "a1" },
+      players: [
+        { id: "h0", teamId: "home", position: [340, 40], hasBall: false, onPitch: true },
+        { id: "h1", teamId: "home", position: [390, 525], hasBall: false, onPitch: true },
+        { id: "a0", teamId: "away", position: [340, 1010], hasBall: false, onPitch: true },
+        { id: "a1", teamId: "away", position: [420, 540], hasBall: true, onPitch: true }
+      ],
+      score: { home: 0, away: 3 },
+      possession: { teamId: "away", zone: "mid" },
+      events: []
+    });
+    const file = new File([JSON.stringify(snapshot)], "snapshot.json", {
+      type: "application/json"
+    });
+
+    render(<VisualiserPage />);
+
+    const input = screen.getByLabelText("Load snapshot JSON");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText("LIV 0-3 MIL")).toBeTruthy());
+    selectHeatmapView();
+    fireEvent.change(screen.getByLabelText("Heatmap subject"), {
+      target: { value: "player_relative" }
+    });
+    fireEvent.change(screen.getByLabelText("Heatmap player"), { target: { value: "h1" } });
+
+    expect(
+      screen.getByRole("img", { name: "Team in possession relative player heatmap" })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("img", { name: "Team out of possession relative player heatmap" })
+    ).toBeTruthy();
+    expect(screen.getByText(/Relative to ball/)).toBeTruthy();
+    expect(screen.getByText("In possession samples")).toBeTruthy();
+    expect(screen.getByText("Out of possession samples")).toBeTruthy();
+  });
 });
+
+function selectHeatmapView(): void {
+  const viewMode = screen.getByLabelText("Visualiser view mode");
+  fireEvent.click(within(viewMode).getByRole("button", { name: "Heatmap" }));
+}
+
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === "string") {
+    return input;
+  }
+
+  if (input instanceof URL) {
+    return input.toString();
+  }
+
+  return input.url;
+}
 
 function shapeDiagnostics(activePlayers: number, teamLine: number) {
   return {

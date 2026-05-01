@@ -9,7 +9,14 @@ const SPEEDS = [1, 4, 16, "instant"] as const;
 type ReplaySpeed = (typeof SPEEDS)[number];
 type ViewMode = "replay" | "heatmap";
 type HeatmapFilter = "all" | TeamId;
-type HeatmapSubject = "ball" | "home_players" | "away_players" | "all_players";
+type HeatmapSubject = "ball" | "home_players" | "away_players" | "all_players" | "player_relative";
+type InspectorTab = "stats" | "shape" | "heatmap" | "player";
+
+interface ArtifactFile {
+  filename: string;
+  sizeBytes: number;
+  modifiedAt: string;
+}
 
 export function VisualiserPage() {
   const [snapshot, setSnapshot] = useState<MatchSnapshot | null>(null);
@@ -19,6 +26,12 @@ export function VisualiserPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("replay");
   const [heatmapFilter, setHeatmapFilter] = useState<HeatmapFilter>("all");
   const [heatmapSubject, setHeatmapSubject] = useState<HeatmapSubject>("ball");
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("stats");
+  const [artifacts, setArtifacts] = useState<ArtifactFile[]>([]);
+  const [selectedArtifact, setSelectedArtifact] = useState("");
+  const [artifactLoading, setArtifactLoading] = useState(false);
+  const [artifactError, setArtifactError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<number | null>(null);
 
@@ -27,6 +40,11 @@ export function VisualiserPage() {
     () => (snapshot && currentTick ? statsForReplay(snapshot.ticks.slice(0, tickIndex + 1)) : null),
     [currentTick, snapshot, tickIndex]
   );
+  const playerOptions = useMemo(() => (snapshot ? rosterOptions(snapshot) : []), [snapshot]);
+
+  useEffect(() => {
+    void loadArtifacts();
+  }, []);
 
   useEffect(() => {
     if (!playing || !snapshot) {
@@ -62,14 +80,60 @@ export function VisualiserPage() {
     try {
       const parsed = JSON.parse(await file.text()) as MatchSnapshot;
       validateSnapshot(parsed);
-      setSnapshot(parsed);
-      setTickIndex(0);
-      setPlaying(false);
-      setError(null);
+      loadSnapshot(parsed);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Snapshot could not be loaded");
       setSnapshot(null);
     }
+  }
+
+  async function loadArtifacts(): Promise<void> {
+    try {
+      const response = await fetch("/api/visualiser/artifacts");
+      if (!response.ok) {
+        throw new Error(`Artifact list failed with ${response.status}`);
+      }
+      const body = (await response.json()) as { files?: ArtifactFile[] };
+      setArtifacts(Array.isArray(body.files) ? body.files : []);
+      setArtifactError(null);
+    } catch (loadError) {
+      setArtifacts([]);
+      setArtifactError(
+        loadError instanceof Error ? loadError.message : "Artifact list could not be loaded"
+      );
+    }
+  }
+
+  async function handleArtifact(filename: string): Promise<void> {
+    setSelectedArtifact(filename);
+    if (!filename) {
+      return;
+    }
+
+    setArtifactLoading(true);
+    setArtifactError(null);
+    try {
+      const response = await fetch(`/api/visualiser/artifacts/${encodeURIComponent(filename)}`);
+      if (!response.ok) {
+        throw new Error(`Artifact load failed with ${response.status}`);
+      }
+      const parsed = (await response.json()) as MatchSnapshot;
+      validateSnapshot(parsed);
+      loadSnapshot(parsed);
+    } catch (loadError) {
+      setArtifactError(loadError instanceof Error ? loadError.message : "Artifact could not load");
+    } finally {
+      setArtifactLoading(false);
+    }
+  }
+
+  function loadSnapshot(parsed: MatchSnapshot): void {
+    setSnapshot(parsed);
+    setTickIndex(0);
+    setPlaying(false);
+    setError(null);
+    const firstPlayer = firstRosterPlayerId(parsed);
+    setSelectedPlayerId(firstPlayer);
   }
 
   const events = snapshot ? eventsUntil(snapshot.ticks, tickIndex) : [];
@@ -78,8 +142,8 @@ export function VisualiserPage() {
 
   return (
     <main style={styles.page}>
-      <section style={styles.stage} aria-label="Snapshot replay visualiser">
-        <header style={styles.header}>
+      <header style={styles.topBar}>
+        <div style={styles.brandBlock}>
           <div>
             <p style={styles.eyebrow}>Match visualiser</p>
             <h1 style={styles.title}>
@@ -89,49 +153,35 @@ export function VisualiserPage() {
             </h1>
             <p style={styles.clock}>{currentTick ? formatClock(currentTick) : "45:00"}</p>
           </div>
-          <label style={styles.fileButton}>
-            JSON
-            <input
-              aria-label="Load snapshot JSON"
-              type="file"
-              accept="application/json,.json"
-              style={styles.fileInput}
-              onChange={(event) => void handleFile(event.currentTarget.files?.[0])}
-            />
-          </label>
-        </header>
-
-        {error ? <p style={styles.error}>{error}</p> : null}
-
-        <div
-          style={styles.dropZone}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault();
-            void handleFile(event.dataTransfer.files[0]);
-          }}
-        >
-          {snapshot && currentTick ? (
-            <div style={styles.pitchWrap}>
-              {viewMode === "replay" ? (
-                <Pitch snapshot={snapshot} tick={currentTick} />
-              ) : (
-                <HeatmapPitch snapshot={snapshot} filter={heatmapFilter} subject={heatmapSubject} />
-              )}
-              {viewMode === "replay" && recentGoal ? (
-                <GoalOverlay
-                  snapshot={snapshot}
-                  event={recentGoal.event}
-                  score={recentGoal.score}
-                />
-              ) : null}
-            </div>
-          ) : (
-            <p style={styles.empty}>Drop a MatchSnapshot JSON file here.</p>
-          )}
+          <div style={styles.sourceControls}>
+            <select
+              aria-label="Snapshot artifact"
+              value={selectedArtifact}
+              disabled={artifactLoading}
+              onChange={(event) => void handleArtifact(event.currentTarget.value)}
+              style={styles.select}
+            >
+              <option value="">{artifactLoading ? "Loading..." : "Select artifact"}</option>
+              {artifacts.map((artifact) => (
+                <option key={artifact.filename} value={artifact.filename}>
+                  {artifact.filename}
+                </option>
+              ))}
+            </select>
+            <label style={styles.fileButton}>
+              JSON
+              <input
+                aria-label="Load snapshot JSON"
+                type="file"
+                accept="application/json,.json"
+                style={styles.fileInput}
+                onChange={(event) => void handleFile(event.currentTarget.files?.[0])}
+              />
+            </label>
+          </div>
         </div>
 
-        <div style={styles.controls}>
+        <div style={styles.toolbarControls}>
           <button
             type="button"
             onClick={() => setPlaying((value) => !value)}
@@ -169,14 +219,20 @@ export function VisualiserPage() {
           <div style={styles.segmentedControl} aria-label="Visualiser view mode">
             <button
               type="button"
-              onClick={() => setViewMode("replay")}
+              onClick={() => {
+                setViewMode("replay");
+                setInspectorTab("stats");
+              }}
               style={viewMode === "replay" ? styles.segmentedButtonActive : styles.segmentedButton}
             >
               Replay
             </button>
             <button
               type="button"
-              onClick={() => setViewMode("heatmap")}
+              onClick={() => {
+                setViewMode("heatmap");
+                setInspectorTab("heatmap");
+              }}
               style={viewMode === "heatmap" ? styles.segmentedButtonActive : styles.segmentedButton}
             >
               Heatmap
@@ -197,6 +253,7 @@ export function VisualiserPage() {
               {snapshot?.meta.awayTeam.shortName ?? "Away"} players
             </option>
             <option value="all_players">All players</option>
+            <option value="player_relative">Player relative</option>
           </select>
           <select
             aria-label="Heatmap possession filter"
@@ -209,40 +266,91 @@ export function VisualiserPage() {
             <option value="home">{snapshot?.meta.homeTeam.shortName ?? "Home"}</option>
             <option value="away">{snapshot?.meta.awayTeam.shortName ?? "Away"}</option>
           </select>
+          <select
+            aria-label="Heatmap player"
+            value={selectedPlayerId}
+            disabled={!snapshot || viewMode !== "heatmap" || heatmapSubject !== "player_relative"}
+            onChange={(event) => setSelectedPlayerId(event.currentTarget.value)}
+            style={styles.select}
+          >
+            {playerOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
+      </header>
+
+      {error || artifactError ? <div style={styles.errorBar}>{error ?? artifactError}</div> : null}
+
+      <section style={styles.workbench} aria-label="Snapshot replay visualiser">
+        <div
+          style={styles.stage}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => {
+            event.preventDefault();
+            void handleFile(event.dataTransfer.files[0]);
+          }}
+        >
+          {snapshot && currentTick ? (
+            <div style={styles.pitchWrap}>
+              {viewMode === "replay" ? (
+                <Pitch snapshot={snapshot} tick={currentTick} />
+              ) : heatmapSubject === "player_relative" ? (
+                <RelativePlayerHeatmaps snapshot={snapshot} playerId={selectedPlayerId} />
+              ) : (
+                <HeatmapPitch snapshot={snapshot} filter={heatmapFilter} subject={heatmapSubject} />
+              )}
+              {viewMode === "replay" && recentGoal ? (
+                <GoalOverlay
+                  snapshot={snapshot}
+                  event={recentGoal.event}
+                  score={recentGoal.score}
+                />
+              ) : null}
+            </div>
+          ) : (
+            <p style={styles.empty}>Select an artifact or drop a MatchSnapshot JSON file here.</p>
+          )}
+        </div>
+
+        <aside style={styles.inspector} aria-label="Visualiser inspector">
+          <div style={styles.inspectorTabs} aria-label="Inspector tabs">
+            {(["stats", "shape", "heatmap", "player"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setInspectorTab(tab)}
+                style={inspectorTab === tab ? styles.inspectorTabActive : styles.inspectorTab}
+              >
+                {tab[0]!.toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+          <InspectorPanel
+            tab={inspectorTab}
+            snapshot={snapshot}
+            tick={currentTick}
+            stats={stats}
+            filter={heatmapFilter}
+            subject={heatmapSubject}
+            selectedPlayerId={selectedPlayerId}
+          />
+        </aside>
       </section>
 
-      <aside style={styles.sidePanel}>
-        <section aria-label="Replay statistics" style={styles.panelSection}>
-          <h2 style={styles.panelTitle}>Stats</h2>
-          {snapshot && currentTick && stats ? (
-            <StatsPanel snapshot={snapshot} tick={currentTick} stats={stats} />
-          ) : (
-            <p style={styles.muted}>No snapshot loaded.</p>
-          )}
-        </section>
-        <section aria-label="Heatmap diagnostics" style={styles.panelSection}>
-          <h2 style={styles.panelTitle}>Heatmap</h2>
-          {snapshot && currentTick ? (
-            <HeatmapDiagnostics
-              snapshot={snapshot}
-              tick={currentTick}
-              filter={heatmapFilter}
-              subject={heatmapSubject}
-            />
-          ) : (
-            <p style={styles.muted}>No heatmap data.</p>
-          )}
-        </section>
-        <section aria-label="Event log" style={styles.panelSection}>
+      <section style={styles.eventDock} aria-label="Event log">
+        <div style={styles.eventHeader}>
           <h2 style={styles.panelTitle}>Events</h2>
-          {snapshot ? (
-            <EventLog snapshot={snapshot} events={events} />
-          ) : (
-            <p style={styles.muted}>No events.</p>
-          )}
-        </section>
-      </aside>
+          <span style={styles.muted}>{events.length} events</span>
+        </div>
+        {snapshot ? (
+          <EventLog snapshot={snapshot} events={events} />
+        ) : (
+          <p style={styles.muted}>No events.</p>
+        )}
+      </section>
     </main>
   );
 }
@@ -310,6 +418,70 @@ function HeatmapPitch({
       ))}
       <PitchLineOverlay />
     </svg>
+  );
+}
+
+function RelativePlayerHeatmaps({
+  snapshot,
+  playerId
+}: {
+  snapshot: MatchSnapshot;
+  playerId: string;
+}) {
+  const data = useMemo(() => buildRelativePlayerHeatmap(snapshot, playerId), [snapshot, playerId]);
+  const player = rosterPlayerById(snapshot, playerId);
+
+  if (!player) {
+    return <p style={styles.empty}>Player heatmap unavailable.</p>;
+  }
+
+  return (
+    <div style={styles.relativeHeatmapWrap}>
+      <div style={styles.relativeHeatmapHeader}>
+        <strong>{player.shortName}</strong>
+        <span style={styles.muted}>Relative to ball · +Y toward opposition goal</span>
+      </div>
+      <div style={styles.relativeHeatmapGrid}>
+        <RelativeHeatmapPanel title="Team in possession" data={data.inPossession} />
+        <RelativeHeatmapPanel title="Team out of possession" data={data.outOfPossession} />
+      </div>
+    </div>
+  );
+}
+
+function RelativeHeatmapPanel({ title, data }: { title: string; data: RelativeHeatmapData }) {
+  const cellWidth = 680 / HEATMAP_COLS;
+  const cellHeight = 680 / HEATMAP_COLS;
+
+  return (
+    <section style={styles.relativeHeatmapPanel}>
+      <div style={styles.relativeHeatmapTitle}>
+        <strong>{title}</strong>
+        <span style={styles.muted}>{data.samples} samples</span>
+      </div>
+      <svg
+        viewBox="0 0 680 680"
+        style={styles.relativeHeatmapSvg}
+        role="img"
+        aria-label={`${title} relative player heatmap`}
+      >
+        <rect x="0" y="0" width="680" height="680" fill="#203027" />
+        <line x1="340" y1="0" x2="340" y2="680" stroke="#d8ded9" strokeWidth="2" opacity="0.45" />
+        <line x1="0" y1="340" x2="680" y2="340" stroke="#d8ded9" strokeWidth="2" opacity="0.45" />
+        <circle cx="340" cy="340" r="7" fill="#fff" stroke="#111" strokeWidth="2" />
+        {data.buckets.map((bucket) => (
+          <rect
+            key={`${bucket.col}-${bucket.row}`}
+            x={bucket.col * cellWidth}
+            y={bucket.row * cellHeight}
+            width={cellWidth}
+            height={cellHeight}
+            fill={heatColour(bucket.count, data.max)}
+            opacity={bucket.count > 0 ? 0.76 : 0}
+          />
+        ))}
+      </svg>
+    </section>
   );
 }
 
@@ -476,6 +648,89 @@ function StatsPanel({
   );
 }
 
+function InspectorPanel({
+  tab,
+  snapshot,
+  tick,
+  stats,
+  filter,
+  subject,
+  selectedPlayerId
+}: {
+  tab: InspectorTab;
+  snapshot: MatchSnapshot | null;
+  tick: MatchTick | null;
+  stats: ReplayStats | null;
+  filter: HeatmapFilter;
+  subject: HeatmapSubject;
+  selectedPlayerId: string;
+}) {
+  if (!snapshot || !tick) {
+    return <p style={styles.muted}>No snapshot loaded.</p>;
+  }
+
+  if (tab === "stats") {
+    return stats ? (
+      <StatsPanel snapshot={snapshot} tick={tick} stats={stats} />
+    ) : (
+      <p style={styles.muted}>No statistics.</p>
+    );
+  }
+
+  if (tab === "shape") {
+    return <ShapeDiagnostics snapshot={snapshot} tick={tick} />;
+  }
+
+  if (tab === "player") {
+    return <PlayerDiagnostics snapshot={snapshot} tick={tick} playerId={selectedPlayerId} />;
+  }
+
+  if (subject === "player_relative") {
+    return <PlayerDiagnostics snapshot={snapshot} tick={tick} playerId={selectedPlayerId} />;
+  }
+
+  return <HeatmapDiagnostics snapshot={snapshot} tick={tick} filter={filter} subject={subject} />;
+}
+
+function PlayerDiagnostics({
+  snapshot,
+  tick,
+  playerId
+}: {
+  snapshot: MatchSnapshot;
+  tick: MatchTick;
+  playerId: string;
+}) {
+  const rosterPlayer = rosterPlayerById(snapshot, playerId);
+  const tickPlayer = tick.players.find((player) => player.id === playerId);
+  const relative = buildRelativePlayerHeatmap(snapshot, playerId);
+
+  if (!rosterPlayer || !tickPlayer) {
+    return <p style={styles.muted}>Player heatmap unavailable.</p>;
+  }
+
+  return (
+    <div style={styles.playerPanel}>
+      <div style={styles.diagnosticGrid}>
+        <span>Player</span>
+        <strong>{rosterPlayer.shortName}</strong>
+        <span>Position</span>
+        <strong>{rosterPlayer.position}</strong>
+        <span>On pitch</span>
+        <strong>{tickPlayer.onPitch ? "yes" : "no"}</strong>
+        <span>Current x/y</span>
+        <strong>
+          {Math.round(tickPlayer.position[0])} / {Math.round(tickPlayer.position[1])}
+        </strong>
+        <span>In possession samples</span>
+        <strong>{relative.inPossession.samples}</strong>
+        <span>Out of possession samples</span>
+        <strong>{relative.outOfPossession.samples}</strong>
+      </div>
+    </div>
+  );
+}
+
 function EventLog({ snapshot, events }: { snapshot: MatchSnapshot; events: SemanticEvent[] }) {
   if (events.length === 0) {
     return <p style={styles.muted}>No events yet.</p>;
@@ -532,6 +787,17 @@ interface HeatmapSummary {
   rightFlankPct: number;
   homeAvgY: number | null;
   awayAvgY: number | null;
+}
+
+interface RelativeHeatmapData {
+  buckets: HeatmapBucket[];
+  max: number;
+  samples: number;
+}
+
+interface RelativePlayerHeatmapData {
+  inPossession: RelativeHeatmapData;
+  outOfPossession: RelativeHeatmapData;
 }
 
 function HeatmapDiagnostics({
@@ -749,9 +1015,72 @@ function heatmapSubjectLabel(subject: HeatmapSubject): string {
       return "Away player-position";
     case "all_players":
       return "All player-position";
+    case "player_relative":
+      return "Player relative";
     case "ball":
       return "Ball-position";
   }
+}
+
+function buildRelativePlayerHeatmap(
+  snapshot: MatchSnapshot,
+  playerId: string
+): RelativePlayerHeatmapData {
+  const playerTeam = playerTeamById(snapshot, playerId);
+  const inPossession = emptyRelativeHeatmap();
+  const outOfPossession = emptyRelativeHeatmap();
+
+  if (!playerTeam) {
+    return { inPossession, outOfPossession };
+  }
+
+  for (const tick of snapshot.ticks) {
+    const player = tick.players.find((candidate) => candidate.id === playerId && candidate.onPitch);
+    if (!player || !tick.possession.teamId) {
+      continue;
+    }
+
+    const relativeX = player.position[0] - tick.ball.position[0];
+    const rawRelativeY = player.position[1] - tick.ball.position[1];
+    const relativeY = playerTeam === "home" ? rawRelativeY : -rawRelativeY;
+    const target = tick.possession.teamId === playerTeam ? inPossession : outOfPossession;
+    addRelativeSample(target, relativeX, relativeY);
+  }
+
+  finaliseRelativeHeatmap(inPossession);
+  finaliseRelativeHeatmap(outOfPossession);
+  return { inPossession, outOfPossession };
+}
+
+function emptyRelativeHeatmap(): RelativeHeatmapData {
+  return {
+    buckets: Array.from({ length: HEATMAP_COLS * HEATMAP_COLS }, (_, index) => ({
+      col: index % HEATMAP_COLS,
+      row: Math.floor(index / HEATMAP_COLS),
+      count: 0
+    })),
+    max: 1,
+    samples: 0
+  };
+}
+
+function addRelativeSample(data: RelativeHeatmapData, relativeX: number, relativeY: number): void {
+  const x = Math.max(-PITCH_WIDTH / 2, Math.min(PITCH_WIDTH / 2, relativeX));
+  const y = Math.max(-PITCH_LENGTH / 2, Math.min(PITCH_LENGTH / 2, relativeY));
+  const col = Math.max(
+    0,
+    Math.min(HEATMAP_COLS - 1, Math.floor(((x + PITCH_WIDTH / 2) / PITCH_WIDTH) * HEATMAP_COLS))
+  );
+  const row = Math.max(
+    0,
+    Math.min(HEATMAP_COLS - 1, Math.floor(((PITCH_LENGTH / 2 - y) / PITCH_LENGTH) * HEATMAP_COLS))
+  );
+  data.buckets[row * HEATMAP_COLS + col]!.count += 1;
+  data.samples += 1;
+}
+
+function finaliseRelativeHeatmap(data: RelativeHeatmapData): void {
+  data.max = Math.max(1, ...data.buckets.map((bucket) => bucket.count));
 }
 
 type ShapeDiagnosticsValue = NonNullable<MatchTick["diagnostics"]>["shape"]["home"];
@@ -881,6 +1210,41 @@ function playerName(snapshot: MatchSnapshot, team: TeamId, playerId: string): st
   return (
     snapshot.meta.rosters[team].find((player) => player.id === playerId)?.shortName ?? playerId
   );
+}
+
+function rosterPlayerById(snapshot: MatchSnapshot, playerId: string) {
+  return (
+    snapshot.meta.rosters.home.find((player) => player.id === playerId) ??
+    snapshot.meta.rosters.away.find((player) => player.id === playerId) ??
+    null
+  );
+}
+
+function playerTeamById(snapshot: MatchSnapshot, playerId: string): TeamId | null {
+  if (snapshot.meta.rosters.home.some((player) => player.id === playerId)) {
+    return "home";
+  }
+  if (snapshot.meta.rosters.away.some((player) => player.id === playerId)) {
+    return "away";
+  }
+  return null;
+}
+
+function rosterOptions(snapshot: MatchSnapshot): Array<{ id: string; label: string }> {
+  return [
+    ...snapshot.meta.rosters.home.map((player) => ({
+      id: player.id,
+      label: `${snapshot.meta.homeTeam.shortName} ${player.shortName}`
+    })),
+    ...snapshot.meta.rosters.away.map((player) => ({
+      id: player.id,
+      label: `${snapshot.meta.awayTeam.shortName} ${player.shortName}`
+    }))
+  ];
+}
+
+function firstRosterPlayerId(snapshot: MatchSnapshot): string {
+  return snapshot.meta.rosters.home[0]?.id ?? snapshot.meta.rosters.away[0]?.id ?? "";
 }
 
 function teamName(snapshot: MatchSnapshot, team: TeamId): string {
@@ -1110,7 +1474,8 @@ function parseHeatmapSubject(value: string): HeatmapSubject {
     value === "ball" ||
     value === "home_players" ||
     value === "away_players" ||
-    value === "all_players"
+    value === "all_players" ||
+    value === "player_relative"
   ) {
     return value;
   }
@@ -1126,17 +1491,30 @@ function clearReplayInterval(ref: MutableRefObject<number | null>): void {
 
 const styles = {
   page: {
+    width: "100vw",
+    maxWidth: "none",
     minHeight: "100vh",
     display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr) 360px",
+    gridTemplateRows: "auto minmax(0, 1fr) 230px",
+    margin: 0,
+    padding: 0,
     background: "#17201b",
     color: "#f5f7f5",
     fontFamily: "Arial, sans-serif"
   },
-  stage: { padding: "18px", minWidth: 0 },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px" },
+  topBar: {
+    display: "grid",
+    gridTemplateColumns: "minmax(280px, 420px) minmax(0, 1fr)",
+    gap: "18px",
+    alignItems: "center",
+    padding: "12px 16px",
+    borderBottom: "1px solid #3f5045",
+    background: "#111c16"
+  },
+  brandBlock: { display: "flex", alignItems: "center", gap: "16px", minWidth: 0 },
+  sourceControls: { display: "flex", gap: "8px", alignItems: "center", minWidth: 0 },
   eyebrow: { margin: 0, color: "#aeb8b1", fontSize: "13px", textTransform: "uppercase" as const },
-  title: { margin: "4px 0", fontSize: "28px", lineHeight: 1.1 },
+  title: { margin: "2px 0", fontSize: "26px", lineHeight: 1.05 },
   clock: { margin: 0, color: "#d8ded9", fontVariantNumeric: "tabular-nums" as const },
   fileButton: {
     position: "relative" as const,
@@ -1146,26 +1524,49 @@ const styles = {
     width: "64px",
     height: "36px",
     border: "1px solid #d8ded9",
+    background: "#17201b",
+    color: "#f5f7f5",
     cursor: "pointer"
   },
   fileInput: { position: "absolute" as const, inset: 0, opacity: 0, cursor: "pointer" },
-  error: { color: "#ffb4a8" },
-  dropZone: {
-    marginTop: "16px",
-    height: "calc(100vh - 150px)",
-    minHeight: "520px",
+  errorBar: {
+    padding: "8px 16px",
+    borderBottom: "1px solid #774539",
+    background: "#3a1d17",
+    color: "#ffb4a8"
+  },
+  toolbarControls: {
     display: "flex",
     alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "10px",
+    minWidth: 0,
+    flexWrap: "wrap" as const
+  },
+  workbench: {
+    display: "flex",
+    minHeight: 0,
+    padding: "12px 16px",
+    gap: "14px"
+  },
+  stage: {
+    flex: "1 1 auto",
+    minWidth: "620px",
+    minHeight: 0,
+    display: "flex",
+    alignItems: "stretch",
     justifyContent: "center",
     border: "1px solid #3f5045",
-    background: "#203027"
+    background: "#203027",
+    overflow: "hidden"
   },
   empty: { color: "#c7d0ca" },
   pitchWrap: {
     position: "relative" as const,
+    width: "100%",
     height: "100%",
-    maxWidth: "100%",
     display: "flex",
+    alignItems: "center",
     justifyContent: "center"
   },
   pitch: { height: "100%", maxWidth: "100%", display: "block" },
@@ -1186,10 +1587,9 @@ const styles = {
     boxShadow: "0 8px 18px rgba(0, 0, 0, 0.35)"
   },
   moving: { transition: "cx 0.3s linear, cy 0.3s linear, x 0.3s linear, y 0.3s linear" },
-  controls: { marginTop: "12px", display: "flex", alignItems: "center", gap: "12px" },
   button: { height: "34px", minWidth: "72px" },
-  slider: { flex: 1 },
-  select: { height: "34px" },
+  slider: { width: "min(300px, 24vw)" },
+  select: { height: "34px", minWidth: "130px", background: "#f5f7f5", color: "#17201b" },
   segmentedControl: { display: "inline-flex", border: "1px solid #d8ded9" },
   segmentedButton: {
     height: "34px",
@@ -1207,16 +1607,112 @@ const styles = {
     color: "#17201b",
     cursor: "pointer"
   },
-  sidePanel: { borderLeft: "1px solid #3f5045", padding: "18px", overflowY: "auto" as const },
+  inspector: {
+    flex: "0 0 430px",
+    minHeight: 0,
+    border: "1px solid #3f5045",
+    background: "#132019",
+    overflowY: "auto" as const
+  },
+  inspectorTabs: {
+    position: "sticky" as const,
+    top: 0,
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    background: "#111c16",
+    borderBottom: "1px solid #3f5045",
+    zIndex: 1
+  },
+  inspectorTab: {
+    minWidth: 0,
+    height: "36px",
+    border: 0,
+    borderRight: "1px solid #3f5045",
+    background: "transparent",
+    color: "#f5f7f5",
+    cursor: "pointer"
+  },
+  inspectorTabActive: {
+    minWidth: 0,
+    height: "36px",
+    border: 0,
+    borderRight: "1px solid #3f5045",
+    background: "#d8ded9",
+    color: "#17201b",
+    cursor: "pointer"
+  },
+  playerPanel: { padding: "14px" },
+  eventDock: {
+    minHeight: 0,
+    borderTop: "1px solid #3f5045",
+    padding: "10px 16px 14px",
+    background: "#111c16",
+    overflow: "hidden"
+  },
+  eventHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "8px"
+  },
   panelSection: { marginBottom: "24px" },
   panelTitle: { margin: "0 0 10px", fontSize: "18px" },
   subPanelTitle: { margin: "12px 0 8px", fontSize: "14px", color: "#d8ded9" },
-  statsGrid: { display: "grid", gridTemplateColumns: "1fr auto auto 1fr", gap: "8px 12px" },
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto auto 1fr",
+    gap: "8px 12px",
+    padding: "14px"
+  },
   diagnosticGrid: { display: "grid", gridTemplateColumns: "1fr auto", gap: "8px 12px" },
-  shapeDiagnostics: { marginBottom: "14px" },
+  shapeDiagnostics: { padding: "14px", marginBottom: "14px" },
   momentumText: { margin: "0 0 12px", color: "#f5f7f5", fontVariantNumeric: "tabular-nums" },
   muted: { color: "#aeb8b1" },
-  eventList: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" },
+  eventList: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    display: "grid",
+    gridAutoFlow: "column",
+    gridAutoColumns: "minmax(260px, 360px)",
+    gap: "8px",
+    overflowX: "auto" as const,
+    overflowY: "hidden" as const,
+    maxHeight: "170px"
+  },
   eventItem: { padding: "8px", background: "#23352a", borderLeft: "3px solid #d8ded9" },
-  eventDetail: { color: "#aeb8b1" }
+  eventDetail: { color: "#aeb8b1" },
+  relativeHeatmapWrap: {
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column" as const,
+    padding: "18px",
+    gap: "12px"
+  },
+  relativeHeatmapHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "12px"
+  },
+  relativeHeatmapGrid: {
+    minHeight: 0,
+    flex: 1,
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "14px"
+  },
+  relativeHeatmapPanel: {
+    minHeight: 0,
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "8px"
+  },
+  relativeHeatmapTitle: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center"
+  },
+  relativeHeatmapSvg: { minHeight: 0, width: "100%", height: "100%" }
 };
