@@ -60,6 +60,37 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
+### Movement strategy refactor before the next major movement feature
+`packages/match-engine/src/ticks/movement.ts` now carries several interacting
+layers: lateral anchors, ball-side shifting, wide runs, vertical support,
+momentum influence, and off-ball pulse. Each layer is defensible, but the file
+is approaching the point where one-off UAT fixes will be hard to reason about.
+Before adding another large movement feature, split movement into per-role or
+per-band strategies that consume shared context explicitly.
+
+### Tune Player Manager protagonist impact during Atatürk integration
+The responsiveness harness proved that a +15 boost to one mid-attribute
+Liverpool outfield player moves home goals by more than the 25% threshold.
+However, the absolute lift in the Smicer test was `0.14 -> 0.36` goals across a
+second half. During Player Manager integration, tune whether the protagonist
+needs a more targeted shooting/composure boost or bespoke involvement logic so
+the player feels meaningfully influential without becoming a ball hog.
+
+### Define the real substitution API
+The responsiveness harness includes `__testApplyMidMatchAttributeSwap` for a
+scripted 60-minute swap. This intentionally proves engine sensitivity without
+creating a public substitution contract. Atatürk integration still needs a real
+substitution API covering bench state, player removal/addition, formation
+rebalancing, and event emission.
+
+### Revisit weak-foot compounding only if v2 finishing drifts
+The current v2 weak-foot model applies rated weak-foot penalties to both
+shot/on-target mechanics and save difficulty. A temporary experiment applying
+the penalty to on-target only moved 50-seed v2 goals from `1.00` to `1.06`,
+which is too small to justify changing mechanics now. Reopen only if future v2
+calibration puts goals below target or if real-data validation exposes a
+finishing issue.
+
 ### Re-verify match-engine calibration with first real v2 dataset
 The v2 bridge was verified with a synthetic generator deliberately shaped to
 preserve v1 calibration values. That was correct for isolating preferred-foot
@@ -94,22 +125,12 @@ loose `number | string` for fidelity to upstream.
 Trigger to address: first real consumer of player skills that needs
 clean numbers (likely tactics layer).
 
-### Engine realism characterisation test — in progress
-We currently have a deterministic smoke test (seeded RNG, asserts
-threshold-of-6-shots etc.). Useful for catching regressions but doesn't
-validate that the engine produces realistic football across the random-
-seed distribution.
-
-A characterisation script (`server/src/match/characterise.ts`) is being
-built to run the match across N seeds and report distributions of goals,
-shots, fouls, cards, and semantic events.
-
-**Trigger**: the vertical slice's first fast-forward run produced only
-2 semantic events across 450 iterations. This may be an event extraction
-gap, an engine behaviour pattern, or a state setup issue. The
-characterisation script will diagnose which.
-
-See `docs/DECISIONS.md` for the decision entry.
+### ~~Engine realism characterisation test~~ ✅ Superseded
+The old backlog item referred to characterising the legacy
+`footballsimulationengine` wrapper. The standalone match engine now has its own
+50/100-seed characterisation, deterministic snapshots, representative replay
+artefacts, and responsiveness harness under `packages/match-engine`. Keep the
+legacy item closed unless the old `/match` route needs separate maintenance.
 
 ## Visualization
 

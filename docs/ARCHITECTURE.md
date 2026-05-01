@@ -27,7 +27,7 @@ The project currently has two match-engine paths:
 - **Legacy Atatürk route**: `/match` still uses `packages/engine`, the typed wrapper around `footballsimulationengine`. This keeps the playable vertical slice stable.
 - **New standalone engine**: `packages/match-engine` is the custom TypeScript engine used for snapshot generation, visualiser replay, calibration, and future Atatürk integration.
 
-Integration of the new engine into the game-specific `/match` route is deliberately parked until the standalone engine has passed responsiveness testing.
+Integration of the new engine into the game-specific `/match` route remains deliberately separate from the legacy route. The standalone engine has now passed calibration and responsiveness testing; the next architectural step is planning the Atatürk-specific integration layer rather than modifying the old route in place.
 
 ### Legacy engine: wrap, don't fork
 
@@ -61,6 +61,18 @@ The engine boundary accepts both:
 - **v2 players**: FC25-style attributes, preferred foot, weak-foot rating, skill-moves rating, and GK-specific attributes.
 
 The bridge architecture keeps engine internals on the calibrated v1 schema. V2 inputs are adapted to v1 at initialisation, while full v2 metadata is preserved on snapshot rosters for future commentary/UI consumers. Preferred-foot logic is the only v2 field currently consumed directly by match resolution.
+
+Snapshot ticks also expose diagnostic state that downstream consumers should not have to infer:
+
+- `attackMomentum: { home: number; away: number }`
+- `possessionStreak: { teamId: 'home' | 'away' | null; ticks: number }`
+
+Momentum is intentionally kinematic-only: it influences support runs and team shape, but it does not directly modify shot or goal probabilities. This keeps pressure visible and narratable without creating runaway scoring feedback loops.
+
+The package includes two development harnesses:
+
+- Characterisation scripts for 50/100-seed calibration and score-distribution checks.
+- A responsiveness harness that varies one tactic or player-quality input at a time. Its scripted `__testApplyMidMatchAttributeSwap` helper is test-only and is not a substitution API for Atatürk integration.
 
 ## Tactics layer (we build this)
 

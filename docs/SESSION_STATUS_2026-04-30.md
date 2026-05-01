@@ -1,7 +1,7 @@
 # The Atatürk — Project Status Reference
 
 **Snapshot date:** 30 April – 1 May 2026 (multi-session arc)
-**Initial snapshot:** 30 April 14:50 SAST. **Last updated:** 1 May 11:25 SAST.
+**Initial snapshot:** 30 April 14:50 SAST. **Last updated:** 1 May 15:47 SAST.
 **Purpose:** Reference doc for post-compaction context. Captures all material decisions, current state, and active work as of this moment.
 
 ---
@@ -15,6 +15,7 @@ Local dev: `/media/mo/Projects/Active_Dev_Projects/2026-the-ataturk` (Linux Mint
 
 ## Major architectural decisions (newest first)
 
+- **1 May 2026**: Match-engine responsiveness gate passed; all pre-declared tactical/player-impact thresholds cleared and v2 100-seed score-distribution stress test passed
 - **1 May 2026**: v2 attribute bridge sprint completed (full FC25-mirror schema accepted, v2→v1 adapter, engine internals stay on v1, weak-foot-aware preferred-foot logic added)
 - **1 May 2026**: Event vocabulary expansion completed (cause taxonomy on possession_change, new pass event type, shot/save/foul detail enrichment)
 - **30 April 2026**: Custom match engine built and calibrated (multi-stage stochastic, possession-zone state, 3-second ticks)
@@ -97,11 +98,13 @@ Substitution bank: **5 subs (modern UEFA rule)**, with one already used historic
 - 0% match outcome drift across event vocabulary expansion (deterministic snapshots preserved)
 - v2 attribute bridge sprint (1 May): FC25-style PlayerInputV2 accepted at the engine boundary, adapted to v1 internally, v2 metadata preserved on snapshot rosters, preferred-foot/weak-foot logic applied only for v2 inputs
 - v1 compatibility verified byte-identical on representative snapshot diff and unchanged on 50-seed characterisation
-- v2 rated-foot characterisation passed targets: shots 8.18, goals 1.18, fouls 5.14, cards 1.26
+- v2 rated-foot characterisation passed targets; latest 100-seed stress test: shots 8.02, goals 1.18, fouls 5.12, cards 1.33, max score share `0-3` at 33%
+- Post-v2 UAT refinement landed: goal/full-time states, second-yellow send-offs, wide carries, crosses/cutbacks, ball-side shifting, attack momentum support runs, visualiser heatmap, and momentum diagnostics
+- Responsiveness harness passed all thresholds: mentality, pressing, tempo, single-player attribute boost, and test-only 60-minute swap all moved the intended metrics
 - Two UAT cycles run with Gemini UAT agent; structured feedback loop established
 
 ### Atatürk integration: parked
-Existing v0.1 text-only `/match` route still uses old `footballsimulationengine` v4.0.0 with patch. New engine is decoupled. Atatürk's game-specific layers (half-time builder, intent toggles, lore framing, commentary, TTS) deferred until engine is responsiveness-tested and stable.
+Existing v0.1 text-only `/match` route still uses old `footballsimulationengine` v4.0.0 with patch. New engine is decoupled and now responsiveness-tested. Atatürk's game-specific layers (half-time builder, intent toggles, lore framing, commentary, TTS) are the next integration planning surface; the old route should not be modified in place.
 
 
 ## Documentation state
@@ -192,31 +195,43 @@ Other coupling (orchestrator, SSE route, frontend) is largely adapter-shaped and
 
 ## What we're doing NOW (1 May 2026)
 
-Engine refinement phase, deliberately deferring Atatürk integration. Specifically:
+Closing the post-v2 engine refinement and responsiveness cycle, then preparing for the next sprint.
 
-**Just completed (this morning):**
+**Just completed:**
 - Rich event vocabulary expansion sprint (possession_change cause taxonomy, pass events with selective emission, shot/save/foul detail enrichment)
-- 0% outcome drift verified across 50 seeds
-- v2 attribute bridge sprint landed: FC25-style v2 schema, adapter, v2 snapshot metadata, weak-foot-aware shot modifiers, v1 byte-identical preservation
+- v2 attribute bridge sprint landed with v1 byte-identical preservation
+- UAT-driven realism work landed: goal/full-time state, second-yellow send-offs, wide carries, crosses/cutbacks, off-ball shifting, attack momentum support, and heatmap diagnostics
+- Momentum and possession streak are now exposed in snapshot ticks and the visualiser heatmap overlay
+- Responsiveness gate passed:
+  - mentality moved Liverpool shots by 151.61%
+  - pressing moved Liverpool fouls by 180.49%
+  - tempo moved possession-streak length by 15.80% magnitude
+  - Smicer +15 single-player boost moved Liverpool goals by 157.14%
+  - test-only 60-minute attribute swap moved four post-60 metrics by >=10%
+- v2 100-seed score-distribution stress test passed; max final-score share is 33%
 
-**Next engine work:**
-- Responsiveness testing (tactical config matrix, sub scenarios, "wonder player" buff test)
+**Next engine/game work:**
+- Plan Atatürk integration with the standalone match engine
+- Define the real substitution API; do not reuse the responsiveness harness's `__testApplyMidMatchAttributeSwap`
+- Decide Player Manager protagonist tuning and involvement model
 - Commentary layer (LLM-driven, Marlow & Pearce voices)
 - TTS layer
-- Atatürk integration with new engine
 - Match HUD design (Direction 2 BBC Sport restrained styling)
 - Pre-match flow (dressing room, team talk, sub bank, sub-self-on)
 
-**Pacing**: UAT-first discipline. Run UAT on the v2-capable engine before responsiveness testing. After responsiveness testing, decide whether more engine work or commentary work comes next.
+**Pacing**: engine maturity gate is now cleared. Next work should be integration planning and commentary/TTS, with movement changes limited to specific UAT findings.
 
-**Realistic v0.1 ship**: still 1-2 weeks of focused work, contingent on engine work landing cleanly and Atatürk integration happening cleanly.
+**Realistic v0.1 ship**: still 1-2 weeks of focused work, now mostly contingent on Atatürk integration, commentary/TTS, and frontend game-flow work landing cleanly.
 
 ## Active backlog highlights
 
-- Engine responsiveness testing harness (next engine sprint)
+- Atatürk integration with standalone match engine
+- Real substitution API for game integration
+- Player Manager protagonist tuning and involvement model
 - Re-verify match-engine calibration when first real FC25-distributed v2 dataset lands
-- Commentary layer with Marlow & Pearce voices (deferred until responsiveness testing complete)
+- Commentary layer with Marlow & Pearce voices
 - TTS layer (Gemini TTS or ElevenLabs) — provider-swappable
+- Movement strategy refactor before the next major movement feature
 - Visualiser polish (Direction 2 BBC Sport restrained aesthetic) — deferred styling sprint
 - Squad-swap mechanic as v0.1 unlock (after first canonical win, swap up to 3 Liverpool↔Milan players, no swap costs)
 - Diving/simulation toggle (v0.1.5+, requires wrapper-side contact-in-box detection)
@@ -246,12 +261,12 @@ Engine refinement phase, deliberately deferring Atatürk integration. Specifical
 
 ## Honest project status
 
-Custom match engine is real, calibrated, and producing watchable football. Vocabulary is rich. UAT pipeline functional. Engine is reaching standalone-product quality independent of The Atatürk.
+Custom match engine is real, calibrated, producing watchable football, and responsive to tactics/player quality. Vocabulary is rich. UAT pipeline functional. Engine has reached standalone-product quality independent of The Atatürk.
 
 Two paths remain converging:
-- v2-capable engine then responsiveness testing → engine maturity
+- standalone engine → Atatürk integration
 - Atatürk integration sprint sequence → v0.1 game ship
 
-Current decision: prioritise engine maturity. Atatürk waits.
+Current decision: engine maturity gate cleared. Move to Atatürk integration planning without modifying the legacy `/match` route in place.
 
 Mo has stayed disciplined throughout — plan-then-execute, no premature integration, willing to pivot when needed (engine standalone, FC25 schema, bridge approach).
