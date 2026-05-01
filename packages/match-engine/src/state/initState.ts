@@ -45,7 +45,7 @@ export function buildInitState(config: MatchConfig): MutableMatchState {
     },
     possession: { teamId: "home", zone: "mid", pressureLevel: "low" },
     possessionTicks: { home: 0, away: 0 },
-    pendingRestartTeam: null,
+    pendingGoal: null,
     pendingSetPiece: null,
     eventsThisTick: [],
     allEvents: []
@@ -65,6 +65,7 @@ function mutablePlayer(
     position: [0, 0],
     targetPosition: [0, 0],
     anchorPosition: [0, 0],
+    lateralAnchor: 0,
     hasBall: false,
     onPitch: true,
     yellowCards: 0,

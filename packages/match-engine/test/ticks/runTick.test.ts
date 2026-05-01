@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildInitState } from "../../src/state/initState";
 import { runTick } from "../../src/ticks/runTick";
+import { updateMovement } from "../../src/ticks/movement";
+import { distance } from "../../src/utils/geometry";
 import { createTestConfig } from "../helpers";
 
 describe("runTick", () => {
@@ -49,5 +51,47 @@ describe("runTick", () => {
     }
 
     expect(positions.size).toBeGreaterThan(10);
+  });
+
+  it("keeps wide players close to their lateral channels when they are not involved", () => {
+    const state = buildInitState(createTestConfig(16));
+    const carrier = state.players.find((player) => player.id === "home-2")!;
+    const rightWing = state.players.find((player) => player.id === "home-5")!;
+    const leftWing = state.players.find((player) => player.id === "home-8")!;
+
+    state.players.forEach((player) => {
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [340, 525];
+    state.ball.position = [340, 525, 0];
+    state.ball.carrierPlayerId = carrier.id;
+    state.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+
+    for (let tick = 0; tick < 12; tick += 1) {
+      updateMovement(state);
+    }
+
+    expect(Math.abs(rightWing.position[0] - rightWing.lateralAnchor)).toBeLessThanOrEqual(90);
+    expect(Math.abs(leftWing.position[0] - leftWing.lateralAnchor)).toBeLessThanOrEqual(90);
+  });
+
+  it("caps player movement to sixty pitch units per tick", () => {
+    const state = buildInitState(createTestConfig(17));
+    const player = state.players.find((candidate) => candidate.id === "away-10")!;
+    const before: [number, number] = [20, 20];
+    player.position = before;
+    player.anchorPosition = [660, 1030];
+    player.lateralAnchor = 660;
+    state.pendingGoal = {
+      scoringTeam: "home",
+      restartTeam: "away",
+      scorerPlayerId: "home-9",
+      score: { home: 1, away: 3 },
+      ticksUntilKickoff: 4
+    };
+
+    updateMovement(state);
+
+    expect(distance(before, player.position)).toBeLessThanOrEqual(60);
   });
 });

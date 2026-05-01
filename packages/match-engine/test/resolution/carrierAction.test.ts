@@ -63,7 +63,7 @@ describe("carrier action selection", () => {
     expect(near.onTarget).toBeGreaterThan(far.onTarget);
   });
 
-  it("leaves a scored goal in the net until the next tick restart", () => {
+  it("emits a goal event, pauses, then gives the conceding team kick-off", () => {
     const state = buildInitState(createTestConfig(22));
     const shooter = state.players.find(
       (player) => player.teamId === "home" && player.baseInput.position === "ST"
@@ -83,15 +83,28 @@ describe("carrier action selection", () => {
 
     performShot(state, shooter);
 
-    expect(state.pendingRestartTeam).toBe("away");
+    expect(state.pendingGoal?.restartTeam).toBe("away");
     expect(state.ball.position).toEqual([340, 1050, 0]);
     expect(state.ball.carrierPlayerId).toBeNull();
     expect(state.players.some((player) => player.hasBall)).toBe(false);
+    expect(state.eventsThisTick.some((event) => event.type === "goal_scored")).toBe(true);
+
+    for (let tick = 0; tick < 4; tick += 1) {
+      runTick(state);
+      expect(state.pendingGoal).not.toBeNull();
+      expect(state.ball.position).toEqual([340, 525, 0]);
+      expect(state.players.some((player) => player.hasBall)).toBe(false);
+    }
 
     runTick(state);
 
-    expect(state.pendingRestartTeam).toBeNull();
-    expect(state.eventsThisTick.some((event) => event.type === "kick_off")).toBe(true);
+    expect(state.pendingGoal).toBeNull();
+    expect(state.eventsThisTick).toContainEqual(
+      expect.objectContaining({ type: "kick_off", team: "away" })
+    );
+    expect(state.eventsThisTick).not.toContainEqual(
+      expect.objectContaining({ type: "kick_off", team: "home" })
+    );
     expect(state.ball.position[0]).toBe(340);
     expect(state.ball.position[1]).toBeGreaterThan(525);
   });

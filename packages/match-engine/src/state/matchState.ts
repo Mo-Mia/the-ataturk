@@ -18,6 +18,7 @@ export interface MutablePlayer {
   position: Coordinate2D;
   targetPosition: Coordinate2D;
   anchorPosition: Coordinate2D;
+  lateralAnchor: number;
   hasBall: boolean;
   onPitch: boolean;
   yellowCards: number;
@@ -42,6 +43,14 @@ export interface PendingSetPiece {
   detail?: Record<string, unknown>;
 }
 
+export interface PendingGoal {
+  scoringTeam: TeamId;
+  restartTeam: TeamId;
+  scorerPlayerId: string;
+  score: { home: number; away: number };
+  ticksUntilKickoff: number;
+}
+
 export interface MutableMatchState {
   iteration: number;
   matchClock: { half: 1 | 2; minute: number; seconds: number };
@@ -56,7 +65,7 @@ export interface MutableMatchState {
   stats: { home: TeamStatistics; away: TeamStatistics };
   possession: { teamId: TeamId | null; zone: Zone; pressureLevel: PressureLevel };
   possessionTicks: { home: number; away: number };
-  pendingRestartTeam: TeamId | null;
+  pendingGoal: PendingGoal | null;
   pendingSetPiece: PendingSetPiece | null;
   eventsThisTick: SemanticEvent[];
   allEvents: SemanticEvent[];

@@ -1,4 +1,9 @@
-import { PITCH_LENGTH, PITCH_WIDTH } from "../calibration/constants";
+import {
+  GOAL_CENTRE_X,
+  MAX_PLAYER_DELTA_PER_TICK,
+  PITCH_LENGTH,
+  PITCH_WIDTH
+} from "../calibration/constants";
 import { setPieceTargetForPlayer } from "../resolution/setPieces";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
 import type { Coordinate2D, TeamId } from "../types";
@@ -7,6 +12,9 @@ import { attackDirection } from "../zones/pitchZones";
 
 const BASE_SPEED_PER_TICK = 10;
 const BALL_PRESS_DISTANCE = 230;
+const TACKLE_INVOLVEMENT_DISTANCE = 74;
+const WIDE_ANCHOR_WEIGHT = 0.85;
+const CENTRAL_ANCHOR_WEIGHT = 0.55;
 
 export function updateMovement(state: MutableMatchState): void {
   const carrier = currentCarrier(state);
@@ -35,6 +43,11 @@ function targetForPlayer(
   carrier: MutablePlayer | null
 ): Coordinate2D {
   const direction = attackDirection(player.teamId);
+  const goalResetTarget = goalResetTargetForPlayer(state, player);
+  if (goalResetTarget) {
+    return clamp2D(goalResetTarget, PITCH_WIDTH, PITCH_LENGTH);
+  }
+
   const setPieceTarget = setPieceTargetForPlayer(state, player);
   if (setPieceTarget) {
     return clamp2D(setPieceTarget, PITCH_WIDTH, PITCH_LENGTH);
@@ -69,7 +82,7 @@ function targetForPlayer(
     target = defensiveTarget(player, ballPosition, tactics.pressing);
   }
 
-  return clamp2D(target, PITCH_WIDTH, PITCH_LENGTH);
+  return clamp2D(applyLateralDiscipline(state, player, carrier, target), PITCH_WIDTH, PITCH_LENGTH);
 }
 
 function supportingTarget(
@@ -103,9 +116,16 @@ function defensiveTarget(
 }
 
 function speedForPlayer(player: MutablePlayer, state: MutableMatchState): number {
+  if (state.pendingGoal || state.pendingSetPiece) {
+    return MAX_PLAYER_DELTA_PER_TICK;
+  }
+
   const tactics = player.teamId === "home" ? state.homeTeam.tactics : state.awayTeam.tactics;
   const tempo = tactics.tempo === "fast" ? 1.12 : tactics.tempo === "slow" ? 0.92 : 1;
-  return (BASE_SPEED_PER_TICK + player.baseInput.attributes.agility / 6) * tempo;
+  return Math.min(
+    MAX_PLAYER_DELTA_PER_TICK,
+    (BASE_SPEED_PER_TICK + player.baseInput.attributes.agility / 6) * tempo
+  );
 }
 
 function currentCarrier(state: MutableMatchState): MutablePlayer | null {
@@ -146,6 +166,86 @@ function widthScaleForTeam(width: "narrow" | "normal" | "wide"): number {
   return 1;
 }
 
+function goalResetTargetForPlayer(
+  state: MutableMatchState,
+  player: MutablePlayer
+): Coordinate2D | null {
+  const pendingGoal = state.pendingGoal;
+  if (!pendingGoal) {
+    return null;
+  }
+
+  if (player.id === kickoffReceiverId(state, pendingGoal.restartTeam)) {
+    return kickoffTargetForTeam(pendingGoal.restartTeam);
+  }
+
+  return player.anchorPosition;
+}
+
+function kickoffTargetForTeam(teamId: TeamId): Coordinate2D {
+  const direction = attackDirection(teamId);
+  return [GOAL_CENTRE_X, PITCH_LENGTH / 2 - direction * 18];
+}
+
+function kickoffReceiverId(state: MutableMatchState, teamId: TeamId): string | null {
+  return (
+    state.players.find(
+      (player) => player.teamId === teamId && player.baseInput.position === "ST" && player.onPitch
+    )?.id ??
+    state.players.find((player) => player.teamId === teamId && player.onPitch)?.id ??
+    null
+  );
+}
+
+function applyLateralDiscipline(
+  state: MutableMatchState,
+  player: MutablePlayer,
+  carrier: MutablePlayer | null,
+  target: Coordinate2D
+): Coordinate2D {
+  if (!carrier || directlyInvolvedInPlay(state, player, carrier)) {
+    return target;
+  }
+
+  const weight = widePosition(player) ? WIDE_ANCHOR_WEIGHT : CENTRAL_ANCHOR_WEIGHT;
+  return [target[0] * (1 - weight) + player.lateralAnchor * weight, target[1]];
+}
+
+function directlyInvolvedInPlay(
+  state: MutableMatchState,
+  player: MutablePlayer,
+  carrier: MutablePlayer
+): boolean {
+  if (player.id === carrier.id) {
+    return true;
+  }
+
+  if (distanceSquared(player.position, carrier.position) <= TACKLE_INVOLVEMENT_DISTANCE ** 2) {
+    return true;
+  }
+
+  return closestOppositionDefenderId(state, carrier) === player.id;
+}
+
+function closestOppositionDefenderId(
+  state: MutableMatchState,
+  carrier: MutablePlayer
+): string | null {
+  return (
+    state.players
+      .filter((player) => player.teamId !== carrier.teamId && player.onPitch)
+      .sort(
+        (a, b) =>
+          distanceSquared(a.position, carrier.position) -
+          distanceSquared(b.position, carrier.position)
+      )[0]?.id ?? null
+  );
+}
+
+function widePosition(player: MutablePlayer): boolean {
+  return ["LB", "RB", "LM", "RM", "LW", "RW"].includes(player.baseInput.position);
+}
+
 function supportDepth(player: MutablePlayer): number {
   if (player.baseInput.position === "ST") {
     return 45;
@@ -164,7 +264,7 @@ function channelRunTarget(
   target: Coordinate2D,
   direction: 1 | -1
 ): Coordinate2D {
-  if (["LW", "RW", "LB", "RB"].includes(player.baseInput.position)) {
+  if (["LW", "RW", "LM", "RM", "LB", "RB"].includes(player.baseInput.position)) {
     const touchlineX = player.anchorPosition[0] < PITCH_WIDTH / 2 ? 55 : PITCH_WIDTH - 55;
     return [touchlineX, target[1] + direction * 18];
   }
@@ -192,7 +292,9 @@ function addOffBallPulse(
   const phase = hashPlayerId(player.id) % 17;
   const wave = Math.sin((state.iteration + phase) / 9);
   const lateral = Math.cos((state.iteration + phase) / 13);
-  const roleMultiplier = ["LW", "RW", "ST", "AM"].includes(player.baseInput.position) ? 1.35 : 0.8;
+  const roleMultiplier = ["LW", "RW", "LM", "RM", "ST", "AM"].includes(player.baseInput.position)
+    ? 1.35
+    : 0.8;
 
   return [
     target[0] + lateral * 14 * intensity * roleMultiplier,

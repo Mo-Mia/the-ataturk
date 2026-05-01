@@ -1,5 +1,5 @@
 import type { CarrierAction } from "../calibration/probabilities";
-import { SECONDS_PER_TICK } from "../calibration/constants";
+import { GOAL_CENTRE_X, PITCH_LENGTH, SECONDS_PER_TICK } from "../calibration/constants";
 import {
   executeCarrierAction,
   isVulnerableAction,
@@ -18,14 +18,11 @@ export function runTick(state: MutableMatchState): void {
   state.eventsThisTick = [];
   advanceClock(state);
 
-  if (state.pendingRestartTeam) {
-    restartAfterGoal(state, state.pendingRestartTeam);
-    determinePossessionState(state);
+  if (continuePendingGoal(state)) {
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
     return;
   }
-
   if (state.pendingSetPiece) {
     updateMovement(state);
     continuePendingSetPiece(state);
@@ -49,12 +46,12 @@ export function runTick(state: MutableMatchState): void {
     }
   }
 
-  if (state.pendingRestartTeam) {
+  if (state.pendingGoal) {
+    state.ball.position = [GOAL_CENTRE_X, PITCH_LENGTH / 2, 0];
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
     return;
   }
-
   if (state.pendingSetPiece) {
     updatePossessionStats(state);
     state.allEvents.push(...state.eventsThisTick);
@@ -173,4 +170,33 @@ function carrierForAction(state: MutableMatchState, fallback: MutablePlayer): Mu
 
 export function actionIsVulnerableForTest(action: CarrierAction): boolean {
   return isVulnerableAction(action);
+}
+
+function continuePendingGoal(state: MutableMatchState): boolean {
+  const pendingGoal = state.pendingGoal;
+  if (!pendingGoal) {
+    return false;
+  }
+
+  state.ball.position = [GOAL_CENTRE_X, PITCH_LENGTH / 2, 0];
+  state.ball.inFlight = false;
+  state.ball.carrierPlayerId = null;
+  state.ball.targetPosition = null;
+  state.ball.targetCarrierPlayerId = null;
+
+  updateMovement(state);
+  state.players.forEach((player) => {
+    player.hasBall = false;
+  });
+  state.possession.teamId = null;
+
+  if (pendingGoal.ticksUntilKickoff > 0) {
+    pendingGoal.ticksUntilKickoff -= 1;
+    return true;
+  }
+
+  restartAfterGoal(state, pendingGoal.restartTeam);
+  state.pendingGoal = null;
+  determinePossessionState(state);
+  return true;
 }

@@ -10,6 +10,8 @@ export const AWAY_GOAL_Y = PITCH_LENGTH;
 export const SECONDS_PER_TICK = 3;
 export const TICKS_PER_HALF = 900;
 export const TICKS_PER_FULL_MATCH = 1800;
+export const GOAL_CELEBRATION_TICKS = 4;
+export const MAX_PLAYER_DELTA_PER_TICK = 60;
 
 export const CALIBRATION_TARGETS: CalibrationTargets = {
   shotsTarget: [8, 12],

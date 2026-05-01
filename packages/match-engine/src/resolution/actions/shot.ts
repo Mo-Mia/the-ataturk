@@ -1,10 +1,14 @@
-import { AWAY_GOAL_Y, GOAL_CENTRE_X, HOME_GOAL_Y, PITCH_LENGTH } from "../../calibration/constants";
+import {
+  AWAY_GOAL_Y,
+  GOAL_CELEBRATION_TICKS,
+  GOAL_CENTRE_X,
+  HOME_GOAL_Y
+} from "../../calibration/constants";
 import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import { emitEvent } from "../../ticks/runTick";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
 import type { TeamId } from "../../types";
-import { attackDirection } from "../../zones/pitchZones";
 import { awardGoalKick } from "../setPieces";
 import { shotDistanceContext } from "../shotDistance";
 
@@ -58,12 +62,21 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
   state.players.forEach((player) => {
     player.hasBall = false;
   });
-  state.pendingRestartTeam = otherTeam(shooter.teamId);
-  emitEvent(state, "goal", shooter.teamId, shooter.id, {
+  state.possession.teamId = null;
+  state.pendingGoal = {
+    scoringTeam: shooter.teamId,
+    restartTeam: otherTeam(shooter.teamId),
+    scorerPlayerId: shooter.id,
+    score: { ...state.score },
+    ticksUntilKickoff: GOAL_CELEBRATION_TICKS
+  };
+  emitEvent(state, "goal_scored", shooter.teamId, shooter.id, {
     fromZone: state.possession.zone,
     distanceToGoal: Math.round(shotDistance.distanceToGoal),
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),
-    distanceBand: shotDistance.band
+    distanceBand: shotDistance.band,
+    score: { ...state.score },
+    restartTeam: otherTeam(shooter.teamId)
   });
 }
 
@@ -81,7 +94,6 @@ function givePossession(state: MutableMatchState, receiver: MutablePlayer): void
 }
 
 export function restartAfterGoal(state: MutableMatchState, restartTeam: TeamId): void {
-  const direction = attackDirection(restartTeam);
   const receiver =
     state.players.find(
       (player) =>
@@ -94,15 +106,12 @@ export function restartAfterGoal(state: MutableMatchState, restartTeam: TeamId):
   state.players.forEach((player) => {
     player.hasBall = player.id === receiver.id;
   });
-  receiver.position = [GOAL_CENTRE_X, PITCH_LENGTH / 2 - direction * 18];
-  receiver.targetPosition = receiver.position;
   state.ball.carrierPlayerId = receiver.id;
   state.ball.position = [receiver.position[0], receiver.position[1], 0];
   state.ball.inFlight = false;
   state.ball.targetPosition = null;
   state.ball.targetCarrierPlayerId = null;
   state.possession.teamId = restartTeam;
-  state.pendingRestartTeam = null;
   emitEvent(state, "kick_off", restartTeam, receiver.id, { afterGoal: true });
 }
 

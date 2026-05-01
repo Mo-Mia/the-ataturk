@@ -44,6 +44,7 @@ export function positionTeam(players: MutablePlayer[], formationName: string): v
         : [PITCH_WIDTH - base[0], PITCH_LENGTH - base[1]];
 
     player.anchorPosition = anchor;
+    player.lateralAnchor = anchor[0];
     player.position = anchor;
     player.targetPosition = anchor;
   }

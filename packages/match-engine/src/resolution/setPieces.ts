@@ -160,8 +160,7 @@ function restartSetPiece(state: MutableMatchState, setPiece: PendingSetPiece): v
     return;
   }
 
-  taker.position = takerPosition(setPiece);
-  taker.targetPosition = taker.position;
+  taker.targetPosition = takerPosition(setPiece);
   const target = restartTarget(state, setPiece, taker);
   taker.hasBall = false;
   state.ball.carrierPlayerId = null;

@@ -1,5 +1,17 @@
 export type TeamId = "home" | "away";
-export type Position = "GK" | "CB" | "LB" | "RB" | "DM" | "CM" | "AM" | "LW" | "RW" | "ST";
+export type Position =
+  | "GK"
+  | "CB"
+  | "LB"
+  | "RB"
+  | "DM"
+  | "CM"
+  | "AM"
+  | "LM"
+  | "RM"
+  | "LW"
+  | "RW"
+  | "ST";
 export type Zone = "def" | "mid" | "att";
 export type PressureLevel = "low" | "medium" | "high";
 export type MatchDuration = "full_90" | "second_half";
@@ -121,6 +133,7 @@ export interface MatchTick {
 export interface SemanticEvent {
   type:
     | "goal"
+    | "goal_scored"
     | "shot"
     | "save"
     | "foul"
