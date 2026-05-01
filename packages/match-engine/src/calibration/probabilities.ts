@@ -1,7 +1,23 @@
-import type { PressureLevel, TeamTactics, Zone } from "../types";
+import type { PressureLevel, StarRating, TeamTactics, Zone } from "../types";
 
 export type CarrierAction = "pass" | "shoot" | "dribble" | "hold" | "clear";
 export type ShotDistanceBand = "close" | "box" | "edge" | "far" | "speculative";
+
+export const SHOT_PREFERRED_FOOT_PROBABILITY_BY_WEAK_FOOT_RATING: Record<StarRating, number> = {
+  1: 0.9,
+  2: 0.83,
+  3: 0.75,
+  4: 0.65,
+  5: 0.55
+};
+
+export const SHOT_WEAK_FOOT_MULTIPLIER_BY_RATING: Record<StarRating, number> = {
+  1: 0.72,
+  2: 0.8,
+  3: 0.85,
+  4: 0.93,
+  5: 1
+};
 
 export const ACTION_WEIGHTS: Record<Zone, Record<PressureLevel, Record<CarrierAction, number>>> = {
   def: {

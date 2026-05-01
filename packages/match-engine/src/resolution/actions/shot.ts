@@ -4,11 +4,15 @@ import {
   GOAL_CENTRE_X,
   HOME_GOAL_Y
 } from "../../calibration/constants";
-import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
+import {
+  SHOT_PREFERRED_FOOT_PROBABILITY_BY_WEAK_FOOT_RATING,
+  SHOT_WEAK_FOOT_MULTIPLIER_BY_RATING,
+  SUCCESS_PROBABILITIES
+} from "../../calibration/probabilities";
 import { emitEvent } from "../../ticks/runTick";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
-import type { SaveQuality, SaveResult, ShotFoot, ShotType, TeamId } from "../../types";
+import type { SaveQuality, SaveResult, ShotFoot, ShotType, StarRating, TeamId } from "../../types";
 import { zoneForPosition } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
 import { awardGoalKick } from "../setPieces";
@@ -18,19 +22,21 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
   const teamStats = state.stats[shooter.teamId];
   teamStats.shots.total += 1;
   const shotDistance = shotDistanceContext(shooter.teamId, shooter.position);
+  const shotType = shotTypeFor(shooter, shotDistance.band, state.possession.pressureLevel);
+  const shotFoot = shotFootFor(state, shooter, shotType);
 
   const onTargetProbability =
     SUCCESS_PROBABILITIES.shotOnTargetByZone[state.possession.zone] *
     SUCCESS_PROBABILITIES.shotPressureModifier[state.possession.pressureLevel] *
     (shooter.baseInput.attributes.shooting / 100) *
-    shotDistance.onTarget;
+    shotDistance.onTarget *
+    shotFoot.onTargetMultiplier;
 
   const onTarget = state.rng.next() <= onTargetProbability;
-  const shotType = shotTypeFor(shooter, shotDistance.band, state.possession.pressureLevel);
   emitEvent(state, "shot", shooter.teamId, shooter.id, {
     onTarget,
     shotType,
-    ...(shotType === "header" ? {} : { foot: shotFootFor(shooter) }),
+    ...(shotFoot.foot ? { foot: shotFoot.foot } : {}),
     distancePitchUnits: Math.round(shotDistance.distanceToGoal),
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),
     distanceBand: shotDistance.band,
@@ -49,13 +55,14 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
     0.95,
     SUCCESS_PROBABILITIES.saveBase *
       ((keeper?.baseInput.attributes.saving ?? 50) / 100) *
-      shotDistance.save
+      shotDistance.save *
+      shotFoot.saveProbabilityMultiplier
   );
 
   if (keeper) {
     const saveRoll = state.rng.next();
     if (saveRoll > saveProbability) {
-      commitGoal(state, shooter, shotDistance, shotType);
+      commitGoal(state, shooter, shotDistance, shotType, shotFoot.foot);
       return;
     }
 
@@ -68,14 +75,15 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
     return;
   }
 
-  commitGoal(state, shooter, shotDistance, shotType);
+  commitGoal(state, shooter, shotDistance, shotType, shotFoot.foot);
 }
 
 function commitGoal(
   state: MutableMatchState,
   shooter: MutablePlayer,
   shotDistance: ShotDistanceContext,
-  shotType: ShotType
+  shotType: ShotType,
+  foot: ShotFoot | undefined
 ): void {
   const teamStats = state.stats[shooter.teamId];
   teamStats.goals += 1;
@@ -99,7 +107,7 @@ function commitGoal(
   emitEvent(state, "goal_scored", shooter.teamId, shooter.id, {
     fromZone: state.possession.zone,
     shotType,
-    ...(shotType === "header" ? {} : { foot: shotFootFor(shooter) }),
+    ...(foot ? { foot } : {}),
     distancePitchUnits: Math.round(shotDistance.distanceToGoal),
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),
     distanceBand: shotDistance.band,
@@ -198,7 +206,54 @@ function shotTypeFor(
     : "power";
 }
 
-function shotFootFor(shooter: MutablePlayer): ShotFoot {
+interface ShotFootContext {
+  foot?: ShotFoot;
+  onTargetMultiplier: number;
+  saveProbabilityMultiplier: number;
+}
+
+function shotFootFor(
+  state: MutableMatchState,
+  shooter: MutablePlayer,
+  shotType: ShotType
+): ShotFootContext {
+  if (shotType === "header") {
+    return { onTargetMultiplier: 1, saveProbabilityMultiplier: 1 };
+  }
+
+  if (!shooter.v2Input) {
+    return {
+      foot: legacyShotFootFor(shooter),
+      onTargetMultiplier: 1,
+      saveProbabilityMultiplier: 1
+    };
+  }
+
+  if (shooter.v2Input.preferredFoot === "either") {
+    return { foot: "preferred", onTargetMultiplier: 1, saveProbabilityMultiplier: 1 };
+  }
+
+  const rating = shooter.v2Input.weakFootRating;
+  const preferredProbability = SHOT_PREFERRED_FOOT_PROBABILITY_BY_WEAK_FOOT_RATING[rating];
+  const foot: ShotFoot = state.rng.next() <= preferredProbability ? "preferred" : "weak";
+
+  if (foot === "preferred") {
+    return { foot, onTargetMultiplier: 1, saveProbabilityMultiplier: 1 };
+  }
+
+  const multiplier = weakFootMultiplier(rating);
+  return {
+    foot,
+    onTargetMultiplier: multiplier,
+    saveProbabilityMultiplier: 1 / multiplier
+  };
+}
+
+function weakFootMultiplier(rating: StarRating): number {
+  return SHOT_WEAK_FOOT_MULTIPLIER_BY_RATING[rating];
+}
+
+function legacyShotFootFor(shooter: MutablePlayer): ShotFoot {
   const checksum = [...shooter.id].reduce((total, character) => total + character.charCodeAt(0), 0);
   return checksum % 5 === 0 ? "weak" : "preferred";
 }
