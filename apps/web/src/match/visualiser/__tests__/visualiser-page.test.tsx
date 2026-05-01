@@ -25,6 +25,11 @@ describe("VisualiserPage", () => {
     expect(screen.getByRole("img", { name: "Football pitch" })).toBeTruthy();
     expect(screen.getAllByText(/45:03/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/shot/).length).toBeGreaterThan(0);
+    expect(screen.getByText("Shooting")).toBeTruthy();
+    expect(screen.getByText("On / off / blocked")).toBeTruthy();
+    expect(screen.getByText("Passing and carries")).toBeTruthy();
+    expect(screen.getByText("Restarts and turnovers")).toBeTruthy();
+    expect(screen.getByText("Territory and momentum")).toBeTruthy();
   });
 
   it("shows a prominent goal overlay for recent goal events", async () => {
