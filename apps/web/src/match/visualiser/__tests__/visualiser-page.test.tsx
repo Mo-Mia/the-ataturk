@@ -170,6 +170,34 @@ describe("VisualiserPage", () => {
     expect(screen.getByText(/Full time/)).toBeTruthy();
     expect(screen.getByText(/1-3/)).toBeTruthy();
   });
+
+  it("renders heatmap diagnostics from the loaded snapshot", async () => {
+    const snapshot = createSnapshot();
+    snapshot.ticks.push({
+      iteration: 2,
+      matchClock: { half: 2, minute: 45, seconds: 6 },
+      ball: { position: [600, 820, 0], inFlight: false, carrierPlayerId: "h1" },
+      players: snapshot.ticks[0]!.players,
+      score: { home: 0, away: 3 },
+      possession: { teamId: "home", zone: "att" },
+      events: []
+    });
+    const file = new File([JSON.stringify(snapshot)], "snapshot.json", {
+      type: "application/json"
+    });
+
+    render(<VisualiserPage />);
+
+    const input = screen.getByLabelText("Load snapshot JSON");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText("LIV 0-3 MIL")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Heatmap" }));
+
+    expect(screen.getByRole("img", { name: "Ball-position heatmap" })).toBeTruthy();
+    expect(screen.getByText("Attacking third")).toBeTruthy();
+    expect(screen.getByText("Right flank")).toBeTruthy();
+  });
 });
 
 function createSnapshot(): MatchSnapshot {

@@ -3,14 +3,20 @@ import type { MatchSnapshot, MatchTick, SemanticEvent, TeamId } from "@the-atatu
 
 const PITCH_WIDTH = 680;
 const PITCH_LENGTH = 1050;
+const HEATMAP_COLS = 12;
+const HEATMAP_ROWS = 18;
 const SPEEDS = [1, 4, 16, "instant"] as const;
 type ReplaySpeed = (typeof SPEEDS)[number];
+type ViewMode = "replay" | "heatmap";
+type HeatmapFilter = "all" | TeamId;
 
 export function VisualiserPage() {
   const [snapshot, setSnapshot] = useState<MatchSnapshot | null>(null);
   const [tickIndex, setTickIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState<ReplaySpeed>(4);
+  const [viewMode, setViewMode] = useState<ViewMode>("replay");
+  const [heatmapFilter, setHeatmapFilter] = useState<HeatmapFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<number | null>(null);
 
@@ -105,8 +111,12 @@ export function VisualiserPage() {
         >
           {snapshot && currentTick ? (
             <div style={styles.pitchWrap}>
-              <Pitch snapshot={snapshot} tick={currentTick} />
-              {recentGoal ? (
+              {viewMode === "replay" ? (
+                <Pitch snapshot={snapshot} tick={currentTick} />
+              ) : (
+                <HeatmapPitch snapshot={snapshot} filter={heatmapFilter} />
+              )}
+              {viewMode === "replay" && recentGoal ? (
                 <GoalOverlay
                   snapshot={snapshot}
                   event={recentGoal.event}
@@ -154,6 +164,33 @@ export function VisualiserPage() {
               </option>
             ))}
           </select>
+          <div style={styles.segmentedControl} aria-label="Visualiser view mode">
+            <button
+              type="button"
+              onClick={() => setViewMode("replay")}
+              style={viewMode === "replay" ? styles.segmentedButtonActive : styles.segmentedButton}
+            >
+              Replay
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("heatmap")}
+              style={viewMode === "heatmap" ? styles.segmentedButtonActive : styles.segmentedButton}
+            >
+              Heatmap
+            </button>
+          </div>
+          <select
+            aria-label="Heatmap possession filter"
+            value={heatmapFilter}
+            disabled={!snapshot || viewMode !== "heatmap"}
+            onChange={(event) => setHeatmapFilter(parseHeatmapFilter(event.currentTarget.value))}
+            style={styles.select}
+          >
+            <option value="all">All possession</option>
+            <option value="home">{snapshot?.meta.homeTeam.shortName ?? "Home"}</option>
+            <option value="away">{snapshot?.meta.awayTeam.shortName ?? "Away"}</option>
+          </select>
         </div>
       </section>
 
@@ -164,6 +201,14 @@ export function VisualiserPage() {
             <StatsPanel snapshot={snapshot} tick={currentTick} stats={stats} />
           ) : (
             <p style={styles.muted}>No snapshot loaded.</p>
+          )}
+        </section>
+        <section aria-label="Heatmap diagnostics" style={styles.panelSection}>
+          <h2 style={styles.panelTitle}>Heatmap</h2>
+          {snapshot ? (
+            <HeatmapDiagnostics snapshot={snapshot} filter={heatmapFilter} />
+          ) : (
+            <p style={styles.muted}>No heatmap data.</p>
           )}
         </section>
         <section aria-label="Event log" style={styles.panelSection}>
@@ -187,7 +232,65 @@ function Pitch({ snapshot, tick }: { snapshot: MatchSnapshot; tick: MatchTick })
       role="img"
       aria-label="Football pitch"
     >
+      <PitchMarkings />
+
+      {tick.players.map((player) => (
+        <PlayerCircle key={player.id} snapshot={snapshot} player={player} />
+      ))}
+      <circle
+        cx={tick.ball.position[0]}
+        cy={tick.ball.position[1]}
+        r="7"
+        fill="#fff"
+        stroke="#111"
+        strokeWidth="2"
+        style={styles.moving}
+      />
+    </svg>
+  );
+}
+
+function HeatmapPitch({ snapshot, filter }: { snapshot: MatchSnapshot; filter: HeatmapFilter }) {
+  const heatmap = useMemo(() => buildHeatmap(snapshot, filter), [snapshot, filter]);
+  const cellWidth = PITCH_WIDTH / HEATMAP_COLS;
+  const cellHeight = PITCH_LENGTH / HEATMAP_ROWS;
+
+  return (
+    <svg
+      viewBox={`0 0 ${PITCH_WIDTH} ${PITCH_LENGTH}`}
+      style={styles.pitch}
+      role="img"
+      aria-label="Ball-position heatmap"
+    >
+      <PitchMarkings />
+      {heatmap.buckets.map((bucket) => (
+        <rect
+          key={`${bucket.col}-${bucket.row}`}
+          x={bucket.col * cellWidth}
+          y={bucket.row * cellHeight}
+          width={cellWidth}
+          height={cellHeight}
+          fill={heatColour(bucket.count, heatmap.max)}
+          opacity={bucket.count > 0 ? 0.74 : 0}
+        />
+      ))}
+      <PitchLineOverlay />
+    </svg>
+  );
+}
+
+function PitchMarkings() {
+  return (
+    <>
       <rect x="0" y="0" width={PITCH_WIDTH} height={PITCH_LENGTH} fill="#2f7d48" />
+      <PitchLineOverlay />
+    </>
+  );
+}
+
+function PitchLineOverlay() {
+  return (
+    <>
       <rect
         x="8"
         y="8"
@@ -236,20 +339,7 @@ function Pitch({ snapshot, tick }: { snapshot: MatchSnapshot; tick: MatchTick })
       />
       <line x1="295" y1="0" x2="385" y2="0" stroke="#fff" strokeWidth="7" />
       <line x1="295" y1={PITCH_LENGTH} x2="385" y2={PITCH_LENGTH} stroke="#fff" strokeWidth="7" />
-
-      {tick.players.map((player) => (
-        <PlayerCircle key={player.id} snapshot={snapshot} player={player} />
-      ))}
-      <circle
-        cx={tick.ball.position[0]}
-        cy={tick.ball.position[1]}
-        r="7"
-        fill="#fff"
-        stroke="#111"
-        strokeWidth="2"
-        style={styles.moving}
-      />
-    </svg>
+    </>
   );
 }
 
@@ -381,6 +471,157 @@ function EventLog({ snapshot, events }: { snapshot: MatchSnapshot; events: Seman
         ))}
     </ol>
   );
+}
+
+interface HeatmapBucket {
+  col: number;
+  row: number;
+  count: number;
+}
+
+interface HeatmapData {
+  buckets: HeatmapBucket[];
+  max: number;
+  diagnostics: HeatmapSummary;
+}
+
+interface HeatmapSummary {
+  totalTicks: number;
+  attackingThirdPct: number;
+  centralLanePct: number;
+  leftFlankPct: number;
+  rightFlankPct: number;
+  homeAvgY: number | null;
+  awayAvgY: number | null;
+}
+
+function HeatmapDiagnostics({
+  snapshot,
+  filter
+}: {
+  snapshot: MatchSnapshot;
+  filter: HeatmapFilter;
+}) {
+  const heatmap = useMemo(() => buildHeatmap(snapshot, filter), [snapshot, filter]);
+  const diagnostics = heatmap.diagnostics;
+
+  if (diagnostics.totalTicks === 0) {
+    return <p style={styles.muted}>No matching possession ticks.</p>;
+  }
+
+  return (
+    <div style={styles.diagnosticGrid}>
+      <span>Ticks</span>
+      <strong>{diagnostics.totalTicks}</strong>
+      <span>Attacking third</span>
+      <strong>{diagnostics.attackingThirdPct}%</strong>
+      <span>Central lane</span>
+      <strong>{diagnostics.centralLanePct}%</strong>
+      <span>Left flank</span>
+      <strong>{diagnostics.leftFlankPct}%</strong>
+      <span>Right flank</span>
+      <strong>{diagnostics.rightFlankPct}%</strong>
+      <span>{snapshot.meta.homeTeam.shortName} avg Y</span>
+      <strong>{diagnostics.homeAvgY === null ? "-" : Math.round(diagnostics.homeAvgY)}</strong>
+      <span>{snapshot.meta.awayTeam.shortName} avg Y</span>
+      <strong>{diagnostics.awayAvgY === null ? "-" : Math.round(diagnostics.awayAvgY)}</strong>
+    </div>
+  );
+}
+
+function buildHeatmap(snapshot: MatchSnapshot, filter: HeatmapFilter): HeatmapData {
+  const buckets = Array.from({ length: HEATMAP_COLS * HEATMAP_ROWS }, (_, index) => ({
+    col: index % HEATMAP_COLS,
+    row: Math.floor(index / HEATMAP_COLS),
+    count: 0
+  }));
+  const homeY: number[] = [];
+  const awayY: number[] = [];
+  let totalTicks = 0;
+  let attackingThirdTicks = 0;
+  let centralLaneTicks = 0;
+  let leftFlankTicks = 0;
+  let rightFlankTicks = 0;
+
+  for (const tick of snapshot.ticks) {
+    const team = tick.possession.teamId;
+    if (filter !== "all" && team !== filter) {
+      continue;
+    }
+
+    const [x, y] = tick.ball.position;
+    const col = Math.max(
+      0,
+      Math.min(HEATMAP_COLS - 1, Math.floor((x / PITCH_WIDTH) * HEATMAP_COLS))
+    );
+    const row = Math.max(
+      0,
+      Math.min(HEATMAP_ROWS - 1, Math.floor((y / PITCH_LENGTH) * HEATMAP_ROWS))
+    );
+    buckets[row * HEATMAP_COLS + col]!.count += 1;
+    totalTicks += 1;
+
+    if (x >= PITCH_WIDTH / 3 && x <= (PITCH_WIDTH * 2) / 3) {
+      centralLaneTicks += 1;
+    } else if (x < PITCH_WIDTH / 3) {
+      leftFlankTicks += 1;
+    } else {
+      rightFlankTicks += 1;
+    }
+
+    if (team === "home") {
+      homeY.push(y);
+      if (y >= (PITCH_LENGTH * 2) / 3) {
+        attackingThirdTicks += 1;
+      }
+    } else if (team === "away") {
+      awayY.push(y);
+      if (y <= PITCH_LENGTH / 3) {
+        attackingThirdTicks += 1;
+      }
+    }
+  }
+
+  const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
+  return {
+    buckets,
+    max,
+    diagnostics: {
+      totalTicks,
+      attackingThirdPct: percentage(attackingThirdTicks, totalTicks),
+      centralLanePct: percentage(centralLaneTicks, totalTicks),
+      leftFlankPct: percentage(leftFlankTicks, totalTicks),
+      rightFlankPct: percentage(rightFlankTicks, totalTicks),
+      homeAvgY: average(homeY),
+      awayAvgY: average(awayY)
+    }
+  };
+}
+
+function heatColour(count: number, max: number): string {
+  if (count <= 0) {
+    return "transparent";
+  }
+
+  const intensity = count / max;
+  if (intensity > 0.75) {
+    return "#ffef5f";
+  }
+  if (intensity > 0.45) {
+    return "#ff9f43";
+  }
+  if (intensity > 0.2) {
+    return "#e84a5f";
+  }
+  return "#7b2ff7";
+}
+
+function percentage(value: number, total: number): number {
+  return total > 0 ? Math.round((value / total) * 100) : 0;
+}
+
+function average(values: number[]): number | null {
+  return values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 }
 
 interface ReplayStats {
@@ -689,6 +930,13 @@ function parseSpeed(value: string): ReplaySpeed {
   return 4;
 }
 
+function parseHeatmapFilter(value: string): HeatmapFilter {
+  if (value === "home" || value === "away") {
+    return value;
+  }
+  return "all";
+}
+
 function clearReplayInterval(ref: MutableRefObject<number | null>): void {
   if (ref.current !== null) {
     window.clearInterval(ref.current);
@@ -762,10 +1010,28 @@ const styles = {
   button: { height: "34px", minWidth: "72px" },
   slider: { flex: 1 },
   select: { height: "34px" },
+  segmentedControl: { display: "inline-flex", border: "1px solid #d8ded9" },
+  segmentedButton: {
+    height: "34px",
+    padding: "0 12px",
+    border: 0,
+    background: "transparent",
+    color: "#f5f7f5",
+    cursor: "pointer"
+  },
+  segmentedButtonActive: {
+    height: "34px",
+    padding: "0 12px",
+    border: 0,
+    background: "#d8ded9",
+    color: "#17201b",
+    cursor: "pointer"
+  },
   sidePanel: { borderLeft: "1px solid #3f5045", padding: "18px", overflowY: "auto" as const },
   panelSection: { marginBottom: "24px" },
   panelTitle: { margin: "0 0 10px", fontSize: "18px" },
   statsGrid: { display: "grid", gridTemplateColumns: "1fr auto auto 1fr", gap: "8px 12px" },
+  diagnosticGrid: { display: "grid", gridTemplateColumns: "1fr auto", gap: "8px 12px" },
   muted: { color: "#aeb8b1" },
   eventList: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" },
   eventItem: { padding: "8px", background: "#23352a", borderLeft: "3px solid #d8ded9" },
