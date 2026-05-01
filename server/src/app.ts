@@ -6,6 +6,7 @@ import { registerDataRoutes } from "./routes/data";
 import { registerHealthRoute } from "./routes/health";
 import { registerMatchRoute } from "./routes/match";
 import { registerSmokeMatchRoute } from "./routes/smoke-match";
+import { registerVisualiserArtifactRoutes } from "./routes/visualiser-artifacts";
 
 export function buildApp() {
   const app = Fastify({
@@ -21,6 +22,7 @@ export function buildApp() {
   registerHealthRoute(app);
   registerSmokeMatchRoute(app);
   registerMatchRoute(app);
+  registerVisualiserArtifactRoutes(app);
 
   return app;
 }
