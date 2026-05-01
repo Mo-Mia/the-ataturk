@@ -49,6 +49,8 @@ export function toMatchTick(state: MutableMatchState): MatchTick {
     })),
     score: { ...state.score },
     possession: { teamId: state.possession.teamId, zone: state.possession.zone },
+    attackMomentum: { ...state.attackMomentum },
+    possessionStreak: { ...state.possessionStreak },
     events: state.eventsThisTick.map(cloneEvent)
   };
 }

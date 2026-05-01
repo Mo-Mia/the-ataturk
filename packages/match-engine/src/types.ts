@@ -224,6 +224,8 @@ export interface MatchTick {
   }>;
   score: { home: number; away: number };
   possession: { teamId: TeamId | null; zone: Zone };
+  attackMomentum?: { home: number; away: number };
+  possessionStreak?: { teamId: TeamId | null; ticks: number };
   events: SemanticEvent[];
 }
 

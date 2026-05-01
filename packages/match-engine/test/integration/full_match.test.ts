@@ -11,6 +11,9 @@ describe("simulateMatch", () => {
     expect(first).toEqual(second);
     expect(first.ticks).toHaveLength(900);
     expect(first.ticks[0]?.matchClock).toEqual({ half: 2, minute: 45, seconds: 3 });
+    expect(first.ticks[0]?.attackMomentum).toEqual({ home: 0, away: 0 });
+    expect(first.ticks[0]?.possessionStreak?.teamId).toMatch(/^(home|away)$/);
+    expect(first.ticks[0]?.possessionStreak?.ticks).toBe(1);
     expect(first.ticks.at(-1)?.matchClock).toEqual({ half: 2, minute: 90, seconds: 0 });
     const fullTimeEvent = first.ticks.at(-1)?.events.at(-1);
     expect(fullTimeEvent?.type).toBe("full_time");

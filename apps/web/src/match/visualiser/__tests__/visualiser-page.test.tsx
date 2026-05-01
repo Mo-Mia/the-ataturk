@@ -22,7 +22,7 @@ describe("VisualiserPage", () => {
     await waitFor(() => expect(screen.getByText("LIV 0-3 MIL")).toBeTruthy());
     expect(screen.getByRole("img", { name: "Football pitch" })).toBeTruthy();
     expect(screen.getAllByText(/45:03/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/shot/)).toBeTruthy();
+    expect(screen.getAllByText(/shot/).length).toBeGreaterThan(0);
   });
 
   it("shows a prominent goal overlay for recent goal events", async () => {
@@ -173,6 +173,8 @@ describe("VisualiserPage", () => {
 
   it("renders heatmap diagnostics from the loaded snapshot", async () => {
     const snapshot = createSnapshot();
+    snapshot.ticks[0]!.attackMomentum = { home: 47, away: 8 };
+    snapshot.ticks[0]!.possessionStreak = { teamId: "home", ticks: 12 };
     snapshot.ticks.push({
       iteration: 2,
       matchClock: { half: 2, minute: 45, seconds: 6 },
@@ -180,6 +182,8 @@ describe("VisualiserPage", () => {
       players: snapshot.ticks[0]!.players,
       score: { home: 0, away: 3 },
       possession: { teamId: "home", zone: "att" },
+      attackMomentum: { home: 55, away: 5 },
+      possessionStreak: { teamId: "home", ticks: 13 },
       events: []
     });
     const file = new File([JSON.stringify(snapshot)], "snapshot.json", {
@@ -195,8 +199,26 @@ describe("VisualiserPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Heatmap" }));
 
     expect(screen.getByRole("img", { name: "Ball-position heatmap" })).toBeTruthy();
+    expect(screen.getByText(/LIV momentum: 47/)).toBeTruthy();
+    expect(screen.getByText(/streak: LIV 12 ticks/)).toBeTruthy();
     expect(screen.getByText("Attacking third")).toBeTruthy();
     expect(screen.getByText("Right flank")).toBeTruthy();
+  });
+
+  it("degrades gracefully when old snapshots do not expose momentum", async () => {
+    const file = new File([JSON.stringify(createSnapshot())], "snapshot.json", {
+      type: "application/json"
+    });
+
+    render(<VisualiserPage />);
+
+    const input = screen.getByLabelText("Load snapshot JSON");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText("LIV 0-3 MIL")).toBeTruthy());
+    fireEvent.click(screen.getByRole("button", { name: "Heatmap" }));
+
+    expect(screen.getByText(/Momentum: unavailable/)).toBeTruthy();
   });
 });
 

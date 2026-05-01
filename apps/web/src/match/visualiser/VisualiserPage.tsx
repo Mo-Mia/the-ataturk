@@ -205,8 +205,8 @@ export function VisualiserPage() {
         </section>
         <section aria-label="Heatmap diagnostics" style={styles.panelSection}>
           <h2 style={styles.panelTitle}>Heatmap</h2>
-          {snapshot ? (
-            <HeatmapDiagnostics snapshot={snapshot} filter={heatmapFilter} />
+          {snapshot && currentTick ? (
+            <HeatmapDiagnostics snapshot={snapshot} tick={currentTick} filter={heatmapFilter} />
           ) : (
             <p style={styles.muted}>No heatmap data.</p>
           )}
@@ -497,9 +497,11 @@ interface HeatmapSummary {
 
 function HeatmapDiagnostics({
   snapshot,
+  tick,
   filter
 }: {
   snapshot: MatchSnapshot;
+  tick: MatchTick;
   filter: HeatmapFilter;
 }) {
   const heatmap = useMemo(() => buildHeatmap(snapshot, filter), [snapshot, filter]);
@@ -510,22 +512,43 @@ function HeatmapDiagnostics({
   }
 
   return (
-    <div style={styles.diagnosticGrid}>
-      <span>Ticks</span>
-      <strong>{diagnostics.totalTicks}</strong>
-      <span>Attacking third</span>
-      <strong>{diagnostics.attackingThirdPct}%</strong>
-      <span>Central lane</span>
-      <strong>{diagnostics.centralLanePct}%</strong>
-      <span>Left flank</span>
-      <strong>{diagnostics.leftFlankPct}%</strong>
-      <span>Right flank</span>
-      <strong>{diagnostics.rightFlankPct}%</strong>
-      <span>{snapshot.meta.homeTeam.shortName} avg Y</span>
-      <strong>{diagnostics.homeAvgY === null ? "-" : Math.round(diagnostics.homeAvgY)}</strong>
-      <span>{snapshot.meta.awayTeam.shortName} avg Y</span>
-      <strong>{diagnostics.awayAvgY === null ? "-" : Math.round(diagnostics.awayAvgY)}</strong>
-    </div>
+    <>
+      <MomentumDiagnostics snapshot={snapshot} tick={tick} />
+      <div style={styles.diagnosticGrid}>
+        <span>Ticks</span>
+        <strong>{diagnostics.totalTicks}</strong>
+        <span>Attacking third</span>
+        <strong>{diagnostics.attackingThirdPct}%</strong>
+        <span>Central lane</span>
+        <strong>{diagnostics.centralLanePct}%</strong>
+        <span>Left flank</span>
+        <strong>{diagnostics.leftFlankPct}%</strong>
+        <span>Right flank</span>
+        <strong>{diagnostics.rightFlankPct}%</strong>
+        <span>{snapshot.meta.homeTeam.shortName} avg Y</span>
+        <strong>{diagnostics.homeAvgY === null ? "-" : Math.round(diagnostics.homeAvgY)}</strong>
+        <span>{snapshot.meta.awayTeam.shortName} avg Y</span>
+        <strong>{diagnostics.awayAvgY === null ? "-" : Math.round(diagnostics.awayAvgY)}</strong>
+      </div>
+    </>
+  );
+}
+
+function MomentumDiagnostics({ snapshot, tick }: { snapshot: MatchSnapshot; tick: MatchTick }) {
+  const momentum = tick.attackMomentum;
+  const streak = tick.possessionStreak;
+
+  if (!momentum) {
+    return <p style={styles.muted}>Momentum: unavailable in this snapshot.</p>;
+  }
+
+  const streakTeam = streak?.teamId ? teamName(snapshot, streak.teamId) : "none";
+  return (
+    <p style={styles.momentumText}>
+      {snapshot.meta.homeTeam.shortName} momentum: {Math.round(momentum.home)} |{" "}
+      {snapshot.meta.awayTeam.shortName} momentum: {Math.round(momentum.away)} | streak:{" "}
+      {streakTeam} {streak?.ticks ?? 0} ticks
+    </p>
   );
 }
 
@@ -1032,6 +1055,7 @@ const styles = {
   panelTitle: { margin: "0 0 10px", fontSize: "18px" },
   statsGrid: { display: "grid", gridTemplateColumns: "1fr auto auto 1fr", gap: "8px 12px" },
   diagnosticGrid: { display: "grid", gridTemplateColumns: "1fr auto", gap: "8px 12px" },
+  momentumText: { margin: "0 0 12px", color: "#f5f7f5", fontVariantNumeric: "tabular-nums" },
   muted: { color: "#aeb8b1" },
   eventList: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" },
   eventItem: { padding: "8px", background: "#23352a", borderLeft: "3px solid #d8ded9" },
