@@ -66,6 +66,9 @@ describe("pressure and tackle resolution", () => {
         tackleType: "standing"
       })
     );
+    expect(state.eventsThisTick.find((event) => event.type === "yellow")?.detail).toEqual(
+      expect.objectContaining({ cardCount: 2 })
+    );
     expect(state.eventsThisTick.find((event) => event.type === "red")?.detail?.reason).toBe(
       "second_yellow"
     );
@@ -75,6 +78,43 @@ describe("pressure and tackle resolution", () => {
       expect.objectContaining({ cause: "foul_against_carrier", previousPossessor: tackler.id })
     );
     expect(state.pendingSetPiece?.type).toBe("free_kick");
+  });
+
+  it("persists bookings across separate fouls and sends off on the second yellow", () => {
+    const state = buildInitState(createTestConfig(6));
+    const carrier = state.players.find((player) => player.hasBall)!;
+    const tackler = state.players.find((player) => player.teamId !== carrier.teamId)!;
+    state.possession.pressureLevel = "high";
+    const rolls = [0, 0, 1, 0, 0];
+    state.rng.next = () => rolls.shift() ?? 1;
+
+    resolveTackleAttempt(state, tackler, carrier);
+    expect(tackler.yellowCards).toBe(1);
+    expect(tackler.onPitch).toBe(true);
+    expect(state.eventsThisTick.find((event) => event.type === "yellow")?.detail).toEqual(
+      expect.objectContaining({ cardCount: 1 })
+    );
+
+    state.eventsThisTick = [];
+    state.pendingSetPiece = null;
+    resolveTackleAttempt(state, tackler, carrier);
+
+    expect(tackler.yellowCards).toBe(2);
+    expect(tackler.onPitch).toBe(false);
+    expect(tackler.redCard).toBe(true);
+    expect(state.eventsThisTick.map((event) => event.type)).toEqual([
+      "foul",
+      "yellow",
+      "red",
+      "free_kick",
+      "possession_change"
+    ]);
+    expect(state.eventsThisTick.find((event) => event.type === "yellow")?.detail).toEqual(
+      expect.objectContaining({ cardCount: 2 })
+    );
+    expect(state.eventsThisTick.find((event) => event.type === "red")?.detail).toEqual(
+      expect.objectContaining({ reason: "second_yellow" })
+    );
   });
 
   it("derives foul severity from the tackle circumstances", () => {

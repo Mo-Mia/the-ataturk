@@ -546,6 +546,10 @@ function formatEventDetail(snapshot: MatchSnapshot, event: SemanticEvent): strin
     return `(${detailString(event.detail.reason, "sent off")})`;
   }
 
+  if (event.type === "yellow") {
+    return event.detail.cardCount === 2 ? "(second booking)" : "";
+  }
+
   if (event.type === "possession_change") {
     return `(${possessionChangeText(snapshot, event)})`;
   }

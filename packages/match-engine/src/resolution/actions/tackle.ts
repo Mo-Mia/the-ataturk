@@ -47,13 +47,7 @@ function commitFoul(
   });
 
   if (state.rng.next() <= SUCCESS_PROBABILITIES.yellowOnFoul) {
-    state.stats[tackler.teamId].yellowCards += 1;
-    tackler.yellowCards += 1;
-    emitEvent(state, "yellow", tackler.teamId, tackler.id, { on: carrier.id });
-
-    if (tackler.yellowCards >= 2) {
-      sendOff(state, tackler, carrier, "second_yellow");
-    }
+    bookPlayer(state, tackler, carrier);
   }
 
   if (!tackler.redCard && state.rng.next() <= SUCCESS_PROBABILITIES.redOnFoul) {
@@ -101,6 +95,27 @@ function foulSeverityFor(
   }
 
   return "minor";
+}
+
+function bookPlayer(
+  state: MutableMatchState,
+  tackler: MutablePlayer,
+  carrier: MutablePlayer
+): void {
+  if (tackler.redCard) {
+    return;
+  }
+
+  state.stats[tackler.teamId].yellowCards += 1;
+  tackler.yellowCards += 1;
+  emitEvent(state, "yellow", tackler.teamId, tackler.id, {
+    on: carrier.id,
+    cardCount: tackler.yellowCards
+  });
+
+  if (tackler.yellowCards >= 2) {
+    sendOff(state, tackler, carrier, "second_yellow");
+  }
 }
 
 function sendOff(

@@ -20,4 +20,37 @@ describe("simulateMatch", () => {
     expect(first.finalSummary.finalScore.home).toBeGreaterThanOrEqual(0);
     expect(first.finalSummary.finalScore.away).toBeGreaterThanOrEqual(3);
   });
+
+  it("never leaves a twice-booked player on the pitch", () => {
+    for (let seed = 1; seed <= 50; seed += 1) {
+      const snapshot = simulateMatch(createTestConfig(seed));
+      const yellowCounts = new Map<string, number>();
+      const redPlayers = new Set<string>();
+
+      snapshot.ticks.forEach((tick) => {
+        tick.events.forEach((event) => {
+          if (!event.playerId) {
+            return;
+          }
+          if (event.type === "yellow") {
+            yellowCounts.set(event.playerId, (yellowCounts.get(event.playerId) ?? 0) + 1);
+          }
+          if (event.type === "red") {
+            redPlayers.add(event.playerId);
+          }
+        });
+
+        const twiceBookedPlayers = [...yellowCounts.entries()]
+          .filter(([, count]) => count >= 2)
+          .map(([playerId]) => playerId);
+        twiceBookedPlayers.forEach((playerId) => {
+          expect(redPlayers.has(playerId), `seed ${seed}: ${playerId} has no red`).toBe(true);
+          expect(
+            tick.players.find((player) => player.id === playerId)?.onPitch,
+            `seed ${seed}: ${playerId} stayed on the pitch`
+          ).toBe(false);
+        });
+      });
+    }
+  });
 });

@@ -113,6 +113,14 @@ describe("VisualiserPage", () => {
         detail: { severity: "reckless", tackleType: "sliding", location: "att", on: "h1" }
       },
       {
+        type: "yellow",
+        team: "away",
+        playerId: "a1",
+        minute: 45,
+        second: 16,
+        detail: { cardCount: 2, on: "h1" }
+      },
+      {
         type: "possession_change",
         team: "home",
         playerId: "h1",
@@ -143,6 +151,7 @@ describe("VisualiserPage", () => {
     expect(screen.getByText(/parried safe/)).toBeTruthy();
     expect(screen.getByText(/key pass/)).toBeTruthy();
     expect(screen.getByText(/sliding/)).toBeTruthy();
+    expect(screen.getByText(/second booking/)).toBeTruthy();
     expect(screen.getByText(/cause unknown/)).toBeTruthy();
     expect(screen.getByText(/Full time/)).toBeTruthy();
     expect(screen.getByText(/1-3/)).toBeTruthy();
