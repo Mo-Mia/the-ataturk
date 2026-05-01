@@ -4,7 +4,9 @@ import {
   CALIBRATION_TARGETS,
   simulateMatch,
   type MatchConfig,
+  type MatchConfigV2,
   type PlayerInput,
+  type PlayerInputV2,
   type Team
 } from "../src";
 
@@ -20,15 +22,17 @@ interface SeedResult {
 
 interface CliOptions {
   seeds: number;
+  schema: "v1" | "v2";
+  preferredFootMode: "either" | "rated";
   writeSnapshotPath?: string;
 }
 
 const options = parseArgs(process.argv.slice(2));
 const results: SeedResult[] = [];
-let representativeConfig: MatchConfig | null = null;
+let representativeConfig: MatchConfig | MatchConfigV2 | null = null;
 
 for (let seed = 1; seed <= options.seeds; seed += 1) {
-  const config = createScenario(seed);
+  const config = createScenario(seed, options.schema, options.preferredFootMode);
   representativeConfig = representativeConfig ?? config;
   const startedAt = performance.now();
   const snapshot = simulateMatch(config);
@@ -63,10 +67,27 @@ if (!report.pass) {
   process.exitCode = 1;
 }
 
-function createScenario(seed: number): MatchConfig {
+function createScenario(
+  seed: number,
+  schema: CliOptions["schema"],
+  preferredFootMode: CliOptions["preferredFootMode"]
+): MatchConfig | MatchConfigV2 {
+  const homeTeam = createTeam("liverpool", "Liverpool", "LIV", "4-4-2", "attacking", "fast", 74);
+  const awayTeam = createTeam("ac-milan", "AC Milan", "MIL", "4-3-1-2", "balanced", "normal", 77);
+
+  if (schema === "v2") {
+    return {
+      homeTeam: toV2Team(homeTeam, preferredFootMode),
+      awayTeam: toV2Team(awayTeam, preferredFootMode),
+      duration: "second_half",
+      seed,
+      preMatchScore: { home: 0, away: 3 }
+    };
+  }
+
   return {
-    homeTeam: createTeam("liverpool", "Liverpool", "LIV", "4-4-2", "attacking", "fast", 74),
-    awayTeam: createTeam("ac-milan", "AC Milan", "MIL", "4-3-1-2", "balanced", "normal", 77),
+    homeTeam,
+    awayTeam,
     duration: "second_half",
     seed,
     preMatchScore: { home: 0, away: 3 }
@@ -146,6 +167,94 @@ function player(
   };
 }
 
+function toV2Team(
+  team: Team,
+  preferredFootMode: CliOptions["preferredFootMode"]
+): MatchConfigV2["homeTeam"] {
+  return {
+    ...team,
+    players: team.players.map((teamPlayer, index) =>
+      playerV2FromV1(teamPlayer, index, preferredFootMode)
+    )
+  };
+}
+
+function playerV2FromV1(
+  playerInput: PlayerInput,
+  index: number,
+  preferredFootMode: CliOptions["preferredFootMode"]
+): PlayerInputV2 {
+  const attributes = playerInput.attributes;
+  const isGoalkeeper = playerInput.position === "GK";
+  const preferredFoot =
+    preferredFootMode === "either" ? "either" : index % 4 === 0 ? "left" : "right";
+  const weakFootRating =
+    preferredFootMode === "either"
+      ? 5
+      : (Math.min(5, Math.max(2, 2 + (index % 4))) as 2 | 3 | 4 | 5);
+  const reactionsAndComposure = (3 * attributes.perception - attributes.passing) / 2;
+  const ballControlAndDribbling = (3 * attributes.control - reactionsAndComposure) / 2;
+  const v2Strength = 2 * attributes.strength - attributes.jumping;
+
+  return {
+    id: playerInput.id,
+    name: playerInput.name,
+    shortName: playerInput.shortName,
+    ...(playerInput.squadNumber === undefined ? {} : { squadNumber: playerInput.squadNumber }),
+    position: playerInput.position,
+    height: isGoalkeeper ? 191 : 181,
+    weight: isGoalkeeper ? 84 : 76,
+    age: 27 + (index % 6),
+    preferredFoot,
+    weakFootRating,
+    skillMovesRating: isGoalkeeper
+      ? 1
+      : (Math.min(5, Math.max(2, 2 + (index % 4))) as 2 | 3 | 4 | 5),
+    attributes: {
+      acceleration: attributes.agility,
+      sprintSpeed: attributes.agility,
+      finishing: attributes.shooting,
+      shotPower: attributes.shooting,
+      longShots: attributes.shooting,
+      positioning: attributes.shooting,
+      volleys: attributes.shooting,
+      penalties: attributes.penaltyTaking,
+      vision: attributes.passing,
+      crossing: attributes.passing,
+      freeKickAccuracy: attributes.penaltyTaking,
+      shortPassing: attributes.passing,
+      longPassing: attributes.passing,
+      curve: attributes.passing,
+      dribbling: ballControlAndDribbling,
+      agility: attributes.agility,
+      balance: attributes.agility,
+      reactions: reactionsAndComposure,
+      ballControl: ballControlAndDribbling,
+      composure: reactionsAndComposure,
+      interceptions: attributes.tackling,
+      headingAccuracy: attributes.jumping,
+      defensiveAwareness: attributes.tackling,
+      standingTackle: attributes.tackling,
+      slidingTackle: attributes.tackling,
+      jumping: attributes.jumping,
+      stamina: attributes.agility,
+      strength: v2Strength,
+      aggression: attributes.strength
+    },
+    ...(isGoalkeeper
+      ? {
+          gkAttributes: {
+            gkDiving: attributes.saving,
+            gkHandling: attributes.saving,
+            gkKicking: attributes.passing,
+            gkPositioning: attributes.saving,
+            gkReflexes: attributes.saving
+          }
+        }
+      : {})
+  };
+}
+
 function buildReport(results: SeedResult[]): {
   averages: Record<"shots" | "goals" | "fouls" | "cards" | "elapsedMs", number>;
   scoreDistribution: Array<{ score: string; count: number; pct: number }>;
@@ -199,7 +308,7 @@ function printReport(report: ReturnType<typeof buildReport>, seeds: number): voi
 }
 
 function parseArgs(args: string[]): CliOptions {
-  const options: CliOptions = { seeds: 50 };
+  const options: CliOptions = { seeds: 50, schema: "v1", preferredFootMode: "rated" };
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -214,6 +323,18 @@ function parseArgs(args: string[]): CliOptions {
         options.writeSnapshotPath = outputPath;
       }
       index += 1;
+    } else if (arg === "--schema" && args[index + 1]) {
+      options.schema = parseSchema(args[index + 1]);
+      index += 1;
+    } else if (arg?.startsWith("--schema=")) {
+      options.schema = parseSchema(arg.slice("--schema=".length));
+    } else if (arg === "--preferred-foot-mode" && args[index + 1]) {
+      options.preferredFootMode = parsePreferredFootMode(args[index + 1]);
+      index += 1;
+    } else if (arg?.startsWith("--preferred-foot-mode=")) {
+      options.preferredFootMode = parsePreferredFootMode(
+        arg.slice("--preferred-foot-mode=".length)
+      );
     }
   }
 
@@ -222,6 +343,20 @@ function parseArgs(args: string[]): CliOptions {
   }
 
   return options;
+}
+
+function parseSchema(value: string | undefined): CliOptions["schema"] {
+  if (value === "v1" || value === "v2") {
+    return value;
+  }
+  throw new Error("Expected --schema to be v1 or v2");
+}
+
+function parsePreferredFootMode(value: string | undefined): CliOptions["preferredFootMode"] {
+  if (value === "either" || value === "rated") {
+    return value;
+  }
+  throw new Error("Expected --preferred-foot-mode to be either or rated");
 }
 
 function avg(values: number[]): number {
