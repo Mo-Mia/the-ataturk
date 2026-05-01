@@ -82,6 +82,7 @@ function mutablePlayer(
     onPitch: true,
     yellowCards: 0,
     redCard: false,
+    lastWideCarryTick: null,
     baseInput,
     ...(isPlayerInputV2(player) ? { v2Input: player } : {})
   };

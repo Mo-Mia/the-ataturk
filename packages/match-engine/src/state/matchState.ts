@@ -26,6 +26,7 @@ export interface MutablePlayer {
   onPitch: boolean;
   yellowCards: number;
   redCard: boolean;
+  lastWideCarryTick: number | null;
   baseInput: PlayerInput;
   v2Input?: PlayerInputV2;
 }

@@ -23,6 +23,7 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
     carrier.position = clamp2D(nextPosition, PITCH_WIDTH, PITCH_LENGTH);
     state.ball.position = [carrier.position[0], carrier.position[1], 0];
     if (isWideCarrier(carrier)) {
+      carrier.lastWideCarryTick = state.iteration;
       emitWideCarryEvent(state, carrier, direction, previousPosition);
     }
     return;

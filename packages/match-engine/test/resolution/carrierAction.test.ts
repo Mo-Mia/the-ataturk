@@ -240,6 +240,51 @@ describe("carrier action selection", () => {
     );
   });
 
+  it("turns recent wide carries into box deliveries", () => {
+    const state = buildInitState(createTestConfig(25));
+    const carrier = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "RW"
+    )!;
+    const striker = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "ST"
+    )!;
+    const fullBack = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "RB"
+    )!;
+    const midfielder = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "CM"
+    )!;
+
+    state.players.forEach((player) => {
+      player.onPitch = [carrier.id, striker.id, fullBack.id, midfielder.id].includes(player.id);
+      player.hasBall = player.id === carrier.id;
+    });
+    state.iteration = 42;
+    carrier.lastWideCarryTick = 40;
+    carrier.position = [610, 660];
+    striker.position = [340, 780];
+    fullBack.position = [600, 690];
+    midfielder.position = [340, 650];
+    carrier.baseInput.attributes.passing = 100;
+    state.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+    state.rng.int = () => 0;
+    state.rng.next = () => 0;
+
+    performPass(state, carrier);
+
+    expect(striker.hasBall).toBe(true);
+    expect(fullBack.hasBall).toBe(false);
+    expect(midfielder.hasBall).toBe(false);
+    expect(carrier.lastWideCarryTick).toBeNull();
+    expect(state.eventsThisTick.find((event) => event.type === "pass")?.detail).toEqual(
+      expect.objectContaining({
+        passType: "cross",
+        keyPass: true,
+        targetPlayerId: striker.id
+      })
+    );
+  });
+
   it("penalises long-range shot selection", () => {
     const near = shotDistanceContext("home", [340, 930]);
     const far = shotDistanceContext("home", [340, 710]);

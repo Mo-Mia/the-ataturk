@@ -24,6 +24,9 @@ export const PASS_TARGET_WEIGHTS = {
   sameFlankWideSupportBonus: 34,
   attackingCrossBonus: 34,
   cutbackBonus: 46,
+  postCarryBoxDeliveryBonus: 72,
+  postCarryCentralRecyclePenalty: 22,
+  postCarryMomentumTicks: 4,
   wideToCentralBouncePenalty: 28
 };
 
