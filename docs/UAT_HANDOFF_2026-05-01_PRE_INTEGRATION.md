@@ -1,6 +1,6 @@
 # UAT Handoff — Pre-integration Engine Diagnostic Pass
 
-Last updated: 2026-05-01 16:25 SAST
+Last updated: 2026-05-01 19:53 SAST
 
 Use this handoff with the next visualiser video and the JSON artefacts. The goal
 is not to recalibrate from vibes; it is to compare visible behaviour against
@@ -21,8 +21,12 @@ All current artefacts include:
 - `diagnostics.shape.home`
 - `diagnostics.shape.away`
 
-The visualiser heatmap mode now supports ball, home-player, away-player, and
-all-player heatmaps.
+The visualiser can load these snapshots directly from
+`packages/match-engine/artifacts` via the in-page artifact picker, or from a
+manual `.json` file upload. Heatmap mode supports ball, home-player,
+away-player, all-player, and player-relative views. The player-relative view
+splits each player's positioning relative to the ball by whether their own team
+is in possession or out of possession.
 
 ## Representative Seed Ground Truth
 
@@ -79,6 +83,7 @@ Check:
 - support runs do not collapse into swarming
 - centre-backs and deeper midfielders remain structurally conservative
 - player heatmaps show support beyond halfway, not only forwards in the attacking half
+- player-relative heatmaps show whether support runs are actually close to the ball or just high up the pitch
 - momentum feels visible but not like a direct scoring boost
 
 ## Forced Second Yellow

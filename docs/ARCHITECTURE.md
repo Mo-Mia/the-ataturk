@@ -74,6 +74,8 @@ The package includes two development harnesses:
 - Characterisation scripts for 50/100-seed calibration and score-distribution checks.
 - A responsiveness harness that varies one tactic or player-quality input at a time. Its scripted `__testApplyMidMatchAttributeSwap` helper is test-only and is not a substitution API for Atatürk integration.
 
+The diagnostic visualiser at `/visualise` is a snapshot-replay tool for the standalone engine. It can load a local `.json` snapshot or browse safe `.json` artefacts exposed by the server from `packages/match-engine/artifacts` through `/api/visualiser/artifacts`. It renders replay, event log, stats, shape diagnostics, momentum/streak diagnostics, ball/player heatmaps, and player-relative heatmaps split by in-possession versus out-of-possession samples. This remains diagnostic tooling, not the production `/match` route.
+
 ## Tactics layer (we build this)
 
 The engine has player-level `action` overrides and team-level binary `intent` (`'attack'` / `'defend'`). That's a starting point, not a tactics system. Our layer:

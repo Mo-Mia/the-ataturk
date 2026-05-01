@@ -1,6 +1,6 @@
 # Session Status — Match Engine Post-v2 Refinement And Responsiveness Gate
 
-Last updated: 2026-05-01 16:30 SAST
+Last updated: 2026-05-01 19:53 SAST
 
 ## Executive Summary
 
@@ -87,7 +87,7 @@ This document covers the work after `807c46c`.
   - Added 100-seed v2 stress reporting.
   - Added report-only weak-foot compounding comparison without changing committed mechanics.
 
-Pre-UAT diagnostic sprint now in progress:
+Pre-UAT diagnostic sprint completed and then extended with visualiser usability work:
 
 - Snapshot ticks include derived team-shape diagnostics:
   - active players
@@ -96,12 +96,24 @@ Pre-UAT diagnostic sprint now in progress:
   - thirds occupation
   - opposition-half players
   - ball-side players
-- Visualiser heatmap mode can show ball, home-player, away-player, or all-player heatmaps.
+- Visualiser heatmap mode can show ball, home-player, away-player, all-player, or player-relative heatmaps.
+- Player-relative heatmaps split each player's positioning relative to the ball by whether their team is in possession or out of possession.
+- `/visualise` can now browse safe `.json` snapshots from `packages/match-engine/artifacts` through the server's `/api/visualiser/artifacts` endpoint, as well as manual file upload.
+- The visualiser layout was reworked into a full-width diagnostic workbench with a constrained pitch stage, tabbed inspector, and bottom event dock. A follow-up sizing fix prevents the pitch from expanding beyond the useful viewport.
 - Added model-gap audit: `docs/MATCH_ENGINE_MODEL_GAPS.md`.
 - Added UAT handoff: `docs/UAT_HANDOFF_2026-05-01_PRE_INTEGRATION.md`.
 - Added forced scenario artefacts:
   - `forced-early-goal-v2.json(.gz)`
   - `forced-high-momentum-attack-v2.json(.gz)`
+
+- `d4ef12c docs: add pre-integration UAT handoff`
+- `94abd18 test(match-engine): add pre-UAT scenario artefacts`
+- `54f10bd feat(web): expand visualiser diagnostic heatmaps`
+- `b152f21 feat(match-engine): expose shape diagnostics`
+- `95c43f4 fix(web): keep goal overlay score home-away`
+- `054c5f3 feat(server): expose visualiser artifact browser`
+- `29eb067 feat(web): rework visualiser diagnostics workbench`
+- `5819c6c fix(web): constrain visualiser pitch sizing`
 
 ## UAT Findings And Fixes Since v2 Bridge
 
@@ -243,11 +255,13 @@ Forced second-yellow artefact summary:
 
 ## Verification Status
 
-Latest verification after pre-UAT diagnostic work:
+Latest verification after pre-UAT diagnostic and visualiser usability work:
 
 - `pnpm test` — passed
 - `pnpm typecheck` — passed
 - `pnpm lint` — passed
+- `pnpm --filter @the-ataturk/web test` — passed after the visualiser layout sizing fix
+- `pnpm --filter @the-ataturk/web typecheck` — passed after the visualiser layout sizing fix
 - `pnpm --filter @the-ataturk/match-engine responsiveness` — passed
 - `pnpm --filter @the-ataturk/match-engine characterise -- --seeds 100 --schema v2 --preferred-foot rated` — passed during responsiveness close-out
 - `pnpm --filter @the-ataturk/match-engine characterise -- --seeds 50 --schema v2 --preferred-foot rated` — passed after diagnostics, unchanged metrics
@@ -280,6 +294,8 @@ Visualiser:
 
 - `apps/web/src/match/visualiser/VisualiserPage.tsx`
 - `apps/web/src/match/visualiser/__tests__/visualiser-page.test.tsx`
+- `server/src/routes/visualiser-artifacts.ts`
+- `server/test/visualiser-artifacts.test.ts`
 
 Canonical docs:
 
