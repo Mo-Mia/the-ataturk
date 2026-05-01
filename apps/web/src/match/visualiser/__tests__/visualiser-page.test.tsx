@@ -175,6 +175,12 @@ describe("VisualiserPage", () => {
     const snapshot = createSnapshot();
     snapshot.ticks[0]!.attackMomentum = { home: 47, away: 8 };
     snapshot.ticks[0]!.possessionStreak = { teamId: "home", ticks: 12 };
+    snapshot.ticks[0]!.diagnostics = {
+      shape: {
+        home: shapeDiagnostics(2, 410),
+        away: shapeDiagnostics(2, 390)
+      }
+    };
     snapshot.ticks.push({
       iteration: 2,
       matchClock: { half: 2, minute: 45, seconds: 6 },
@@ -184,6 +190,12 @@ describe("VisualiserPage", () => {
       possession: { teamId: "home", zone: "att" },
       attackMomentum: { home: 55, away: 5 },
       possessionStreak: { teamId: "home", ticks: 13 },
+      diagnostics: {
+        shape: {
+          home: shapeDiagnostics(2, 430),
+          away: shapeDiagnostics(2, 380)
+        }
+      },
       events: []
     });
     const file = new File([JSON.stringify(snapshot)], "snapshot.json", {
@@ -201,8 +213,18 @@ describe("VisualiserPage", () => {
     expect(screen.getByRole("img", { name: "Ball-position heatmap" })).toBeTruthy();
     expect(screen.getByText(/LIV momentum: 47/)).toBeTruthy();
     expect(screen.getByText(/streak: LIV 12 ticks/)).toBeTruthy();
+    expect(screen.getByText("Shape")).toBeTruthy();
+    expect(screen.getByText("LIV active")).toBeTruthy();
+    expect(screen.getByText("LIV line")).toBeTruthy();
     expect(screen.getByText("Attacking third")).toBeTruthy();
     expect(screen.getByText("Right flank")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Heatmap subject"), {
+      target: { value: "home_players" }
+    });
+
+    expect(screen.getByRole("img", { name: "Home player-position heatmap" })).toBeTruthy();
+    expect(screen.getByLabelText("Heatmap possession filter")).toHaveProperty("disabled", true);
   });
 
   it("degrades gracefully when old snapshots do not expose momentum", async () => {
@@ -219,8 +241,33 @@ describe("VisualiserPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Heatmap" }));
 
     expect(screen.getByText(/Momentum: unavailable/)).toBeTruthy();
+    expect(screen.getByText(/Shape diagnostics unavailable/)).toBeTruthy();
   });
 });
+
+function shapeDiagnostics(activePlayers: number, teamLine: number) {
+  return {
+    activePlayers,
+    lineHeight: {
+      team: teamLine,
+      defence: teamLine - 140,
+      midfield: teamLine,
+      attack: teamLine + 160
+    },
+    spread: {
+      width: 280,
+      depth: 420,
+      compactness: 190
+    },
+    thirds: {
+      defensive: 1,
+      middle: 1,
+      attacking: 0
+    },
+    oppositionHalfPlayers: 1,
+    ballSidePlayers: 1
+  };
+}
 
 function createSnapshot(): MatchSnapshot {
   return {

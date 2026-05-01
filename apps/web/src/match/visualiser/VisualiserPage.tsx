@@ -9,6 +9,7 @@ const SPEEDS = [1, 4, 16, "instant"] as const;
 type ReplaySpeed = (typeof SPEEDS)[number];
 type ViewMode = "replay" | "heatmap";
 type HeatmapFilter = "all" | TeamId;
+type HeatmapSubject = "ball" | "home_players" | "away_players" | "all_players";
 
 export function VisualiserPage() {
   const [snapshot, setSnapshot] = useState<MatchSnapshot | null>(null);
@@ -17,6 +18,7 @@ export function VisualiserPage() {
   const [speed, setSpeed] = useState<ReplaySpeed>(4);
   const [viewMode, setViewMode] = useState<ViewMode>("replay");
   const [heatmapFilter, setHeatmapFilter] = useState<HeatmapFilter>("all");
+  const [heatmapSubject, setHeatmapSubject] = useState<HeatmapSubject>("ball");
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<number | null>(null);
 
@@ -114,7 +116,7 @@ export function VisualiserPage() {
               {viewMode === "replay" ? (
                 <Pitch snapshot={snapshot} tick={currentTick} />
               ) : (
-                <HeatmapPitch snapshot={snapshot} filter={heatmapFilter} />
+                <HeatmapPitch snapshot={snapshot} filter={heatmapFilter} subject={heatmapSubject} />
               )}
               {viewMode === "replay" && recentGoal ? (
                 <GoalOverlay
@@ -181,9 +183,25 @@ export function VisualiserPage() {
             </button>
           </div>
           <select
+            aria-label="Heatmap subject"
+            value={heatmapSubject}
+            disabled={!snapshot || viewMode !== "heatmap"}
+            onChange={(event) => setHeatmapSubject(parseHeatmapSubject(event.currentTarget.value))}
+            style={styles.select}
+          >
+            <option value="ball">Ball</option>
+            <option value="home_players">
+              {snapshot?.meta.homeTeam.shortName ?? "Home"} players
+            </option>
+            <option value="away_players">
+              {snapshot?.meta.awayTeam.shortName ?? "Away"} players
+            </option>
+            <option value="all_players">All players</option>
+          </select>
+          <select
             aria-label="Heatmap possession filter"
             value={heatmapFilter}
-            disabled={!snapshot || viewMode !== "heatmap"}
+            disabled={!snapshot || viewMode !== "heatmap" || heatmapSubject !== "ball"}
             onChange={(event) => setHeatmapFilter(parseHeatmapFilter(event.currentTarget.value))}
             style={styles.select}
           >
@@ -206,7 +224,12 @@ export function VisualiserPage() {
         <section aria-label="Heatmap diagnostics" style={styles.panelSection}>
           <h2 style={styles.panelTitle}>Heatmap</h2>
           {snapshot && currentTick ? (
-            <HeatmapDiagnostics snapshot={snapshot} tick={currentTick} filter={heatmapFilter} />
+            <HeatmapDiagnostics
+              snapshot={snapshot}
+              tick={currentTick}
+              filter={heatmapFilter}
+              subject={heatmapSubject}
+            />
           ) : (
             <p style={styles.muted}>No heatmap data.</p>
           )}
@@ -250,8 +273,19 @@ function Pitch({ snapshot, tick }: { snapshot: MatchSnapshot; tick: MatchTick })
   );
 }
 
-function HeatmapPitch({ snapshot, filter }: { snapshot: MatchSnapshot; filter: HeatmapFilter }) {
-  const heatmap = useMemo(() => buildHeatmap(snapshot, filter), [snapshot, filter]);
+function HeatmapPitch({
+  snapshot,
+  filter,
+  subject
+}: {
+  snapshot: MatchSnapshot;
+  filter: HeatmapFilter;
+  subject: HeatmapSubject;
+}) {
+  const heatmap = useMemo(
+    () => buildHeatmap(snapshot, filter, subject),
+    [snapshot, filter, subject]
+  );
   const cellWidth = PITCH_WIDTH / HEATMAP_COLS;
   const cellHeight = PITCH_LENGTH / HEATMAP_ROWS;
 
@@ -260,7 +294,7 @@ function HeatmapPitch({ snapshot, filter }: { snapshot: MatchSnapshot; filter: H
       viewBox={`0 0 ${PITCH_WIDTH} ${PITCH_LENGTH}`}
       style={styles.pitch}
       role="img"
-      aria-label="Ball-position heatmap"
+      aria-label={`${heatmapSubjectLabel(subject)} heatmap`}
     >
       <PitchMarkings />
       {heatmap.buckets.map((bucket) => (
@@ -485,6 +519,12 @@ interface HeatmapData {
   diagnostics: HeatmapSummary;
 }
 
+interface HeatmapPoint {
+  x: number;
+  y: number;
+  teamId: TeamId | null;
+}
+
 interface HeatmapSummary {
   totalTicks: number;
   attackingThirdPct: number;
@@ -498,24 +538,30 @@ interface HeatmapSummary {
 function HeatmapDiagnostics({
   snapshot,
   tick,
-  filter
+  filter,
+  subject
 }: {
   snapshot: MatchSnapshot;
   tick: MatchTick;
   filter: HeatmapFilter;
+  subject: HeatmapSubject;
 }) {
-  const heatmap = useMemo(() => buildHeatmap(snapshot, filter), [snapshot, filter]);
+  const heatmap = useMemo(
+    () => buildHeatmap(snapshot, filter, subject),
+    [snapshot, filter, subject]
+  );
   const diagnostics = heatmap.diagnostics;
 
   if (diagnostics.totalTicks === 0) {
-    return <p style={styles.muted}>No matching possession ticks.</p>;
+    return <p style={styles.muted}>No matching heatmap samples.</p>;
   }
 
   return (
     <>
       <MomentumDiagnostics snapshot={snapshot} tick={tick} />
+      <ShapeDiagnostics snapshot={snapshot} tick={tick} />
       <div style={styles.diagnosticGrid}>
-        <span>Ticks</span>
+        <span>{subject === "ball" ? "Ticks" : "Samples"}</span>
         <strong>{diagnostics.totalTicks}</strong>
         <span>Attacking third</span>
         <strong>{diagnostics.attackingThirdPct}%</strong>
@@ -552,7 +598,54 @@ function MomentumDiagnostics({ snapshot, tick }: { snapshot: MatchSnapshot; tick
   );
 }
 
-function buildHeatmap(snapshot: MatchSnapshot, filter: HeatmapFilter): HeatmapData {
+function ShapeDiagnostics({ snapshot, tick }: { snapshot: MatchSnapshot; tick: MatchTick }) {
+  const shape = tick.diagnostics?.shape;
+  if (!shape) {
+    return <p style={styles.muted}>Shape diagnostics unavailable.</p>;
+  }
+
+  return (
+    <div style={styles.shapeDiagnostics}>
+      <h3 style={styles.subPanelTitle}>Shape</h3>
+      <div style={styles.diagnosticGrid}>
+        <span>{snapshot.meta.homeTeam.shortName} active</span>
+        <strong>{shape.home.activePlayers}</strong>
+        <span>{snapshot.meta.awayTeam.shortName} active</span>
+        <strong>{shape.away.activePlayers}</strong>
+        <span>{snapshot.meta.homeTeam.shortName} line</span>
+        <strong>{shape.home.lineHeight.team}</strong>
+        <span>{snapshot.meta.awayTeam.shortName} line</span>
+        <strong>{shape.away.lineHeight.team}</strong>
+        <span>{snapshot.meta.homeTeam.shortName} lines</span>
+        <strong>{lineSummary(shape.home)}</strong>
+        <span>{snapshot.meta.awayTeam.shortName} lines</span>
+        <strong>{lineSummary(shape.away)}</strong>
+        <span>{snapshot.meta.homeTeam.shortName} opp half</span>
+        <strong>{shape.home.oppositionHalfPlayers}</strong>
+        <span>{snapshot.meta.awayTeam.shortName} opp half</span>
+        <strong>{shape.away.oppositionHalfPlayers}</strong>
+        <span>{snapshot.meta.homeTeam.shortName} attacking third</span>
+        <strong>{shape.home.thirds.attacking}</strong>
+        <span>{snapshot.meta.awayTeam.shortName} attacking third</span>
+        <strong>{shape.away.thirds.attacking}</strong>
+        <span>{snapshot.meta.homeTeam.shortName} spread</span>
+        <strong>{spreadSummary(shape.home)}</strong>
+        <span>{snapshot.meta.awayTeam.shortName} spread</span>
+        <strong>{spreadSummary(shape.away)}</strong>
+        <span>{snapshot.meta.homeTeam.shortName} ball side</span>
+        <strong>{shape.home.ballSidePlayers}</strong>
+        <span>{snapshot.meta.awayTeam.shortName} ball side</span>
+        <strong>{shape.away.ballSidePlayers}</strong>
+      </div>
+    </div>
+  );
+}
+
+function buildHeatmap(
+  snapshot: MatchSnapshot,
+  filter: HeatmapFilter,
+  subject: HeatmapSubject
+): HeatmapData {
   const buckets = Array.from({ length: HEATMAP_COLS * HEATMAP_ROWS }, (_, index) => ({
     col: index % HEATMAP_COLS,
     row: Math.floor(index / HEATMAP_COLS),
@@ -568,39 +661,46 @@ function buildHeatmap(snapshot: MatchSnapshot, filter: HeatmapFilter): HeatmapDa
 
   for (const tick of snapshot.ticks) {
     const team = tick.possession.teamId;
-    if (filter !== "all" && team !== filter) {
+    if (subject === "ball" && filter !== "all" && team !== filter) {
       continue;
     }
 
-    const [x, y] = tick.ball.position;
-    const col = Math.max(
-      0,
-      Math.min(HEATMAP_COLS - 1, Math.floor((x / PITCH_WIDTH) * HEATMAP_COLS))
-    );
-    const row = Math.max(
-      0,
-      Math.min(HEATMAP_ROWS - 1, Math.floor((y / PITCH_LENGTH) * HEATMAP_ROWS))
-    );
-    buckets[row * HEATMAP_COLS + col]!.count += 1;
-    totalTicks += 1;
-
-    if (x >= PITCH_WIDTH / 3 && x <= (PITCH_WIDTH * 2) / 3) {
-      centralLaneTicks += 1;
-    } else if (x < PITCH_WIDTH / 3) {
-      leftFlankTicks += 1;
-    } else {
-      rightFlankTicks += 1;
+    const points = heatmapPoints(tick, subject);
+    if (points.length === 0) {
+      continue;
     }
 
-    if (team === "home") {
-      homeY.push(y);
-      if (y >= (PITCH_LENGTH * 2) / 3) {
-        attackingThirdTicks += 1;
+    for (const point of points) {
+      const { x, y } = point;
+      const col = Math.max(
+        0,
+        Math.min(HEATMAP_COLS - 1, Math.floor((x / PITCH_WIDTH) * HEATMAP_COLS))
+      );
+      const row = Math.max(
+        0,
+        Math.min(HEATMAP_ROWS - 1, Math.floor((y / PITCH_LENGTH) * HEATMAP_ROWS))
+      );
+      buckets[row * HEATMAP_COLS + col]!.count += 1;
+      totalTicks += 1;
+
+      if (x >= PITCH_WIDTH / 3 && x <= (PITCH_WIDTH * 2) / 3) {
+        centralLaneTicks += 1;
+      } else if (x < PITCH_WIDTH / 3) {
+        leftFlankTicks += 1;
+      } else {
+        rightFlankTicks += 1;
       }
-    } else if (team === "away") {
-      awayY.push(y);
-      if (y <= PITCH_LENGTH / 3) {
-        attackingThirdTicks += 1;
+
+      if (point.teamId === "home") {
+        homeY.push(y);
+        if (y >= (PITCH_LENGTH * 2) / 3) {
+          attackingThirdTicks += 1;
+        }
+      } else if (point.teamId === "away") {
+        awayY.push(y);
+        if (y <= PITCH_LENGTH / 3) {
+          attackingThirdTicks += 1;
+        }
       }
     }
   }
@@ -619,6 +719,52 @@ function buildHeatmap(snapshot: MatchSnapshot, filter: HeatmapFilter): HeatmapDa
       awayAvgY: average(awayY)
     }
   };
+}
+
+function heatmapPoints(tick: MatchTick, subject: HeatmapSubject): HeatmapPoint[] {
+  if (subject === "ball") {
+    return [{ x: tick.ball.position[0], y: tick.ball.position[1], teamId: tick.possession.teamId }];
+  }
+
+  return tick.players
+    .filter((player) => {
+      if (!player.onPitch) {
+        return false;
+      }
+      if (subject === "home_players") {
+        return player.teamId === "home";
+      }
+      if (subject === "away_players") {
+        return player.teamId === "away";
+      }
+      return true;
+    })
+    .map((player) => ({ x: player.position[0], y: player.position[1], teamId: player.teamId }));
+}
+
+function heatmapSubjectLabel(subject: HeatmapSubject): string {
+  switch (subject) {
+    case "home_players":
+      return "Home player-position";
+    case "away_players":
+      return "Away player-position";
+    case "all_players":
+      return "All player-position";
+    case "ball":
+      return "Ball-position";
+  }
+}
+
+type ShapeDiagnosticsValue = NonNullable<MatchTick["diagnostics"]>["shape"]["home"];
+
+function lineSummary(shape: ShapeDiagnosticsValue): string {
+  return `${shape.lineHeight.defence ?? "-"} / ${shape.lineHeight.midfield ?? "-"} / ${
+    shape.lineHeight.attack ?? "-"
+  }`;
+}
+
+function spreadSummary(shape: ShapeDiagnosticsValue): string {
+  return `${shape.spread.width}w ${shape.spread.depth}d ${shape.spread.compactness}c`;
 }
 
 function heatColour(count: number, max: number): string {
@@ -960,6 +1106,18 @@ function parseHeatmapFilter(value: string): HeatmapFilter {
   return "all";
 }
 
+function parseHeatmapSubject(value: string): HeatmapSubject {
+  if (
+    value === "ball" ||
+    value === "home_players" ||
+    value === "away_players" ||
+    value === "all_players"
+  ) {
+    return value;
+  }
+  return "ball";
+}
+
 function clearReplayInterval(ref: MutableRefObject<number | null>): void {
   if (ref.current !== null) {
     window.clearInterval(ref.current);
@@ -1053,8 +1211,10 @@ const styles = {
   sidePanel: { borderLeft: "1px solid #3f5045", padding: "18px", overflowY: "auto" as const },
   panelSection: { marginBottom: "24px" },
   panelTitle: { margin: "0 0 10px", fontSize: "18px" },
+  subPanelTitle: { margin: "12px 0 8px", fontSize: "14px", color: "#d8ded9" },
   statsGrid: { display: "grid", gridTemplateColumns: "1fr auto auto 1fr", gap: "8px 12px" },
   diagnosticGrid: { display: "grid", gridTemplateColumns: "1fr auto", gap: "8px 12px" },
+  shapeDiagnostics: { marginBottom: "14px" },
   momentumText: { margin: "0 0 12px", color: "#f5f7f5", fontVariantNumeric: "tabular-nums" },
   muted: { color: "#aeb8b1" },
   eventList: { listStyle: "none", padding: 0, margin: 0, display: "grid", gap: "8px" },
