@@ -3,10 +3,12 @@ import type {
   Coordinate3D,
   MatchDuration,
   PlayerInput,
+  PlayerInputV2,
   PressureLevel,
   PossessionChangeCause,
   SemanticEvent,
   Team,
+  TeamV2,
   TeamId,
   TeamStatistics,
   Zone
@@ -25,6 +27,7 @@ export interface MutablePlayer {
   yellowCards: number;
   redCard: boolean;
   baseInput: PlayerInput;
+  v2Input?: PlayerInputV2;
 }
 
 export interface MutableBall {
@@ -58,8 +61,8 @@ export interface MutableMatchState {
   duration: MatchDuration;
   seed: number;
   rng: Rng;
-  homeTeam: Team;
-  awayTeam: Team;
+  homeTeam: Team | TeamV2;
+  awayTeam: Team | TeamV2;
   players: MutablePlayer[];
   ball: MutableBall;
   score: { home: number; away: number };

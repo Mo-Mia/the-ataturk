@@ -4,19 +4,27 @@ import {
   TICKS_PER_FULL_MATCH,
   TICKS_PER_HALF
 } from "./calibration/constants";
+import { isPlayerInputV2 } from "./adapter/v2ToV1";
 import { buildInitState } from "./state/initState";
 import type { MutableMatchState } from "./state/matchState";
 import type {
   MatchConfig,
+  MatchConfigV2,
   MatchSnapshot,
   MatchTick,
+  PlayerInput,
+  PlayerInputV2,
   SnapshotRosterPlayer,
   Team,
+  TeamV2,
   TeamStatistics
 } from "./types";
 import { runTick } from "./ticks/runTick";
 
-export function simulateMatch(config: MatchConfig): MatchSnapshot {
+export function simulateMatch(config: MatchConfig): MatchSnapshot;
+export function simulateMatch(config: MatchConfigV2): MatchSnapshot;
+export function simulateMatch(config: MatchConfig | MatchConfigV2): MatchSnapshot;
+export function simulateMatch(config: MatchConfig | MatchConfigV2): MatchSnapshot {
   const state = buildInitState(config);
   const ticks: MatchTick[] = [];
   const totalTicks = tickCount(config.duration);
@@ -29,8 +37,20 @@ export function simulateMatch(config: MatchConfig): MatchSnapshot {
   return buildSnapshot(state, config, ticks);
 }
 
-export async function* simulateMatchStream(
+export function simulateMatchStream(
   config: MatchConfig,
+  options?: { signal?: AbortSignal }
+): AsyncIterable<MatchTick>;
+export function simulateMatchStream(
+  config: MatchConfigV2,
+  options?: { signal?: AbortSignal }
+): AsyncIterable<MatchTick>;
+export function simulateMatchStream(
+  config: MatchConfig | MatchConfigV2,
+  options?: { signal?: AbortSignal }
+): AsyncIterable<MatchTick>;
+export async function* simulateMatchStream(
+  config: MatchConfig | MatchConfigV2,
   options?: { signal?: AbortSignal }
 ): AsyncIterable<MatchTick> {
   const state = buildInitState(config);
@@ -68,7 +88,7 @@ function toMatchTick(state: MutableMatchState): MatchTick {
 
 function buildSnapshot(
   state: MutableMatchState,
-  config: MatchConfig,
+  config: MatchConfig | MatchConfigV2,
   ticks: MatchTick[]
 ): MatchSnapshot {
   return {
@@ -100,18 +120,38 @@ function tickCount(duration: MatchConfig["duration"]): number {
   return duration === "second_half" ? TICKS_PER_HALF : TICKS_PER_FULL_MATCH;
 }
 
-function teamMeta(team: Team): { id: string; name: string; shortName: string } {
+function teamMeta(team: Team | TeamV2): { id: string; name: string; shortName: string } {
   return { id: team.id, name: team.name, shortName: team.shortName };
 }
 
-function roster(team: Team): SnapshotRosterPlayer[] {
-  return team.players.map((player) => ({
+function roster(team: Team | TeamV2): SnapshotRosterPlayer[] {
+  return team.players.map(rosterPlayer);
+}
+
+function rosterPlayer(player: PlayerInput | PlayerInputV2): SnapshotRosterPlayer {
+  const base = {
     id: player.id,
     name: player.name,
     shortName: player.shortName,
     ...(player.squadNumber === undefined ? {} : { squadNumber: player.squadNumber }),
     position: player.position
-  }));
+  };
+
+  if (!isPlayerInputV2(player)) {
+    return base;
+  }
+
+  return {
+    ...base,
+    ...(player.height === undefined ? {} : { height: player.height }),
+    ...(player.weight === undefined ? {} : { weight: player.weight }),
+    ...(player.age === undefined ? {} : { age: player.age }),
+    preferredFoot: player.preferredFoot,
+    weakFootRating: player.weakFootRating,
+    skillMovesRating: player.skillMovesRating,
+    attributesV2: structuredClone(player.attributes),
+    ...(player.gkAttributes ? { gkAttributesV2: structuredClone(player.gkAttributes) } : {})
+  };
 }
 
 function cloneStats(stats: TeamStatistics): TeamStatistics {

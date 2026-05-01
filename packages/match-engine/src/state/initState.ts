@@ -1,10 +1,17 @@
 import { PITCH_LENGTH, PITCH_WIDTH } from "../calibration/constants";
-import type { MatchConfig, TeamStatistics } from "../types";
+import { adaptV2ToV1, isPlayerInputV2 } from "../adapter/v2ToV1";
+import type {
+  MatchConfig,
+  MatchConfigV2,
+  PlayerInput,
+  PlayerInputV2,
+  TeamStatistics
+} from "../types";
 import { createSeededRng } from "../utils/rng";
 import { positionTeam } from "../utils/formations";
 import { emptyTeamStatistics, type MutableMatchState, type MutablePlayer } from "./matchState";
 
-export function buildInitState(config: MatchConfig): MutableMatchState {
+export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatchState {
   validateConfig(config);
 
   const isSecondHalf = config.duration === "second_half";
@@ -59,11 +66,13 @@ export function buildInitState(config: MatchConfig): MutableMatchState {
 }
 
 function mutablePlayer(
-  player: import("../types").PlayerInput,
+  player: PlayerInput | PlayerInputV2,
   teamId: "home" | "away"
 ): MutablePlayer {
+  const baseInput = isPlayerInputV2(player) ? adaptV2ToV1(player) : player;
+
   return {
-    id: player.id,
+    id: baseInput.id,
     teamId,
     position: [0, 0],
     targetPosition: [0, 0],
@@ -73,7 +82,8 @@ function mutablePlayer(
     onPitch: true,
     yellowCards: 0,
     redCard: false,
-    baseInput: player
+    baseInput,
+    ...(isPlayerInputV2(player) ? { v2Input: player } : {})
   };
 }
 
@@ -104,7 +114,7 @@ function cloneStats(stats: TeamStatistics | undefined, scoreGoals: number): Team
   return cloned;
 }
 
-function validateConfig(config: MatchConfig): void {
+function validateConfig(config: MatchConfig | MatchConfigV2): void {
   if (config.homeTeam.players.length !== 11 || config.awayTeam.players.length !== 11) {
     throw new Error("Match engine requires exactly 11 players per team");
   }
