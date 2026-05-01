@@ -3,7 +3,7 @@ import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
 import { clamp2D } from "../../utils/geometry";
-import { attackDirection } from "../../zones/pitchZones";
+import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
 
 export function performDribble(state: MutableMatchState, carrier: MutablePlayer): void {
@@ -42,5 +42,9 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
   state.ball.carrierPlayerId = opponent.id;
   state.ball.position = [opponent.position[0], opponent.position[1], 0];
   state.possession.teamId = opponent.teamId;
-  emitPossessionChange(state, carrier.teamId, opponent.teamId, opponent.id);
+  emitPossessionChange(state, carrier.teamId, opponent.teamId, opponent.id, {
+    cause: "failed_dribble",
+    previousPossessor: carrier.id,
+    zone: zoneForPosition(opponent.teamId, opponent.position)
+  });
 }

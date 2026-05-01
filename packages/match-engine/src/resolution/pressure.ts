@@ -1,8 +1,10 @@
 import { SUCCESS_PROBABILITIES, TACTIC_MODIFIERS } from "../calibration/probabilities";
 import { emitEvent } from "../ticks/runTick";
 import { otherTeam, type MutableMatchState, type MutablePlayer } from "../state/matchState";
-import type { PressureLevel, TeamId } from "../types";
+import type { PossessionChangeCause, PressureLevel, TeamId, Zone } from "../types";
 import { distanceSquared } from "../utils/geometry";
+import { zoneForPosition } from "../zones/pitchZones";
+import type { CarrierAction } from "../calibration/probabilities";
 import { resolveTackleAttempt } from "./actions/tackle";
 
 const TACKLE_RANGE = 74;
@@ -24,7 +26,11 @@ export function pressureLevel(state: MutableMatchState, carrier: MutablePlayer):
   return "low";
 }
 
-export function rollPressureTackle(state: MutableMatchState, carrier: MutablePlayer): boolean {
+export function rollPressureTackle(
+  state: MutableMatchState,
+  carrier: MutablePlayer,
+  carrierAction: CarrierAction = "hold"
+): boolean {
   const tacklers = eligibleTacklers(state, carrier);
 
   for (const tackler of tacklers) {
@@ -39,13 +45,13 @@ export function rollPressureTackle(state: MutableMatchState, carrier: MutablePla
       continue;
     }
 
-    const outcome = resolveTackleAttempt(state, tackler, carrier);
+    const outcome = resolveTackleAttempt(state, tackler, carrier, { carrierAction });
     if (outcome === "foul") {
       return true;
     }
 
     if (outcome === "won") {
-      changePossession(state, tackler);
+      changePossession(state, tackler, carrier.id);
       return true;
     }
   }
@@ -68,7 +74,11 @@ function eligibleTacklers(state: MutableMatchState, carrier: MutablePlayer): Mut
     );
 }
 
-function changePossession(state: MutableMatchState, tackler: MutablePlayer): void {
+function changePossession(
+  state: MutableMatchState,
+  tackler: MutablePlayer,
+  previousPossessor: string
+): void {
   const previousTeam = otherTeam(tackler.teamId);
   state.players.forEach((player) => {
     player.hasBall = player.id === tackler.id;
@@ -77,14 +87,24 @@ function changePossession(state: MutableMatchState, tackler: MutablePlayer): voi
   state.ball.carrierPlayerId = tackler.id;
   state.ball.position = [tackler.position[0], tackler.position[1], 0];
   state.possession.teamId = tackler.teamId;
-  emitPossessionChange(state, previousTeam, tackler.teamId, tackler.id);
+  emitPossessionChange(state, previousTeam, tackler.teamId, tackler.id, {
+    cause: "successful_tackle",
+    previousPossessor
+  });
 }
 
 export function emitPossessionChange(
   state: MutableMatchState,
   from: TeamId | null,
   to: TeamId,
-  playerId?: string
+  playerId?: string,
+  detail: { cause?: PossessionChangeCause; previousPossessor?: string; zone?: Zone } = {}
 ): void {
-  emitEvent(state, "possession_change", to, playerId, { from, to });
+  const player = playerId ? state.players.find((candidate) => candidate.id === playerId) : null;
+  emitEvent(state, "possession_change", to, playerId, {
+    from,
+    to,
+    ...detail,
+    zone: detail.zone ?? (player ? zoneForPosition(to, player.position) : state.possession.zone)
+  });
 }

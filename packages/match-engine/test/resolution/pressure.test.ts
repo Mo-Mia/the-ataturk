@@ -56,11 +56,44 @@ describe("pressure and tackle resolution", () => {
       "foul",
       "yellow",
       "red",
-      "free_kick"
+      "free_kick",
+      "possession_change"
     ]);
+    expect(state.eventsThisTick.find((event) => event.type === "foul")?.detail).toEqual(
+      expect.objectContaining({
+        severity: "minor",
+        location: "mid",
+        tackleType: "standing"
+      })
+    );
     expect(state.eventsThisTick.find((event) => event.type === "red")?.detail?.reason).toBe(
       "second_yellow"
     );
+    expect(
+      state.eventsThisTick.find((event) => event.type === "possession_change")?.detail
+    ).toEqual(
+      expect.objectContaining({ cause: "foul_against_carrier", previousPossessor: tackler.id })
+    );
     expect(state.pendingSetPiece?.type).toBe("free_kick");
+  });
+
+  it("derives foul severity from the tackle circumstances", () => {
+    const state = buildInitState(createTestConfig(5));
+    const carrier = state.players.find((player) => player.hasBall)!;
+    const tackler = state.players.find((player) => player.teamId !== carrier.teamId)!;
+    state.possession = { teamId: carrier.teamId, zone: "att", pressureLevel: "medium" };
+    carrier.position = [340, 820];
+    tackler.position = [340, 770];
+    state.rng.next = () => 0;
+
+    resolveTackleAttempt(state, tackler, carrier, { carrierAction: "dribble" });
+
+    expect(state.eventsThisTick.find((event) => event.type === "foul")?.detail).toEqual(
+      expect.objectContaining({
+        severity: "reckless",
+        tackleType: "sliding",
+        location: "att"
+      })
+    );
   });
 });

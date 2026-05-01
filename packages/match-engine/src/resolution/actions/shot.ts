@@ -8,9 +8,11 @@ import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import { emitEvent } from "../../ticks/runTick";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
-import type { TeamId } from "../../types";
+import type { SaveQuality, SaveResult, ShotFoot, ShotType, TeamId } from "../../types";
+import { zoneForPosition } from "../../zones/pitchZones";
+import { emitPossessionChange } from "../pressure";
 import { awardGoalKick } from "../setPieces";
-import { shotDistanceContext } from "../shotDistance";
+import { shotDistanceContext, type ShotDistanceContext } from "../shotDistance";
 
 export function performShot(state: MutableMatchState, shooter: MutablePlayer): void {
   const teamStats = state.stats[shooter.teamId];
@@ -24,11 +26,15 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
     shotDistance.onTarget;
 
   const onTarget = state.rng.next() <= onTargetProbability;
+  const shotType = shotTypeFor(shooter, shotDistance.band, state.possession.pressureLevel);
   emitEvent(state, "shot", shooter.teamId, shooter.id, {
     onTarget,
-    distanceToGoal: Math.round(shotDistance.distanceToGoal),
+    shotType,
+    ...(shotType === "header" ? {} : { foot: shotFootFor(shooter) }),
+    distancePitchUnits: Math.round(shotDistance.distanceToGoal),
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),
-    distanceBand: shotDistance.band
+    distanceBand: shotDistance.band,
+    pressure: state.possession.pressureLevel
   });
 
   if (!onTarget) {
@@ -46,12 +52,32 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
       shotDistance.save
   );
 
-  if (keeper && state.rng.next() <= saveProbability) {
-    emitEvent(state, "save", keeper.teamId, keeper.id, { shooterId: shooter.id });
-    givePossession(state, keeper);
+  if (keeper) {
+    const saveRoll = state.rng.next();
+    if (saveRoll > saveProbability) {
+      commitGoal(state, shooter, shotDistance, shotType);
+      return;
+    }
+
+    emitEvent(state, "save", keeper.teamId, keeper.id, {
+      shooterId: shooter.id,
+      quality: saveQualityFor(saveProbability - saveRoll),
+      result: saveResultFor(saveProbability - saveRoll)
+    });
+    givePossession(state, keeper, shooter.teamId, shooter.id);
     return;
   }
 
+  commitGoal(state, shooter, shotDistance, shotType);
+}
+
+function commitGoal(
+  state: MutableMatchState,
+  shooter: MutablePlayer,
+  shotDistance: ShotDistanceContext,
+  shotType: ShotType
+): void {
+  const teamStats = state.stats[shooter.teamId];
   teamStats.goals += 1;
   state.score[shooter.teamId] += 1;
   state.ball.position = [GOAL_CENTRE_X, shooter.teamId === "home" ? AWAY_GOAL_Y : HOME_GOAL_Y, 0];
@@ -72,15 +98,23 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
   };
   emitEvent(state, "goal_scored", shooter.teamId, shooter.id, {
     fromZone: state.possession.zone,
-    distanceToGoal: Math.round(shotDistance.distanceToGoal),
+    shotType,
+    ...(shotType === "header" ? {} : { foot: shotFootFor(shooter) }),
+    distancePitchUnits: Math.round(shotDistance.distanceToGoal),
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),
     distanceBand: shotDistance.band,
+    pressure: state.possession.pressureLevel,
     score: { ...state.score },
     restartTeam: otherTeam(shooter.teamId)
   });
 }
 
-function givePossession(state: MutableMatchState, receiver: MutablePlayer): void {
+function givePossession(
+  state: MutableMatchState,
+  receiver: MutablePlayer,
+  previousTeam: TeamId,
+  previousPossessor: string
+): void {
   state.players.forEach((player) => {
     player.hasBall = player.id === receiver.id;
   });
@@ -91,9 +125,18 @@ function givePossession(state: MutableMatchState, receiver: MutablePlayer): void
   state.ball.carrierPlayerId = receiver.id;
   state.ball.position = [receiver.position[0], receiver.position[1], 0];
   state.possession.teamId = receiver.teamId;
+  emitPossessionChange(state, previousTeam, receiver.teamId, receiver.id, {
+    cause: "goalkeeper_save",
+    previousPossessor,
+    zone: zoneForPosition(receiver.teamId, receiver.position)
+  });
 }
 
-export function restartAfterGoal(state: MutableMatchState, restartTeam: TeamId): void {
+export function restartAfterGoal(
+  state: MutableMatchState,
+  restartTeam: TeamId,
+  previousPossessor?: string
+): void {
   const receiver =
     state.players.find(
       (player) =>
@@ -113,6 +156,11 @@ export function restartAfterGoal(state: MutableMatchState, restartTeam: TeamId):
   state.ball.targetCarrierPlayerId = null;
   state.possession.teamId = restartTeam;
   emitEvent(state, "kick_off", restartTeam, receiver.id, { afterGoal: true });
+  emitPossessionChange(state, otherTeam(restartTeam), restartTeam, receiver.id, {
+    cause: "kickoff_after_goal",
+    ...(previousPossessor ? { previousPossessor } : {}),
+    zone: zoneForPosition(restartTeam, receiver.position)
+  });
 }
 
 function goalkeeperFor(state: MutableMatchState, teamId: TeamId): MutablePlayer | null {
@@ -121,4 +169,53 @@ function goalkeeperFor(state: MutableMatchState, teamId: TeamId): MutablePlayer 
       (player) => player.teamId === teamId && player.baseInput.position === "GK" && player.onPitch
     ) ?? null
   );
+}
+
+function shotTypeFor(
+  shooter: MutablePlayer,
+  band: string,
+  pressure: "low" | "medium" | "high"
+): ShotType {
+  if (
+    (band === "close" || band === "box") &&
+    shooter.baseInput.attributes.jumping > shooter.baseInput.attributes.shooting + 6
+  ) {
+    return "header";
+  }
+  if (band === "far" || band === "speculative") {
+    return "long_range";
+  }
+  if (pressure === "high") {
+    return shooter.baseInput.attributes.strength >= shooter.baseInput.attributes.control
+      ? "power"
+      : "first_time";
+  }
+  if (shooter.baseInput.attributes.control > shooter.baseInput.attributes.shooting + 5) {
+    return "volley";
+  }
+  return shooter.baseInput.attributes.perception >= shooter.baseInput.attributes.strength
+    ? "placed"
+    : "power";
+}
+
+function shotFootFor(shooter: MutablePlayer): ShotFoot {
+  const checksum = [...shooter.id].reduce((total, character) => total + character.charCodeAt(0), 0);
+  return checksum % 5 === 0 ? "weak" : "preferred";
+}
+
+function saveQualityFor(margin: number): SaveQuality {
+  if (margin >= 0.22) {
+    return "routine";
+  }
+  if (margin >= 0.07) {
+    return "good";
+  }
+  return "spectacular";
+}
+
+function saveResultFor(margin: number): SaveResult {
+  if (margin >= 0.22) {
+    return "caught";
+  }
+  return margin >= 0.07 ? "parried_safe" : "parried_dangerous";
 }

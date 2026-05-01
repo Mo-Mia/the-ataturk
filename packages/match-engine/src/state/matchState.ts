@@ -4,6 +4,7 @@ import type {
   MatchDuration,
   PlayerInput,
   PressureLevel,
+  PossessionChangeCause,
   SemanticEvent,
   Team,
   TeamId,
@@ -67,8 +68,11 @@ export interface MutableMatchState {
   possessionTicks: { home: number; away: number };
   pendingGoal: PendingGoal | null;
   pendingSetPiece: PendingSetPiece | null;
+  pendingLooseBallCause: PossessionChangeCause | null;
+  pendingLooseBallPreviousPossessor: string | null;
   eventsThisTick: SemanticEvent[];
   allEvents: SemanticEvent[];
+  openingKickoffPending: boolean;
 }
 
 export function emptyTeamStatistics(): TeamStatistics {

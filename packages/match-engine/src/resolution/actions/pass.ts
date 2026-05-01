@@ -1,11 +1,14 @@
 import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
-import { PITCH_WIDTH } from "../../calibration/constants";
+import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
-import { distanceSquared } from "../../utils/geometry";
-import { attackDirection } from "../../zones/pitchZones";
+import { emitEvent } from "../../ticks/runTick";
+import type { PassType } from "../../types";
+import { distance, distanceSquared } from "../../utils/geometry";
+import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
 import { awardThrowIn } from "../setPieces";
+import { shotDistanceContext } from "../shotDistance";
 
 export function performPass(state: MutableMatchState, carrier: MutablePlayer): void {
   const target = selectPassTarget(state, carrier);
@@ -19,17 +22,20 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer): v
     (carrier.baseInput.attributes.passing / 100);
 
   if (state.rng.next() <= completionProbability) {
+    emitPassEvent(state, carrier, target, true);
     completePass(state, carrier, target);
     return;
   }
 
   if (state.rng.next() <= SUCCESS_PROBABILITIES.failedPassOutOfPlay) {
-    awardThrowIn(state, carrier.teamId, carrier.position, "failed_pass");
+    emitPassEvent(state, carrier, target, false);
+    awardThrowIn(state, carrier.teamId, carrier.position, "failed_pass", carrier.id);
     return;
   }
 
   const interceptor = nearestOpponent(state, target);
   if (interceptor) {
+    emitPassEvent(state, carrier, target, false);
     completeTurnover(state, carrier, interceptor);
   }
 }
@@ -88,7 +94,11 @@ function completeTurnover(
   state.ball.carrierPlayerId = interceptor.id;
   state.ball.position = [interceptor.position[0], interceptor.position[1], 0];
   state.possession.teamId = interceptor.teamId;
-  emitPossessionChange(state, carrier.teamId, interceptor.teamId, interceptor.id);
+  emitPossessionChange(state, carrier.teamId, interceptor.teamId, interceptor.id, {
+    cause: "intercepted_pass",
+    previousPossessor: carrier.id,
+    zone: zoneForPosition(interceptor.teamId, interceptor.position)
+  });
 }
 
 function nearestOpponent(state: MutableMatchState, target: MutablePlayer): MutablePlayer | null {
@@ -124,4 +134,88 @@ function forwardRunBonus(
 ): number {
   const progress = (candidate.position[1] - carrier.position[1]) * direction;
   return progress > 40 ? Math.min(28, progress / 10) : 0;
+}
+
+function emitPassEvent(
+  state: MutableMatchState,
+  carrier: MutablePlayer,
+  target: MutablePlayer,
+  complete: boolean
+): void {
+  const context = passContext(carrier, target, complete);
+  if (
+    context.passType === "short" &&
+    !context.progressive &&
+    !context.keyPass &&
+    context.complete
+  ) {
+    return;
+  }
+
+  emitEvent(state, "pass", carrier.teamId, carrier.id, {
+    passType: context.passType,
+    complete: context.complete,
+    keyPass: context.keyPass,
+    progressive: context.progressive,
+    targetPlayerId: target.id
+  });
+}
+
+function passContext(
+  carrier: MutablePlayer,
+  target: MutablePlayer,
+  complete: boolean
+): {
+  passType: PassType;
+  complete: boolean;
+  keyPass: boolean;
+  progressive: boolean;
+} {
+  const direction = attackDirection(carrier.teamId);
+  const progress = (target.position[1] - carrier.position[1]) * direction;
+  const lateralDistance = Math.abs(target.position[0] - carrier.position[0]);
+  const passDistance = distance(carrier.position, target.position);
+  const targetZone = zoneForPosition(target.teamId, target.position);
+  const progressive = progress >= PITCH_LENGTH * 0.1;
+  const keyPass =
+    complete &&
+    targetZone === "att" &&
+    ["close", "box", "edge"].includes(shotDistanceContext(target.teamId, target.position).band);
+
+  return {
+    passType: classifyPass(carrier, target, progress, lateralDistance, passDistance),
+    complete,
+    keyPass,
+    progressive
+  };
+}
+
+function classifyPass(
+  carrier: MutablePlayer,
+  target: MutablePlayer,
+  progress: number,
+  lateralDistance: number,
+  passDistance: number
+): PassType {
+  const carrierWide = carrier.position[0] < 150 || carrier.position[0] > PITCH_WIDTH - 150;
+  const targetCentral = target.position[0] > 190 && target.position[0] < PITCH_WIDTH - 190;
+  const targetAttackingZone = zoneForPosition(target.teamId, target.position) === "att";
+  const attackingRole = ["ST", "AM", "LW", "RW", "LM", "RM"].includes(target.baseInput.position);
+
+  if (progress < -35) {
+    return "back";
+  }
+  if (carrierWide && targetCentral && targetAttackingZone) {
+    return "cross";
+  }
+  if (lateralDistance >= 260) {
+    return "switch";
+  }
+  if (progress >= 150 && attackingRole) {
+    return "through_ball";
+  }
+  if (passDistance >= 230) {
+    return "long";
+  }
+  return "short";
 }

@@ -4,7 +4,7 @@ import type { MutableMatchState, MutablePlayer, PendingSetPiece } from "../state
 import { otherTeam } from "../state/matchState";
 import type { Coordinate2D, TeamId } from "../types";
 import { distanceSquared } from "../utils/geometry";
-import { attackDirection } from "../zones/pitchZones";
+import { attackDirection, zoneForPosition } from "../zones/pitchZones";
 import { emitPossessionChange } from "./pressure";
 
 const SET_PIECE_DELAY_TICKS = 2;
@@ -13,7 +13,8 @@ export function awardThrowIn(
   state: MutableMatchState,
   concedingTeam: TeamId,
   position: Coordinate2D,
-  reason: "failed_pass" | "clearance"
+  reason: "failed_pass" | "clearance",
+  previousPossessor?: string
 ): void {
   const teamId = otherTeam(concedingTeam);
   const touchlineX = position[0] < PITCH_WIDTH / 2 ? 0 : PITCH_WIDTH;
@@ -32,7 +33,11 @@ export function awardThrowIn(
     ticksUntilRestart: SET_PIECE_DELAY_TICKS,
     detail: { wonFrom: concedingTeam, reason, x: touchlineX, y: throwY }
   });
-  emitPossessionChange(state, concedingTeam, teamId, taker.id);
+  emitPossessionChange(state, concedingTeam, teamId, taker.id, {
+    cause: "restart_throw_in",
+    ...(previousPossessor ? { previousPossessor } : {}),
+    zone: zoneForPosition(teamId, taker.position)
+  });
 }
 
 export function awardGoalKick(
@@ -58,7 +63,11 @@ export function awardGoalKick(
     ticksUntilRestart: SET_PIECE_DELAY_TICKS,
     detail: { shooterId }
   });
-  emitPossessionChange(state, shooterTeam, teamId, keeper.id);
+  emitPossessionChange(state, shooterTeam, teamId, keeper.id, {
+    cause: "restart_goal_kick",
+    previousPossessor: shooterId,
+    zone: zoneForPosition(teamId, keeper.position)
+  });
 }
 
 export function awardFreeKick(
@@ -86,6 +95,11 @@ export function awardFreeKick(
     position: restartPosition,
     ticksUntilRestart: SET_PIECE_DELAY_TICKS,
     detail: { fouledBy }
+  });
+  emitPossessionChange(state, otherTeam(teamId), teamId, taker.id, {
+    cause: "foul_against_carrier",
+    previousPossessor: fouledBy,
+    zone: zoneForPosition(teamId, taker.position)
   });
 }
 

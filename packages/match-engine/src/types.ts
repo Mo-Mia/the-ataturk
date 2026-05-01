@@ -17,6 +17,27 @@ export type PressureLevel = "low" | "medium" | "high";
 export type MatchDuration = "full_90" | "second_half";
 export type Coordinate2D = [x: number, y: number];
 export type Coordinate3D = [x: number, y: number, z: number];
+export type PossessionChangeCause =
+  | "successful_tackle"
+  | "failed_dribble"
+  | "intercepted_pass"
+  | "loose_ball_recovered"
+  | "clearance_recovered"
+  | "goalkeeper_save"
+  | "shot_blocked"
+  | "foul_against_carrier"
+  | "restart_throw_in"
+  | "restart_goal_kick"
+  | "restart_corner"
+  | "kickoff_after_goal"
+  | "kickoff_match_start";
+export type ShotType = "header" | "volley" | "placed" | "power" | "first_time" | "long_range";
+export type ShotFoot = "preferred" | "weak";
+export type SaveQuality = "routine" | "good" | "spectacular";
+export type SaveResult = "caught" | "parried_safe" | "parried_dangerous";
+export type FoulSeverity = "minor" | "cynical" | "reckless";
+export type TackleType = "standing" | "sliding";
+export type PassType = "short" | "long" | "through_ball" | "cross" | "switch" | "back";
 
 export interface PlayerAttributes {
   passing: number;
@@ -135,6 +156,7 @@ export interface SemanticEvent {
     | "goal"
     | "goal_scored"
     | "shot"
+    | "pass"
     | "save"
     | "foul"
     | "yellow"

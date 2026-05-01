@@ -5,8 +5,11 @@ import { attackDirection } from "../../zones/pitchZones";
 import { awardThrowIn } from "../setPieces";
 
 export function performClearance(state: MutableMatchState, carrier: MutablePlayer): void {
+  state.pendingLooseBallCause = null;
+  state.pendingLooseBallPreviousPossessor = null;
+
   if (state.rng.next() <= SUCCESS_PROBABILITIES.clearanceOutOfPlay) {
-    awardThrowIn(state, carrier.teamId, carrier.position, "clearance");
+    awardThrowIn(state, carrier.teamId, carrier.position, "clearance", carrier.id);
     return;
   }
 
@@ -32,6 +35,8 @@ export function performClearance(state: MutableMatchState, carrier: MutablePlaye
     state.ball.carrierPlayerId = null;
     state.ball.targetCarrierPlayerId = null;
     state.ball.targetPosition = [targetX, targetY, 0];
+    state.pendingLooseBallCause = "clearance_recovered";
+    state.pendingLooseBallPreviousPossessor = carrier.id;
   }
   state.ball.inFlight = true;
 }

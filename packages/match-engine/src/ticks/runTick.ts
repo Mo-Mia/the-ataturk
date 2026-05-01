@@ -34,12 +34,14 @@ export function runTick(state: MutableMatchState): void {
   updateBallPhysics(state);
   updateMovement(state);
   determinePossessionState(state);
+  emitOpeningKickoff(state);
 
   const carrier = currentCarrier(state);
   if (carrier) {
     const action = selectCarrierAction(state, carrier);
     const dispossessed =
-      isVulnerableAction(action) && rollPressureTackle(state, carrierForAction(state, carrier));
+      isVulnerableAction(action) &&
+      rollPressureTackle(state, carrierForAction(state, carrier), action);
 
     if (!dispossessed) {
       executeCarrierAction(state, carrierForAction(state, carrier), action);
@@ -147,6 +149,9 @@ function claimLooseBall(state: MutableMatchState): MutablePlayer | null {
   }
 
   const previousTeam = state.possession.teamId;
+  const previousPossessor =
+    state.pendingLooseBallPreviousPossessor ?? state.ball.carrierPlayerId ?? undefined;
+  const cause = state.pendingLooseBallCause ?? "loose_ball_recovered";
   state.players.forEach((player) => {
     player.hasBall = player.id === nearest.id;
   });
@@ -157,9 +162,14 @@ function claimLooseBall(state: MutableMatchState): MutablePlayer | null {
   if (previousTeam && previousTeam !== nearest.teamId) {
     emitEvent(state, "possession_change", nearest.teamId, nearest.id, {
       from: previousTeam,
-      to: nearest.teamId
+      to: nearest.teamId,
+      cause,
+      previousPossessor,
+      zone: zoneForPosition(nearest.teamId, nearest.position)
     });
   }
+  state.pendingLooseBallCause = null;
+  state.pendingLooseBallPreviousPossessor = null;
 
   return nearest;
 }
@@ -170,6 +180,26 @@ function carrierForAction(state: MutableMatchState, fallback: MutablePlayer): Mu
 
 export function actionIsVulnerableForTest(action: CarrierAction): boolean {
   return isVulnerableAction(action);
+}
+
+function emitOpeningKickoff(state: MutableMatchState): void {
+  if (!state.openingKickoffPending) {
+    return;
+  }
+
+  state.openingKickoffPending = false;
+  const carrier = currentCarrier(state);
+  if (!carrier) {
+    return;
+  }
+
+  emitEvent(state, "kick_off", carrier.teamId, carrier.id, { matchStart: true });
+  emitEvent(state, "possession_change", carrier.teamId, carrier.id, {
+    from: null,
+    to: carrier.teamId,
+    cause: "kickoff_match_start",
+    zone: zoneForPosition(carrier.teamId, carrier.position)
+  });
 }
 
 function continuePendingGoal(state: MutableMatchState): boolean {
@@ -195,7 +225,7 @@ function continuePendingGoal(state: MutableMatchState): boolean {
     return true;
   }
 
-  restartAfterGoal(state, pendingGoal.restartTeam);
+  restartAfterGoal(state, pendingGoal.restartTeam, pendingGoal.scorerPlayerId);
   state.pendingGoal = null;
   determinePossessionState(state);
   return true;

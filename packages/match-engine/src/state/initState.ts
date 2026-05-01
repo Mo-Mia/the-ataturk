@@ -47,8 +47,11 @@ export function buildInitState(config: MatchConfig): MutableMatchState {
     possessionTicks: { home: 0, away: 0 },
     pendingGoal: null,
     pendingSetPiece: null,
+    pendingLooseBallCause: null,
+    pendingLooseBallPreviousPossessor: null,
     eventsThisTick: [],
-    allEvents: []
+    allEvents: [],
+    openingKickoffPending: true
   };
 
   giveKickOffToHome(state);
