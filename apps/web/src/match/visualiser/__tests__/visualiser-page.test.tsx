@@ -50,6 +50,94 @@ describe("VisualiserPage", () => {
     await waitFor(() => expect(screen.getByText(/GOAL!/)).toBeTruthy());
     expect(screen.getByText(/scored by HF at 45:03/)).toBeTruthy();
   });
+
+  it("renders rich event detail fields and legacy possession changes", async () => {
+    const snapshot = createSnapshot();
+    snapshot.ticks[0]!.events = [
+      {
+        type: "shot",
+        team: "home",
+        playerId: "h1",
+        minute: 45,
+        second: 3,
+        detail: {
+          onTarget: true,
+          shotType: "power",
+          distanceBand: "edge",
+          pressure: "high",
+          distanceToGoalMetres: 28
+        }
+      },
+      {
+        type: "possession_change",
+        team: "away",
+        playerId: "a1",
+        minute: 45,
+        second: 6,
+        detail: {
+          from: "home",
+          to: "away",
+          cause: "intercepted_pass",
+          previousPossessor: "h1",
+          zone: "mid"
+        }
+      },
+      {
+        type: "save",
+        team: "away",
+        playerId: "a0",
+        minute: 45,
+        second: 9,
+        detail: { quality: "good", result: "parried_safe", shooterId: "h1" }
+      },
+      {
+        type: "pass",
+        team: "home",
+        playerId: "h1",
+        minute: 45,
+        second: 12,
+        detail: {
+          passType: "long",
+          complete: true,
+          keyPass: true,
+          progressive: true,
+          targetPlayerId: "h0"
+        }
+      },
+      {
+        type: "foul",
+        team: "away",
+        playerId: "a1",
+        minute: 45,
+        second: 15,
+        detail: { severity: "reckless", tackleType: "sliding", location: "att", on: "h1" }
+      },
+      {
+        type: "possession_change",
+        team: "home",
+        playerId: "h1",
+        minute: 45,
+        second: 18,
+        detail: { from: "away", to: "home" }
+      }
+    ];
+    const file = new File([JSON.stringify(snapshot)], "snapshot.json", {
+      type: "application/json"
+    });
+
+    render(<VisualiserPage />);
+
+    const input = screen.getByLabelText("Load snapshot JSON");
+    fireEvent.change(input, { target: { files: [file] } });
+
+    await waitFor(() => expect(screen.getByText(/power/)).toBeTruthy());
+    expect(screen.getByText(/high pressure/)).toBeTruthy();
+    expect(screen.getByText(/intercepted/)).toBeTruthy();
+    expect(screen.getByText(/parried safe/)).toBeTruthy();
+    expect(screen.getByText(/key pass/)).toBeTruthy();
+    expect(screen.getByText(/sliding/)).toBeTruthy();
+    expect(screen.getByText(/cause unknown/)).toBeTruthy();
+  });
 });
 
 function createSnapshot(): MatchSnapshot {
