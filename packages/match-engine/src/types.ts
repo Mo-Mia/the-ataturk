@@ -17,6 +17,8 @@ export type PressureLevel = "low" | "medium" | "high";
 export type MatchDuration = "full_90" | "second_half";
 export type Coordinate2D = [x: number, y: number];
 export type Coordinate3D = [x: number, y: number, z: number];
+export type PreferredFoot = "left" | "right" | "either";
+export type StarRating = 1 | 2 | 3 | 4 | 5;
 export type PossessionChangeCause =
   | "successful_tackle"
   | "failed_dribble"
@@ -52,6 +54,46 @@ export interface PlayerAttributes {
   control: number;
 }
 
+export interface PlayerAttributesV2 {
+  acceleration: number;
+  sprintSpeed: number;
+  finishing: number;
+  shotPower: number;
+  longShots: number;
+  positioning: number;
+  volleys: number;
+  penalties: number;
+  vision: number;
+  crossing: number;
+  freeKickAccuracy: number;
+  shortPassing: number;
+  longPassing: number;
+  curve: number;
+  dribbling: number;
+  agility: number;
+  balance: number;
+  reactions: number;
+  ballControl: number;
+  composure: number;
+  interceptions: number;
+  headingAccuracy: number;
+  defensiveAwareness: number;
+  standingTackle: number;
+  slidingTackle: number;
+  jumping: number;
+  stamina: number;
+  strength: number;
+  aggression: number;
+}
+
+export interface GoalkeeperAttributesV2 {
+  gkDiving: number;
+  gkHandling: number;
+  gkKicking: number;
+  gkPositioning: number;
+  gkReflexes: number;
+}
+
 export interface Team {
   id: string;
   name: string;
@@ -69,6 +111,27 @@ export interface PlayerInput {
   squadNumber?: number;
   position: Position;
   attributes: PlayerAttributes;
+  overrides?: PlayerOverrides;
+}
+
+export interface TeamV2 extends Omit<Team, "players"> {
+  players: PlayerInputV2[];
+}
+
+export interface PlayerInputV2 {
+  id: string;
+  name: string;
+  shortName: string;
+  squadNumber?: number;
+  position: Position;
+  height?: number;
+  weight?: number;
+  age?: number;
+  preferredFoot: PreferredFoot;
+  weakFootRating: StarRating;
+  skillMovesRating: StarRating;
+  attributes: PlayerAttributesV2;
+  gkAttributes?: GoalkeeperAttributesV2;
   overrides?: PlayerOverrides;
 }
 
@@ -102,6 +165,11 @@ export interface MatchConfig {
   };
 }
 
+export interface MatchConfigV2 extends Omit<MatchConfig, "homeTeam" | "awayTeam"> {
+  homeTeam: TeamV2;
+  awayTeam: TeamV2;
+}
+
 export interface MatchSnapshot {
   meta: {
     homeTeam: { id: string; name: string; shortName: string };
@@ -129,6 +197,14 @@ export interface SnapshotRosterPlayer {
   shortName: string;
   squadNumber?: number;
   position: Position;
+  height?: number;
+  weight?: number;
+  age?: number;
+  preferredFoot?: PreferredFoot;
+  weakFootRating?: StarRating;
+  skillMovesRating?: StarRating;
+  attributesV2?: PlayerAttributesV2;
+  gkAttributesV2?: GoalkeeperAttributesV2;
 }
 
 export interface MatchTick {
