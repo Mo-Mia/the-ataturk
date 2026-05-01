@@ -20,6 +20,7 @@ import type {
   TeamStatistics
 } from "./types";
 import { runTick } from "./ticks/runTick";
+import { emitEvent } from "./ticks/runTick";
 
 export function simulateMatch(config: MatchConfig): MatchSnapshot;
 export function simulateMatch(config: MatchConfigV2): MatchSnapshot;
@@ -31,6 +32,9 @@ export function simulateMatch(config: MatchConfig | MatchConfigV2): MatchSnapsho
 
   for (let count = 0; count < totalTicks; count += 1) {
     runTick(state);
+    if (count === totalTicks - 1) {
+      emitFullTime(state);
+    }
     ticks.push(toMatchTick(state));
   }
 
@@ -59,9 +63,23 @@ export async function* simulateMatchStream(
   for (let count = 0; count < totalTicks; count += 1) {
     throwIfAborted(options?.signal);
     runTick(state);
+    if (count === totalTicks - 1) {
+      emitFullTime(state);
+    }
     yield toMatchTick(state);
     await Promise.resolve();
   }
+}
+
+function emitFullTime(state: MutableMatchState): void {
+  emitEvent(state, "full_time", "home", undefined, {
+    finalScore: { ...state.score },
+    possession: {
+      home: state.stats.home.possession,
+      away: state.stats.away.possession
+    }
+  });
+  state.allEvents.push(state.eventsThisTick[state.eventsThisTick.length - 1]!);
 }
 
 function toMatchTick(state: MutableMatchState): MatchTick {

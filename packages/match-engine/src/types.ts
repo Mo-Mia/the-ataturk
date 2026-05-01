@@ -242,7 +242,8 @@ export interface SemanticEvent {
     | "throw_in"
     | "free_kick"
     | "possession_change"
-    | "kick_off";
+    | "kick_off"
+    | "full_time";
   team: TeamId;
   playerId?: string;
   minute: number;

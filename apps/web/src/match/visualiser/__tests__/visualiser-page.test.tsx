@@ -119,6 +119,13 @@ describe("VisualiserPage", () => {
         minute: 45,
         second: 18,
         detail: { from: "away", to: "home" }
+      },
+      {
+        type: "full_time",
+        team: "home",
+        minute: 90,
+        second: 0,
+        detail: { finalScore: { home: 1, away: 3 } }
       }
     ];
     const file = new File([JSON.stringify(snapshot)], "snapshot.json", {
@@ -137,6 +144,8 @@ describe("VisualiserPage", () => {
     expect(screen.getByText(/key pass/)).toBeTruthy();
     expect(screen.getByText(/sliding/)).toBeTruthy();
     expect(screen.getByText(/cause unknown/)).toBeTruthy();
+    expect(screen.getByText(/Full time/)).toBeTruthy();
+    expect(screen.getByText(/1-3/)).toBeTruthy();
   });
 });
 

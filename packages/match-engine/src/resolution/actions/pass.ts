@@ -1,4 +1,4 @@
-import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
+import { PASS_TARGET_WEIGHTS, SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
@@ -62,12 +62,19 @@ function selectPassTarget(state: MutableMatchState, carrier: MutablePlayer): Mut
         player.baseInput.attributes.perception -
         Math.sqrt(distanceSquared(player.position, carrier.position)) / 6 +
         widePassBonus(carrier, player, direction) +
-        forwardRunBonus(carrier, player, direction)
+        forwardRunBonus(carrier, player, direction) -
+        strikerToStrikerPenalty(carrier, player)
     }))
     .sort((a, b) => b.score - a.score);
 
   const upper = Math.min(weighted.length, 4);
   return weighted[state.rng.int(0, upper - 1)]?.player ?? weighted[0]?.player ?? null;
+}
+
+function strikerToStrikerPenalty(carrier: MutablePlayer, candidate: MutablePlayer): number {
+  return carrier.baseInput.position === "ST" && candidate.baseInput.position === "ST"
+    ? PASS_TARGET_WEIGHTS.strikerToStrikerPenalty
+    : 0;
 }
 
 function completePass(

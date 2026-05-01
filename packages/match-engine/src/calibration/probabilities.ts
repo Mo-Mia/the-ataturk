@@ -19,6 +19,10 @@ export const SHOT_WEAK_FOOT_MULTIPLIER_BY_RATING: Record<StarRating, number> = {
   5: 1
 };
 
+export const PASS_TARGET_WEIGHTS = {
+  strikerToStrikerPenalty: 16
+};
+
 export const ACTION_WEIGHTS: Record<Zone, Record<PressureLevel, Record<CarrierAction, number>>> = {
   def: {
     low: { pass: 0.55, dribble: 0.04, hold: 0.26, clear: 0.15, shoot: 0 },

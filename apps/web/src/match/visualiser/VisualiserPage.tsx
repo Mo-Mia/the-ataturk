@@ -371,7 +371,8 @@ function EventLog({ snapshot, events }: { snapshot: MatchSnapshot; events: Seman
             <strong>
               {event.minute}:{String(event.second).padStart(2, "0")}
             </strong>{" "}
-            {eventLabel(event)} · {teamName(snapshot, event.team)}
+            {eventLabel(event)}
+            {event.type === "full_time" ? "" : ` · ${teamName(snapshot, event.team)}`}
             {event.playerId ? ` · ${playerName(snapshot, event.team, event.playerId)}` : ""}
             {event.detail ? (
               <span style={styles.eventDetail}> {formatEventDetail(snapshot, event)}</span>
@@ -549,10 +550,18 @@ function formatEventDetail(snapshot: MatchSnapshot, event: SemanticEvent): strin
     return `(${possessionChangeText(snapshot, event)})`;
   }
 
+  if (event.type === "full_time") {
+    const score = event.detail.finalScore;
+    return score ? `(${detailScore(score)})` : "";
+  }
+
   return "";
 }
 
 function eventLabel(event: SemanticEvent): string {
+  if (event.type === "full_time") {
+    return "Full time";
+  }
   return event.type.replaceAll("_", " ");
 }
 

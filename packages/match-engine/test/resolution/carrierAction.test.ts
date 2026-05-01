@@ -94,6 +94,35 @@ describe("carrier action selection", () => {
     );
   });
 
+  it("discourages repetitive passes between the two central strikers", () => {
+    const state = buildInitState(createTestConfig(17));
+    const strikers = state.players.filter(
+      (player) => player.teamId === "home" && player.baseInput.position === "ST"
+    );
+    const carrier = strikers[0]!;
+    const otherStriker = strikers[1]!;
+    const midfielder = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "CM"
+    )!;
+
+    state.players.forEach((player) => {
+      player.onPitch = [carrier.id, otherStriker.id, midfielder.id].includes(player.id);
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [340, 700];
+    otherStriker.position = [342, 760];
+    midfielder.position = [230, 760];
+    carrier.baseInput.attributes.passing = 100;
+    state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+    state.rng.int = () => 0;
+    state.rng.next = () => 0;
+
+    performPass(state, carrier);
+
+    expect(midfielder.hasBall).toBe(true);
+    expect(otherStriker.hasBall).toBe(false);
+  });
+
   it("penalises long-range shot selection", () => {
     const near = shotDistanceContext("home", [340, 930]);
     const far = shotDistanceContext("home", [340, 710]);
