@@ -1493,14 +1493,15 @@ const styles = {
   page: {
     width: "100vw",
     maxWidth: "none",
-    minHeight: "100vh",
+    height: "100vh",
     display: "grid",
     gridTemplateRows: "auto minmax(0, 1fr) 230px",
     margin: 0,
     padding: 0,
     background: "#17201b",
     color: "#f5f7f5",
-    fontFamily: "Arial, sans-serif"
+    fontFamily: "Arial, sans-serif",
+    overflow: "hidden"
   },
   topBar: {
     display: "grid",
@@ -1547,11 +1548,12 @@ const styles = {
     display: "flex",
     minHeight: 0,
     padding: "12px 16px",
-    gap: "14px"
+    gap: "14px",
+    overflow: "hidden"
   },
   stage: {
     flex: "1 1 auto",
-    minWidth: "620px",
+    minWidth: 0,
     minHeight: 0,
     display: "flex",
     alignItems: "stretch",
@@ -1565,11 +1567,21 @@ const styles = {
     position: "relative" as const,
     width: "100%",
     height: "100%",
+    minHeight: 0,
     display: "flex",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    overflow: "hidden"
   },
-  pitch: { height: "100%", maxWidth: "100%", display: "block" },
+  pitch: {
+    height: "100%",
+    width: "auto",
+    maxHeight: "100%",
+    maxWidth: "100%",
+    aspectRatio: `${PITCH_WIDTH} / ${PITCH_LENGTH}`,
+    display: "block",
+    flex: "0 0 auto"
+  },
   goalOverlay: {
     position: "absolute" as const,
     top: "20px",
