@@ -1,6 +1,6 @@
 # Full-Match Characterisation
 
-Last updated: 2026-05-02 22:05 SAST
+Last updated: 2026-05-02 22:17 SAST
 
 ## Scope
 
@@ -57,6 +57,39 @@ Interpretation: full-match texture is effectively in range, but goals are
 technically 0.02 below the doubled target floor. Per sprint rules, calibration
 was not tuned silently. Mo needs to decide whether to accept this as negligible
 50-seed drift, run a larger stress sample, or scope a small calibration pass.
+
+## 200-Seed Stress Check
+
+Command:
+
+```bash
+pnpm --filter @the-ataturk/match-engine characterise -- --schema v2 --preferred-foot-mode rated --duration full_90 --seeds 200
+```
+
+Result:
+
+```text
+=== Match Engine Characterisation (200 seeds, full 90, v2, preferred-foot rated) ===
+Shots: 16.59 target [16, 24]
+Goals: 2.23 target [2, 6]
+Fouls: 9.73 target [8, 16]
+Cards: 2.75 target [2, 6]
+Average elapsed: 67.94ms
+Score distribution:
+  1-0: 30 (15%)
+  1-1: 28 (14%)
+  0-0: 23 (12%)
+  2-1: 18 (9%)
+  2-0: 17 (9%)
+  0-1: 17 (9%)
+  3-1: 12 (6%)
+  1-2: 11 (6%)
+Calibration pass: yes
+```
+
+Interpretation: the larger sample clears the doubled full-match target bands.
+The 50-seed goals miss was sampling noise, not a calibration defect. No
+probability constants were changed.
 
 ## Second-Half Regression Check
 

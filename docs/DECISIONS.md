@@ -33,8 +33,10 @@ goals `[2, 6]`, fouls `[8, 16]`, cards `[2, 6]`, with the same max-score-share
 limit of 40%. The standing characterisation default for preferred-foot testing
 is `--preferred-foot-mode rated`; this is not a sprint-specific flag. The first
 50-seed full-match v2 run landed at 16.76 shots, 1.98 goals, 10.34 fouls, and
-2.58 cards. Goals are technically 0.02 below the target floor, so calibration
-was not tuned silently; this is documented for Mo's call.
+2.58 cards. A follow-up 200-seed stress check landed at 16.59 shots, 2.23
+goals, 9.73 fouls, and 2.75 cards, clearing all full-match target bands. The
+50-seed goals miss is therefore treated as sampling noise, not a calibration
+defect, and no probability constants were changed.
 
 ## 2026-05-02 — FootSim Phase 2 scope: workbench depth + server-side run persistence
 
