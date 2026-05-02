@@ -25,14 +25,16 @@ describe("data migrations", () => {
     expect(firstRun.applied).toEqual([
       "001_initial.sql",
       "002_player_profiles.sql",
-      "003_fc25.sql"
+      "003_fc25.sql",
+      "004_match_runs.sql"
     ]);
     expect(firstRun.skipped).toEqual([]);
     expect(secondRun.applied).toEqual([]);
     expect(secondRun.skipped).toEqual([
       "001_initial.sql",
       "002_player_profiles.sql",
-      "003_fc25.sql"
+      "003_fc25.sql",
+      "004_match_runs.sql"
     ]);
 
     const db = new Database(testDatabase.path);
@@ -41,7 +43,7 @@ describe("data migrations", () => {
         .prepare<[], CountRow>("SELECT COUNT(*) AS count FROM _migrations")
         .get();
 
-      expect(row?.count).toBe(3);
+      expect(row?.count).toBe(4);
 
       const tableRows = db
         .prepare<[], { name: string }>(
@@ -55,6 +57,14 @@ describe("data migrations", () => {
         "fc25_players",
         "fc25_squads"
       ]);
+
+      const matchRunsTable = db
+        .prepare<[], { name: string }>(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'match_runs'"
+        )
+        .get();
+
+      expect(matchRunsTable?.name).toBe("match_runs");
     } finally {
       db.close();
     }

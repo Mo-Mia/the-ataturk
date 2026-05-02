@@ -431,3 +431,45 @@ export interface Fc25ParsedPlayerRow {
   attributes: Fc25PlayerAttributes;
   gkAttributes: Fc25GoalkeeperAttributes | null;
 }
+
+export interface MatchRunSummary {
+  score: { home: number; away: number };
+  shots: { home: number; away: number };
+  fouls: { home: number; away: number };
+  cards: { home: number; away: number };
+  possession: { home: number; away: number };
+}
+
+export interface MatchRun {
+  id: string;
+  created_at: string;
+  batch_id: string | null;
+  seed: number;
+  home_club_id: Fc25ClubId;
+  away_club_id: Fc25ClubId;
+  home_tactics: unknown;
+  away_tactics: unknown;
+  summary: MatchRunSummary;
+  artefact_filename: string;
+}
+
+export interface CreateMatchRunInput {
+  id: string;
+  created_at: string;
+  batch_id?: string | null;
+  seed: number;
+  home_club_id: Fc25ClubId;
+  away_club_id: Fc25ClubId;
+  home_tactics: unknown;
+  away_tactics: unknown;
+  summary: MatchRunSummary;
+  artefact_filename: string;
+}
+
+export interface MatchRunPage {
+  runs: MatchRun[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
