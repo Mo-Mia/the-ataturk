@@ -259,6 +259,86 @@ pre {
   overflow-x: auto;
 }
 
+.compare-shell {
+  width: min(1760px, calc(100% - 32px));
+  font-family: "Trebuchet MS", sans-serif;
+}
+
+.compare-header,
+.compare-picker,
+.compare-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.compare-picker,
+.compare-summary,
+.compare-warning {
+  border: 1px solid #d4d0c4;
+  background: #ffffff;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.compare-picker label {
+  display: grid;
+  flex: 1;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.compare-picker select {
+  min-height: 38px;
+  border: 1px solid #bdb6a7;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #151515;
+  font: inherit;
+  padding: 8px;
+}
+
+.compare-warning {
+  border-color: #b64a36;
+  color: #7a2b1d;
+}
+
+.compare-summary {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.compare-column {
+  min-width: 0;
+  border: 1px solid #d4d0c4;
+  background: #ffffff;
+}
+
+.compare-column-header {
+  border-bottom: 1px solid #d4d0c4;
+  margin: 0;
+  padding: 16px;
+}
+
+.compare-column-header h2 {
+  margin-top: 0;
+}
+
+.compare-heatmap {
+  height: 520px;
+  border-top: 1px solid #d4d0c4;
+  border-bottom: 1px solid #d4d0c4;
+  background: #203027;
+  padding: 12px;
+}
+
 .sim-runner-history table {
   margin-bottom: 0;
 }

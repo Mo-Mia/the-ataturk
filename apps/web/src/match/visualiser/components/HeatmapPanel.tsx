@@ -62,7 +62,7 @@ export function HeatmapPitch({
   snapshot: MatchSnapshot;
   filter: HeatmapFilter;
   subject: HeatmapSubject;
-  maxOverride?: number;
+  maxOverride?: number | undefined;
 }) {
   const heatmap = useMemo(
     () => buildHeatmap(snapshot, filter, subject),

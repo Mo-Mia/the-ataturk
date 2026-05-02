@@ -20,11 +20,19 @@ describe("SimRunnerPage", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(clubs))
+      .mockResolvedValueOnce(jsonResponse(runList([])))
       .mockResolvedValueOnce(
         jsonResponse({
           runs: [
             {
+              id: "run-42",
               seed: 42,
+              batchId: null,
+              createdAt: "2026-05-02T12:00:00.000Z",
+              homeClubId: "liverpool",
+              awayClubId: "manchester-city",
+              homeTactics: defaultTactics(),
+              awayTactics: defaultTactics(),
               artefactId: "match-engine-20260502120000-liv-mci-seed-42-deadbeef.json",
               summary: {
                 score: { home: 1, away: 2 },
@@ -42,11 +50,11 @@ describe("SimRunnerPage", () => {
 
     render(<SimRunnerPage />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "42" } });
     fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     expect(fetchMock).toHaveBeenLastCalledWith(
       "/api/match-engine/simulate",
       expect.objectContaining({
@@ -85,13 +93,19 @@ describe("SimRunnerPage", () => {
     expect(within(history).getByText("1-2")).toBeTruthy();
     expect(within(history).getByText("9/7")).toBeTruthy();
     expect(within(history).getByText("49%/51%")).toBeTruthy();
-    expect(within(history).getByRole("link", { name: "Open replay" }).getAttribute("href")).toBe(
+    expect(within(history).getByRole("link", { name: "Replay" }).getAttribute("href")).toBe(
       "/visualise?artifact=match-engine-20260502120000-liv-mci-seed-42-deadbeef.json"
+    );
+    expect(within(history).getByRole("link", { name: "Compare" }).getAttribute("href")).toBe(
+      "/visualise/compare?a=run-42"
     );
   });
 
   it("renders an empty dataset message when no FC25 clubs are active", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(jsonResponse([])));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(jsonResponse([])).mockResolvedValueOnce(jsonResponse(runList([])))
+    );
 
     render(<SimRunnerPage />);
 
@@ -104,11 +118,19 @@ describe("SimRunnerPage", () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(clubs))
+      .mockResolvedValueOnce(jsonResponse(runList([])))
       .mockResolvedValueOnce(
         jsonResponse({
           runs: [
             {
+              id: "run-50",
               seed: 50,
+              batchId: "batch-1",
+              createdAt: "2026-05-02T12:00:00.000Z",
+              homeClubId: "liverpool",
+              awayClubId: "manchester-city",
+              homeTactics: defaultTactics(),
+              awayTactics: defaultTactics(),
               artefactId: "match-engine-20260502120000-liv-mci-seed-50-feedface.json",
               summary: {
                 score: { home: 2, away: 1 },
@@ -126,16 +148,31 @@ describe("SimRunnerPage", () => {
 
     render(<SimRunnerPage />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "50" } });
     fireEvent.change(screen.getByLabelText("Batch"), { target: { value: "50" } });
     fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
     expect(screen.getByText("2-1")).toBeTruthy();
     expect(screen.getByText("Seed 51: Synthetic run failure")).toBeTruthy();
   });
 });
+
+function runList(runs: unknown[]) {
+  return { runs, total: runs.length, page: 1, hasMore: false };
+}
+
+function defaultTactics() {
+  return {
+    formation: "4-4-2",
+    mentality: "balanced",
+    tempo: "normal",
+    pressing: "medium",
+    lineHeight: "normal",
+    width: "normal"
+  };
+}
 
 function jsonResponse(body: unknown): Response {
   return {

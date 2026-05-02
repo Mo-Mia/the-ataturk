@@ -12,6 +12,7 @@ import { AdminHomePage } from "./admin/pages/AdminHomePage";
 import { AdminPlayerDetailPage } from "./admin/pages/AdminPlayerDetailPage";
 import { AdminProfileVersionsPage } from "./admin/pages/AdminProfileVersionsPage";
 import { MatchPage } from "./match/MatchPage";
+import { ComparePage } from "./match/visualiser/ComparePage";
 import { SimRunnerPage } from "./match/visualiser/SimRunnerPage";
 import { VisualiserPage } from "./match/visualiser/VisualiserPage";
 
@@ -191,6 +192,7 @@ export function App() {
           <Route path="/" element={<SmokeTestPage />} />
           <Route path="/match" element={<MatchPage />} />
           <Route path="/visualise" element={<VisualiserPage />} />
+          <Route path="/visualise/compare" element={<ComparePage />} />
           <Route path="/visualise/run" element={<SimRunnerPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminHomePage />} />

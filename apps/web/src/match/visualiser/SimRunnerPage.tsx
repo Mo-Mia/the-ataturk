@@ -1,34 +1,11 @@
 import type { TeamTactics } from "@the-ataturk/match-engine";
 import { useEffect, useMemo, useState } from "react";
+import type { MatchRunListResponse, PersistedMatchRun, SimError, SimResponse } from "./runTypes";
 
 interface Fc25Club {
   id: string;
   name: string;
   short_name: string;
-}
-
-interface SimRunSummary {
-  score: { home: number; away: number };
-  shots: { home: number; away: number };
-  fouls: { home: number; away: number };
-  cards: { home: number; away: number };
-  possession: { home: number; away: number };
-}
-
-interface SimRun {
-  seed: number;
-  artefactId: string;
-  summary: SimRunSummary;
-}
-
-interface SimError {
-  seed: number;
-  error: string;
-}
-
-interface SimResponse {
-  runs: SimRun[];
-  errors: SimError[];
 }
 
 type TeamSide = "home" | "away";
@@ -57,7 +34,7 @@ export function SimRunnerPage() {
   const [awayTactics, setAwayTactics] = useState<TeamTactics>(DEFAULT_TACTICS);
   const [seed, setSeed] = useState(() => String(randomSeed()));
   const [batch, setBatch] = useState<1 | 50>(1);
-  const [history, setHistory] = useState<SimRun[]>([]);
+  const [history, setHistory] = useState<PersistedMatchRun[]>([]);
   const [runErrors, setRunErrors] = useState<SimError[]>([]);
   const [status, setStatus] = useState<"loading-clubs" | "idle" | "running" | "error">(
     "loading-clubs"
@@ -67,17 +44,25 @@ export function SimRunnerPage() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadClubs(): Promise<void> {
+    async function loadWorkbench(): Promise<void> {
       try {
-        const response = await fetch("/api/match-engine/clubs");
-        if (!response.ok) {
-          throw new Error(`Club request failed with ${response.status}`);
+        const [clubResponse, runResponse] = await Promise.all([
+          fetch("/api/match-engine/clubs"),
+          fetch("/api/match-engine/runs?page=1&limit=50")
+        ]);
+        if (!clubResponse.ok) {
+          throw new Error(`Club request failed with ${clubResponse.status}`);
         }
-        const loadedClubs = (await response.json()) as Fc25Club[];
+        if (!runResponse.ok) {
+          throw new Error(`Run history request failed with ${runResponse.status}`);
+        }
+        const loadedClubs = (await clubResponse.json()) as Fc25Club[];
+        const loadedRuns = (await runResponse.json()) as MatchRunListResponse;
         if (cancelled) {
           return;
         }
         setClubs(loadedClubs);
+        setHistory(loadedRuns.runs);
         setHomeClubId(preferredClubId(loadedClubs, "liverpool") ?? loadedClubs[0]?.id ?? "");
         setAwayClubId(
           preferredClubId(loadedClubs, "manchester-city") ??
@@ -94,7 +79,7 @@ export function SimRunnerPage() {
       }
     }
 
-    void loadClubs();
+    void loadWorkbench();
 
     return () => {
       cancelled = true;
@@ -245,12 +230,12 @@ export function SimRunnerPage() {
                   <th>Fouls</th>
                   <th>Cards</th>
                   <th>Possession</th>
-                  <th>Replay</th>
+                  <th>Links</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map((run) => (
-                  <tr key={`${run.seed}:${run.artefactId}`}>
+                  <tr key={run.id}>
                     <td>{run.seed}</td>
                     <td>
                       {run.summary.score.home}-{run.summary.score.away}
@@ -269,8 +254,16 @@ export function SimRunnerPage() {
                     </td>
                     <td>
                       <a href={`/visualise?artifact=${encodeURIComponent(run.artefactId)}`}>
-                        Open replay
+                        Replay
                       </a>
+                      {" · "}
+                      <a href={`/visualise/compare?a=${encodeURIComponent(run.id)}`}>Compare</a>
+                      {run.batchId ? (
+                        <>
+                          {" · "}
+                          <a href={`/visualise/batch/${encodeURIComponent(run.batchId)}`}>Batch</a>
+                        </>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
