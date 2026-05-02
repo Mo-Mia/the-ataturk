@@ -12,6 +12,7 @@ import { AdminHomePage } from "./admin/pages/AdminHomePage";
 import { AdminPlayerDetailPage } from "./admin/pages/AdminPlayerDetailPage";
 import { AdminProfileVersionsPage } from "./admin/pages/AdminProfileVersionsPage";
 import { MatchPage } from "./match/MatchPage";
+import { SimRunnerPage } from "./match/visualiser/SimRunnerPage";
 import { VisualiserPage } from "./match/visualiser/VisualiserPage";
 
 type RequestState = "idle" | "loading" | "success" | "error";
@@ -190,6 +191,7 @@ export function App() {
           <Route path="/" element={<SmokeTestPage />} />
           <Route path="/match" element={<MatchPage />} />
           <Route path="/visualise" element={<VisualiserPage />} />
+          <Route path="/visualise/run" element={<SimRunnerPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminHomePage />} />
             <Route path="clubs" element={<AdminClubsPage />} />
