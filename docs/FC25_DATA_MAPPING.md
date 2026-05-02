@@ -189,7 +189,4 @@ squad/role selection.
 5. `feat(server): add match-engine simulation endpoint`
 6. `feat(web): add FC25 sim runner workbench`
 7. `feat(web): allow visualiser artifact query loading`
-
-If the final implementation needs a status-doc refresh, include it in commit 7
-unless it is large enough to merit a separate docs-only follow-up.
-
+8. `docs: refresh FootSim phase 1 status`

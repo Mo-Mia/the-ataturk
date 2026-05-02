@@ -38,6 +38,14 @@ Cosmetic only. Probably v0.3+.
 
 ## Refactor
 
+### Decompose `VisualiserPage.tsx` before comparison/diff work
+`apps/web/src/match/visualiser/VisualiserPage.tsx` is intentionally left intact
+through FootSim Phase 1, apart from the approved `?artifact=` auto-load hook.
+It now carries replay, artifact loading, heatmaps, player-relative diagnostics,
+stats, events, and workbench-adjacent concerns. Before adding comparison views,
+side-by-side run analysis, or richer replay controls, split it into smaller
+route/page, pitch, controls, inspector, heatmap, and event-log components.
+
 ### Extract shared types package
 API boundary types are currently duplicated between `packages/data/src/types.ts`
 (Node, includes SQLite-specific helpers) and `apps/web/src/admin/lib/api.ts`
@@ -59,6 +67,18 @@ field is the place this lives.
 The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That may be higher than real-world expectation for 2004/05 even if his technique and dead-ball reputation are elite. Revisit when forum feedback comes back and calibrate against other designated takers in the dataset.
 
 ## Engine
+
+### Full 90-minute FootSim support
+FootSim Phase 1 deliberately runs second-half-only simulations through
+`duration: "second_half"`: 900 ticks, 0-0 start. Full 90-minute support is
+deferred because it needs a separate calibration pass and likely separate
+workbench wording around first-half/second-half context.
+
+### Formation-aware FC25 starter-XI selection
+The FC25 importer currently locks a formation-neutral starting XI at ingest
+time, then reuses that XI across all submitted formations. This is good enough
+for the first workbench slice, but future squad work should select or rebalance
+the XI based on submitted formation and available positions.
 
 ### Movement strategy refactor before the next major movement feature
 `packages/match-engine/src/ticks/movement.ts` now carries several interacting
@@ -133,6 +153,12 @@ artefacts, and responsiveness harness under `packages/match-engine`. Keep the
 legacy item closed unless the old `/match` route needs separate maintenance.
 
 ## Visualization
+
+### Persist FootSim run history across refreshes
+The `/visualise/run` workbench keeps recent simulation runs in React state only.
+Persist run history once users need to compare runs after page refresh, share
+workbench sessions, or resume analysis later. Until then, artefacts themselves
+remain on disk under `packages/match-engine/artifacts`.
 
 ### Reference: GallagherAiden's existing visualisers
 Two repos that visualise footballsimulationengine matches:

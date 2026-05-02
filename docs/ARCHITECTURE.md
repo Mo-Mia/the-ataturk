@@ -76,6 +76,17 @@ The package includes two development harnesses:
 
 The diagnostic visualiser at `/visualise` is a snapshot-replay tool for the standalone engine. It can load a local `.json` snapshot or browse safe `.json` artefacts exposed by the server from `packages/match-engine/artifacts` through `/api/visualiser/artifacts`. It renders replay, event log, stats, shape diagnostics, momentum/streak diagnostics, ball/player heatmaps, and player-relative heatmaps split by in-possession versus out-of-possession samples. This remains diagnostic tooling, not the production `/match` route.
 
+The FC25 workbench at `/visualise/run` is a sibling page, not a decomposition of
+`VisualiserPage.tsx`. It loads five-club FC25 squads from the existing SQLite
+database, submits the engine's six `TeamTactics` levers for each side, runs
+second-half-only batch simulations through `POST /api/match-engine/simulate`,
+and links successful runs back into `/visualise?artifact=...`.
+
+FC25 data lives in additive `fc25_*` tables in the existing Atatürk SQLite
+database. Imports are dataset-versioned and preserve previous imports. The
+first workbench slice uses a formation-neutral starter XI locked at ingest;
+formation-aware XI selection is deferred.
+
 ## Tactics layer (we build this)
 
 The engine has player-level `action` overrides and team-level binary `intent` (`'attack'` / `'defend'`). That's a starting point, not a tactics system. Our layer:

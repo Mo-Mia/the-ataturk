@@ -6,7 +6,10 @@ The hook: AI-driven match commentary (text + voice) that makes a single match fe
 
 ## Status
 
-v0.1 scaffolding in progress. The text-only match playback vertical slice is functional: the second half of the 2005 final streams 450 engine iterations over SSE and renders a live event log at `/match`.
+v0.1 scaffolding in progress. The legacy text-only match playback vertical
+slice is functional at `/match`. In parallel, the standalone TypeScript match
+engine now has a diagnostic snapshot visualiser at `/visualise` and an FC25
+sim-runner workbench at `/visualise/run`.
 
 ## Prerequisites
 
@@ -24,6 +27,14 @@ The server runs on port 8005 and the web app runs on port 5175.
 
 Admin tooling is available locally at `http://127.0.0.1:5175/admin`.
 Match playback is available at `http://127.0.0.1:5175/match`.
+Match-engine replay diagnostics are available at `http://127.0.0.1:5175/visualise`.
+The FC25 sim-runner workbench is available at `http://127.0.0.1:5175/visualise/run`.
+
+To import the tracked five-club FC25 fixture for workbench smoke testing:
+
+```sh
+pnpm --filter @the-ataturk/data fc25:import -- --csv data/fc-25/fixtures/male_players_top5pl.csv
+```
 
 ## Checks
 
@@ -54,6 +65,10 @@ pnpm typecheck
 - `GET /api/players/:playerId/profile-history`
 - `POST /api/profile-extraction/run`
 - `POST /api/match/run` — SSE stream of second-half match ticks (`?speed=fast` for dev)
+- `GET /api/visualiser/artifacts`
+- `GET /api/visualiser/artifacts/:filename`
+- `GET /api/match-engine/clubs`
+- `POST /api/match-engine/simulate` — batch-then-load FC25 workbench simulations
 
 ## Documentation
 
@@ -98,6 +113,19 @@ direct file paths rather than `/tree/` directory URLs.
 - [`packages/match-engine/test/integration/v2_input.test.ts`](packages/match-engine/test/integration/v2_input.test.ts)
 - [`packages/match-engine/test/resolution/preferredFoot.test.ts`](packages/match-engine/test/resolution/preferredFoot.test.ts)
 
+### FC25 data ingestion
+
+- [`docs/FC25_DATA_MAPPING.md`](docs/FC25_DATA_MAPPING.md)
+- [`data/fc-25/fixtures/male_players_top5pl.csv`](data/fc-25/fixtures/male_players_top5pl.csv)
+- [`packages/data/migrations/003_fc25.sql`](packages/data/migrations/003_fc25.sql)
+- [`packages/data/src/fc25/constants.ts`](packages/data/src/fc25/constants.ts)
+- [`packages/data/src/fc25/parser.ts`](packages/data/src/fc25/parser.ts)
+- [`packages/data/src/fc25/adapter.ts`](packages/data/src/fc25/adapter.ts)
+- [`packages/data/src/fc25/importer.ts`](packages/data/src/fc25/importer.ts)
+- [`packages/data/test/fc25/parser.test.ts`](packages/data/test/fc25/parser.test.ts)
+- [`packages/data/test/fc25/adapter.test.ts`](packages/data/test/fc25/adapter.test.ts)
+- [`packages/data/test/fc25/importer.test.ts`](packages/data/test/fc25/importer.test.ts)
+
 ### Harnesses, scripts, and artefacts
 
 - [`packages/match-engine/scripts/characterise.ts`](packages/match-engine/scripts/characterise.ts)
@@ -114,9 +142,13 @@ direct file paths rather than `/tree/` directory URLs.
 ### Visualiser and server support
 
 - [`apps/web/src/match/visualiser/VisualiserPage.tsx`](apps/web/src/match/visualiser/VisualiserPage.tsx)
+- [`apps/web/src/match/visualiser/SimRunnerPage.tsx`](apps/web/src/match/visualiser/SimRunnerPage.tsx)
 - [`apps/web/src/match/visualiser/__tests__/visualiser-page.test.tsx`](apps/web/src/match/visualiser/__tests__/visualiser-page.test.tsx)
+- [`apps/web/src/match/visualiser/__tests__/sim-runner-page.test.tsx`](apps/web/src/match/visualiser/__tests__/sim-runner-page.test.tsx)
 - [`server/src/routes/visualiser-artifacts.ts`](server/src/routes/visualiser-artifacts.ts)
+- [`server/src/routes/match-engine.ts`](server/src/routes/match-engine.ts)
 - [`server/test/visualiser-artifacts.test.ts`](server/test/visualiser-artifacts.test.ts)
+- [`server/test/match-engine/simulate-route.test.ts`](server/test/match-engine/simulate-route.test.ts)
 
 ### Key tests
 
@@ -131,16 +163,22 @@ direct file paths rather than `/tree/` directory URLs.
 
 ### Canonical docs
 
+- [`docs/SESSION_STATUS_2026-05-02_1945_SAST.md`](docs/SESSION_STATUS_2026-05-02_1945_SAST.md)
 - [`docs/SESSION_STATUS_2026-05-01_1506_SAST.md`](docs/SESSION_STATUS_2026-05-01_1506_SAST.md)
 - [`docs/UAT_HANDOFF_2026-05-01_PRE_INTEGRATION.md`](docs/UAT_HANDOFF_2026-05-01_PRE_INTEGRATION.md)
 - [`docs/MATCH_ENGINE_MODEL_GAPS.md`](docs/MATCH_ENGINE_MODEL_GAPS.md)
+- [`docs/FC25_DATA_MAPPING.md`](docs/FC25_DATA_MAPPING.md)
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - [`docs/DECISIONS.md`](docs/DECISIONS.md)
 - [`docs/BACKLOG.md`](docs/BACKLOG.md)
 
 ## Stack
 
-Vite + React + TypeScript frontend, Node backend wrapping `footballsimulationengine`, SQLite for state, Gemini 3 family for commentary, Gemini TTS / ElevenLabs for voice. Deployment to Vercel is deferred.
+Vite + React + TypeScript frontend, Node backend, legacy
+`footballsimulationengine` wrapper for `/match`, standalone TypeScript
+`@the-ataturk/match-engine` for diagnostics/workbench simulations, SQLite for
+state, Gemini 3 family for commentary, Gemini TTS / ElevenLabs for voice.
+Deployment to Vercel is deferred.
 
 ## Licence
 
