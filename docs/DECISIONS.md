@@ -4,6 +4,38 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-02 — FootSim Phase 3 scope: full-match workbench + formation-aware XI
+
+Phase 3 retires two Phase 1 compromises: workbench simulations default to
+`duration: "full_90"` and FC25 starter XIs are selected at simulate time from
+the full imported squad based on the chosen formation. The canonical duration
+token remains `full_90`; `full_match` was not added as a second public spelling.
+Pre-Phase-3 persisted runs without `summary.duration` are inferred as
+`second_half` in the UI.
+
+The engine was selectively unfrozen for full-match support only. It now emits a
+rich `half_time` event at the 45:00 boundary and full-time at 90:00 for
+`full_90` runs. True half-time side-switching of attack direction is explicitly
+deferred because attack direction and zone perspective are spread across
+movement, pass, dribble, tackle, shot, pressure, and set-piece code paths.
+Shipping that safely requires its own audit and post-refactor full-match
+characterisation pass.
+
+Starter XI selection is now formation-aware. `fc25_squads.squad_role` remains
+for backward compatibility but the simulate endpoint no longer uses it as the
+source of truth. Persisted run summaries store rich XI entries (`id`, `name`,
+`shortName`, role-in-XI `position`, optional `squadNumber`) so run history,
+comparison, and batch views render historical line-ups without re-reading
+artefacts or current FC25 imports.
+
+Full-match characterisation uses doubled per-half targets: shots `[16, 24]`,
+goals `[2, 6]`, fouls `[8, 16]`, cards `[2, 6]`, with the same max-score-share
+limit of 40%. The standing characterisation default for preferred-foot testing
+is `--preferred-foot-mode rated`; this is not a sprint-specific flag. The first
+50-seed full-match v2 run landed at 16.76 shots, 1.98 goals, 10.34 fouls, and
+2.58 cards. Goals are technically 0.02 below the target floor, so calibration
+was not tuned silently; this is documented for Mo's call.
+
 ## 2026-05-02 — FootSim Phase 2 scope: workbench depth + server-side run persistence
 
 Phase 2 ships in three strands as one combined sprint: server-side run persistence (foundation, new `match_runs` table in the existing Atatürk SQLite + four endpoints), side-by-side comparison view at `/visualise/compare`, and distribution analysis for 50-seed batches at `/visualise/batch/:batchId`. `VisualiserPage.tsx`'s freeze ends — shared components are lifted into `apps/web/src/match/visualiser/components/` organically as the comparison view needs them, with each lift a behaviour-preserving commit.

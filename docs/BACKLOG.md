@@ -68,17 +68,69 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
-### Full 90-minute FootSim support
-FootSim Phase 1 deliberately runs second-half-only simulations through
-`duration: "second_half"`: 900 ticks, 0-0 start. Full 90-minute support is
-deferred because it needs a separate calibration pass and likely separate
-workbench wording around first-half/second-half context.
+### True half-time side-switch
+Phase 3 added full-90 tick support and a `half_time` marker but deliberately
+deferred flipping attacking direction at tick 900. This must audit and update
+all direction/zone consumers, including:
+`packages/match-engine/src/ticks/movement.ts`,
+`resolution/actions/pass.ts`, `dribble.ts`, `tackle.ts`, `shot.ts`,
+`resolution/pressure.ts`, set-piece logic, shot-distance helpers, and visualiser
+pitch/heatmap assumptions where team direction is inferred. Re-run second-half
+and full-match characterisation after the refactor. Specific risk: changing
+attacking-goal perspective may shift shot-distance and shot-quality
+distribution, even if raw shot volume stays in range.
 
-### Formation-aware FC25 starter-XI selection
-The FC25 importer currently locks a formation-neutral starting XI at ingest
-time, then reuses that XI across all submitted formations. This is good enough
-for the first workbench slice, but future squad work should select or rebalance
-the XI based on submitted formation and available positions.
+### Player fatigue modelling
+Full 90-minute runs currently treat player intensity as constant. Add fatigue
+only once substitutions and longer-match balancing need it.
+
+### Substitutions API + UI
+The engine still has no production substitution contract. Build bench state,
+player removal/addition, formation rebalance, event emission, and workbench UI
+after the full-match/XI foundation settles.
+
+### Extra time and penalty shootout
+Out of scope for FootSim Phase 3. Needed before modelling knockout matches that
+remain level after 90 minutes.
+
+### In-match tactical changes
+The workbench submits tactics at kick-off only. Later Atatürk integration needs
+safe mid-match tactic changes and a clear event/audit trail.
+
+### Manual XI override / drag-and-drop XI builder
+Phase 3 selects deterministic formation-aware XIs automatically. Manual lineup
+control is deferred until there is a concrete workbench or Atatürk UX for it.
+
+### Role-suitability scoring beyond overall + position
+The current XI selector uses primary position, alternative positions, adjacency
+fallback, then `overall` and id tie-breaks. Future work can weight role-specific
+attributes once the automatic selector needs more football nuance.
+
+### Additional formations
+Current supported FootSim formations are `4-4-2`, `4-3-1-2`, `4-3-3`, and
+`4-2-3-1`. Add `3-5-2`, `5-3-2`, `4-1-4-1`, and others only with matching XI
+templates and visual validation.
+
+### Half-time team talks
+The `half_time` marker now exists, but there is no game-state intervention at
+the break. Future commentary and Atatürk UX can hang team-talk logic off this
+event.
+
+### Score-state-aware behaviour adjustments
+The engine does not yet alter risk appetite because a side is protecting a lead
+or chasing a deficit. Add only after full-match calibration has enough headroom
+to absorb score-state effects.
+
+### ~~Full 90-minute FootSim support~~ ✅ Baseline shipped
+Phase 3 added `full_90` workbench runs by default, 1800 ticks, `half_time` at
+45:00, and full-match characterisation support. True half-time side-switch is
+tracked separately above.
+
+### ~~Formation-aware FC25 starter-XI selection~~ ✅ Done
+Phase 3 added deterministic simulate-time XI selection from the full FC25 squad
+for the four supported formations. `fc25_squads.squad_role` remains for
+backward compatibility but the simulate endpoint no longer uses it for XI
+selection.
 
 ### Movement strategy refactor before the next major movement feature
 `packages/match-engine/src/ticks/movement.ts` now carries several interacting
