@@ -18,6 +18,7 @@
     }
   },
   "scripts": {
+    "fc25:import": "tsx src/fc25/importer.ts",
     "migrate": "tsx src/migrate.ts",
     "reset": "tsx src/reset.ts",
     "seed": "tsx src/seed.ts",
