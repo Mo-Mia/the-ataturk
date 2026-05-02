@@ -22,10 +22,18 @@ describe("data migrations", () => {
     const firstRun = migrate({ databasePath: testDatabase.path });
     const secondRun = migrate({ databasePath: testDatabase.path });
 
-    expect(firstRun.applied).toEqual(["001_initial.sql", "002_player_profiles.sql"]);
+    expect(firstRun.applied).toEqual([
+      "001_initial.sql",
+      "002_player_profiles.sql",
+      "003_fc25.sql"
+    ]);
     expect(firstRun.skipped).toEqual([]);
     expect(secondRun.applied).toEqual([]);
-    expect(secondRun.skipped).toEqual(["001_initial.sql", "002_player_profiles.sql"]);
+    expect(secondRun.skipped).toEqual([
+      "001_initial.sql",
+      "002_player_profiles.sql",
+      "003_fc25.sql"
+    ]);
 
     const db = new Database(testDatabase.path);
     try {
@@ -33,7 +41,20 @@ describe("data migrations", () => {
         .prepare<[], CountRow>("SELECT COUNT(*) AS count FROM _migrations")
         .get();
 
-      expect(row?.count).toBe(2);
+      expect(row?.count).toBe(3);
+
+      const tableRows = db
+        .prepare<[], { name: string }>(
+          "SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'fc25_%' ORDER BY name"
+        )
+        .all();
+
+      expect(tableRows.map((table) => table.name)).toEqual([
+        "fc25_clubs",
+        "fc25_dataset_versions",
+        "fc25_players",
+        "fc25_squads"
+      ]);
     } finally {
       db.close();
     }

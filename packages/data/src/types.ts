@@ -289,3 +289,145 @@ export interface SquadPlayerWithAttributes {
   player: Player;
   attributes: PlayerAttributes | null;
 }
+
+export const FC25_CLUB_IDS = [
+  "arsenal",
+  "manchester-city",
+  "manchester-united",
+  "liverpool",
+  "aston-villa"
+] as const;
+export type Fc25ClubId = (typeof FC25_CLUB_IDS)[number];
+
+export const FC25_POSITIONS = [
+  "GK",
+  "CB",
+  "LB",
+  "RB",
+  "DM",
+  "CM",
+  "AM",
+  "LM",
+  "RM",
+  "LW",
+  "RW",
+  "ST"
+] as const;
+export type Fc25Position = (typeof FC25_POSITIONS)[number];
+
+export const FC25_SOURCE_POSITIONS = [
+  "GK",
+  "CB",
+  "LB",
+  "RB",
+  "CDM",
+  "CM",
+  "CAM",
+  "LM",
+  "RM",
+  "LW",
+  "RW",
+  "ST"
+] as const;
+export type Fc25SourcePosition = (typeof FC25_SOURCE_POSITIONS)[number];
+
+export const FC25_SQUAD_ROLES = ["starter", "sub", "reserve"] as const;
+export type Fc25SquadRole = (typeof FC25_SQUAD_ROLES)[number];
+
+export type Fc25PreferredFoot = "left" | "right" | "either";
+export type Fc25StarRating = 1 | 2 | 3 | 4 | 5;
+
+export interface Fc25ClubDefinition {
+  id: Fc25ClubId;
+  name: string;
+  shortName: string;
+  country: string;
+  league: string;
+  sourceTeam: string;
+}
+
+export interface Fc25DatasetVersion {
+  id: string;
+  name: string;
+  source_file: string;
+  source_file_sha256: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Fc25Club {
+  dataset_version_id: string;
+  id: Fc25ClubId;
+  name: string;
+  short_name: string;
+  country: string;
+  league: string;
+  fc25_team_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Fc25PlayerAttributes {
+  acceleration: number;
+  sprintSpeed: number;
+  finishing: number;
+  shotPower: number;
+  longShots: number;
+  positioning: number;
+  volleys: number;
+  penalties: number;
+  vision: number;
+  crossing: number;
+  freeKickAccuracy: number;
+  shortPassing: number;
+  longPassing: number;
+  curve: number;
+  dribbling: number;
+  agility: number;
+  balance: number;
+  reactions: number;
+  ballControl: number;
+  composure: number;
+  interceptions: number;
+  headingAccuracy: number;
+  defensiveAwareness: number;
+  standingTackle: number;
+  slidingTackle: number;
+  jumping: number;
+  stamina: number;
+  strength: number;
+  aggression: number;
+}
+
+export interface Fc25GoalkeeperAttributes {
+  gkDiving: number;
+  gkHandling: number;
+  gkKicking: number;
+  gkPositioning: number;
+  gkReflexes: number;
+}
+
+export interface Fc25ParsedPlayerRow {
+  sourceIndex: number;
+  rank: number;
+  fc25PlayerId: string;
+  name: string;
+  overall: number;
+  position: Fc25Position;
+  sourcePosition: Fc25SourcePosition;
+  alternativePositions: Fc25Position[];
+  age: number;
+  nationality: string;
+  league: string;
+  sourceTeam: string;
+  preferredFoot: Fc25PreferredFoot;
+  weakFootRating: Fc25StarRating;
+  skillMovesRating: Fc25StarRating;
+  heightCm: number;
+  weightKg: number;
+  playStyle: string | null;
+  sourceUrl: string;
+  attributes: Fc25PlayerAttributes;
+  gkAttributes: Fc25GoalkeeperAttributes | null;
+}
