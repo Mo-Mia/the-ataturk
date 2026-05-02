@@ -11,12 +11,16 @@ import {
   listAllMatchRuns,
   listMatchRunsByBatch,
   loadFc25Squad,
+  selectStartingXI,
+  supportedFormation,
   type Fc25Club,
   type Fc25ClubId,
+  type MatchRunLineupPlayer,
   type MatchRun
 } from "@the-ataturk/data";
 import {
   simulateMatch,
+  type MatchDuration,
   type MatchSnapshot,
   type TeamTactics,
   type TeamV2
@@ -40,6 +44,7 @@ interface SimulateBody {
   };
   seed?: unknown;
   batch?: unknown;
+  duration?: unknown;
 }
 
 interface SimulateRunSuccess {
@@ -56,6 +61,11 @@ interface SimulateRunSuccess {
     fouls: { home: number; away: number };
     cards: { home: number; away: number };
     possession: { home: number; away: number };
+    duration: MatchDuration;
+    xi: {
+      home: MatchRunLineupPlayer[];
+      away: MatchRunLineupPlayer[];
+    };
   };
 }
 
@@ -119,10 +129,12 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
       for (let offset = 0; offset < parsed.batch; offset += 1) {
         const seed = parsed.seed + offset;
         try {
+          const home = buildTeam(parsed.home.clubId, parsed.home.tactics);
+          const away = buildTeam(parsed.away.clubId, parsed.away.tactics);
           const snapshot = simulateMatch({
-            homeTeam: buildTeam(parsed.home.clubId, parsed.home.tactics),
-            awayTeam: buildTeam(parsed.away.clubId, parsed.away.tactics),
-            duration: "second_half",
+            homeTeam: home.team,
+            awayTeam: away.team,
+            duration: parsed.duration,
             seed
           });
           const artefactId = await writeSnapshot(snapshot, seed);
@@ -135,7 +147,7 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
             homeClubId: parsed.home.clubId,
             awayClubId: parsed.away.clubId,
             artefactId,
-            summary: summaryFor(snapshot)
+            summary: summaryFor(snapshot, parsed.duration, home.xi, away.xi)
           });
         } catch (error) {
           errors.push({
@@ -222,6 +234,7 @@ function parseSimulateBody(body: SimulateBody):
       away: { clubId: Fc25ClubId; tactics: TeamTactics };
       seed: number;
       batch: number;
+      duration: MatchDuration;
     }
   | ErrorReply {
   if (!isRecord(body)) {
@@ -247,12 +260,18 @@ function parseSimulateBody(body: SimulateBody):
   if (isErrorReply(batch)) {
     return batch;
   }
+  const duration =
+    body.duration === undefined ? "full_90" : parseDuration(body.duration, "duration");
+  if (isErrorReply(duration)) {
+    return duration;
+  }
 
   return {
     home,
     away,
     seed,
-    batch
+    batch,
+    duration
   };
 }
 
@@ -328,15 +347,26 @@ function parseTactics(value: unknown): TeamTactics | { error: string } {
   };
 }
 
-function buildTeam(clubId: Fc25ClubId, tactics: TeamTactics): TeamV2 {
-  const squad = loadFc25Squad(clubId);
+function buildTeam(
+  clubId: Fc25ClubId,
+  tactics: TeamTactics
+): { team: TeamV2; xi: MatchRunLineupPlayer[] } {
+  if (!supportedFormation(tactics.formation)) {
+    throw new Error(`Unsupported formation '${tactics.formation}'`);
+  }
+
+  const squad = loadFc25Squad(clubId, undefined, { include: "all" });
+  const xi = selectStartingXI(squad.players, tactics.formation);
 
   return {
-    id: clubId,
-    name: squad.clubName,
-    shortName: squad.shortName,
-    players: squad.players,
-    tactics
+    team: {
+      id: clubId,
+      name: squad.clubName,
+      shortName: squad.shortName,
+      players: xi,
+      tactics
+    },
+    xi: xi.map(lineupPlayer)
   };
 }
 
@@ -350,7 +380,12 @@ async function writeSnapshot(snapshot: MatchSnapshot, seed: number): Promise<str
   return writeVisualiserArtifact(filename, serialised);
 }
 
-function summaryFor(snapshot: MatchSnapshot): SimulateRunSuccess["summary"] {
+function summaryFor(
+  snapshot: MatchSnapshot,
+  duration: MatchDuration,
+  homeXi: MatchRunLineupPlayer[],
+  awayXi: MatchRunLineupPlayer[]
+): SimulateRunSuccess["summary"] {
   const { home, away } = snapshot.finalSummary.statistics;
   return {
     score: snapshot.finalSummary.finalScore,
@@ -360,7 +395,22 @@ function summaryFor(snapshot: MatchSnapshot): SimulateRunSuccess["summary"] {
       home: home.yellowCards + home.redCards,
       away: away.yellowCards + away.redCards
     },
-    possession: { home: home.possession, away: away.possession }
+    possession: { home: home.possession, away: away.possession },
+    duration,
+    xi: {
+      home: homeXi,
+      away: awayXi
+    }
+  };
+}
+
+function lineupPlayer(player: TeamV2["players"][number]): MatchRunLineupPlayer {
+  return {
+    id: player.id,
+    name: player.name,
+    shortName: player.shortName,
+    position: player.position,
+    ...(player.squadNumber === undefined ? {} : { squadNumber: player.squadNumber })
   };
 }
 
@@ -385,6 +435,13 @@ function parseInteger(
     return { error: `${field} must be an integer from ${min} to ${max}` };
   }
   return value;
+}
+
+function parseDuration(value: unknown, field: string): MatchDuration | ErrorReply {
+  if (value === "second_half" || value === "full_90") {
+    return value;
+  }
+  return { error: `${field} must be one of: second_half, full_90` };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

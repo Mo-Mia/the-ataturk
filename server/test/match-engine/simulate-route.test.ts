@@ -1,5 +1,6 @@
 import { createMatchRuns, getDb, importFc25Dataset } from "@the-ataturk/data";
 import { afterEach, describe, expect, it } from "vitest";
+import type { FastifyInstance } from "fastify";
 
 import { buildApp } from "../../src/app";
 import { writeVisualiserArtifact } from "../../src/routes/visualiser-artifacts";
@@ -40,7 +41,7 @@ describe("match-engine simulation routes", () => {
     }
   });
 
-  it("runs a second-half simulation and writes a visualiser artifact", async () => {
+  it("runs a full-90 simulation by default and writes XI metadata", async () => {
     testDatabase = createServerTestDatabase("match-engine-simulate");
     importFc25Dataset({
       databasePath: testDatabase.path,
@@ -71,6 +72,8 @@ describe("match-engine simulation routes", () => {
             score: { home: number; away: number };
             shots: { home: number; away: number };
             possession: { home: number; away: number };
+            duration: string;
+            xi: { home: Array<{ id: string; position: string }>; away: Array<{ id: string }> };
           };
         }>;
         errors: Array<{ seed: number; error: string }>;
@@ -87,6 +90,21 @@ describe("match-engine simulation routes", () => {
         /^match-engine-\d{14}-liv-mci-seed-7-[a-f0-9]{8}\.json$/
       );
       expect(body.runs[0]?.summary.shots.home).toEqual(expect.any(Number));
+      expect(body.runs[0]?.summary.duration).toBe("full_90");
+      expect(body.runs[0]?.summary.xi.home).toHaveLength(11);
+      expect(body.runs[0]?.summary.xi.home.map((player) => player.position)).toEqual([
+        "GK",
+        "RB",
+        "CB",
+        "CB",
+        "LB",
+        "RM",
+        "CM",
+        "CM",
+        "LM",
+        "ST",
+        "ST"
+      ]);
 
       const artifact = await app.inject({
         method: "GET",
@@ -101,9 +119,9 @@ describe("match-engine simulation routes", () => {
       }>();
 
       expect(artifact.statusCode).toBe(200);
-      expect(snapshot.meta.duration).toBe("second_half");
+      expect(snapshot.meta.duration).toBe("full_90");
       expect(snapshot.meta.preMatchScore).toEqual({ home: 0, away: 0 });
-      expect(snapshot.ticks).toHaveLength(900);
+      expect(snapshot.ticks).toHaveLength(1800);
 
       const persisted = await app.inject({
         method: "GET",
@@ -143,7 +161,8 @@ describe("match-engine simulation routes", () => {
           home: { clubId: "liverpool", tactics: DEFAULT_TACTICS },
           away: { clubId: "manchester-city", tactics: DEFAULT_TACTICS },
           seed: 100,
-          batch: 50
+          batch: 50,
+          duration: "second_half"
         }
       });
       const body = response.json<{
@@ -173,6 +192,45 @@ describe("match-engine simulation routes", () => {
       await app.close();
     }
   }, 15_000);
+
+  it("uses formation-specific XIs in persisted summaries", async () => {
+    testDatabase = createServerTestDatabase("match-engine-xi-formations");
+    importFc25Dataset({
+      databasePath: testDatabase.path,
+      csvPath: FIXTURE_PATH,
+      datasetVersionId: "fc25-route-test"
+    });
+    const app = buildApp();
+    const createdRunIds: string[] = [];
+
+    try {
+      const fourFourTwo = await simulateWithFormation(app, "4-4-2", 201);
+      const fourThreeThree = await simulateWithFormation(app, "4-3-3", 202);
+      createdRunIds.push(fourFourTwo.id, fourThreeThree.id);
+
+      expect(fourFourTwo.summary.xi.home.map((player) => player.position)).not.toEqual(
+        fourThreeThree.summary.xi.home.map((player) => player.position)
+      );
+      expect(fourThreeThree.summary.xi.home.map((player) => player.position)).toEqual([
+        "GK",
+        "LB",
+        "CB",
+        "CB",
+        "RB",
+        "DM",
+        "CM",
+        "CM",
+        "LW",
+        "ST",
+        "RW"
+      ]);
+    } finally {
+      for (const runId of createdRunIds) {
+        await app.inject({ method: "DELETE", url: `/api/match-engine/runs/${runId}` });
+      }
+      await app.close();
+    }
+  });
 
   it("rejects unknown FC25 clubs before running a batch", async () => {
     testDatabase = createServerTestDatabase("match-engine-unknown-club");
@@ -349,4 +407,41 @@ function createRun(overrides: {
     },
     artefact_filename: overrides.artefact_filename
   };
+}
+
+async function simulateWithFormation(
+  app: FastifyInstance,
+  formation: string,
+  seed: number
+): Promise<{
+  id: string;
+  summary: {
+    xi: { home: Array<{ position: string }>; away: Array<{ position: string }> };
+  };
+}> {
+  const response = await app.inject({
+    method: "POST",
+    url: "/api/match-engine/simulate",
+    payload: {
+      home: { clubId: "liverpool", tactics: { ...DEFAULT_TACTICS, formation } },
+      away: { clubId: "manchester-city", tactics: DEFAULT_TACTICS },
+      seed,
+      batch: 1,
+      duration: "second_half"
+    }
+  });
+  const body = response.json<{
+    runs: Array<{
+      id: string;
+      summary: {
+        xi: { home: Array<{ position: string }>; away: Array<{ position: string }> };
+      };
+    }>;
+    errors: Array<{ seed: number; error: string }>;
+  }>();
+
+  expect(response.statusCode).toBe(200);
+  expect(body.errors).toEqual([]);
+  expect(body.runs).toHaveLength(1);
+  return body.runs[0]!;
 }
