@@ -80,6 +80,9 @@ importers:
       '@google/genai':
         specifier: ^1.50.1
         version: 1.50.1
+      '@the-ataturk/match-engine':
+        specifier: workspace:*
+        version: link:../match-engine
       better-sqlite3:
         specifier: 12.9.0
         version: 12.9.0

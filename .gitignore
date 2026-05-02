@@ -50,3 +50,8 @@ visualiser-loaded-snapshot*.png
 # Local working files
 .scratch/
 TODO.local.md
+
+# FC25 source dumps are local; tests use tracked reduced fixtures.
+data/fc-25/*.csv
+!data/fc-25/fixtures/
+!data/fc-25/fixtures/*.csv

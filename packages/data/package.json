@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.50.1",
+    "@the-ataturk/match-engine": "workspace:*",
     "better-sqlite3": "12.9.0",
     "csv-parse": "^6.2.1"
   },
