@@ -38,13 +38,13 @@ Cosmetic only. Probably v0.3+.
 
 ## Refactor
 
-### Decompose `VisualiserPage.tsx` before comparison/diff work
-`apps/web/src/match/visualiser/VisualiserPage.tsx` is intentionally left intact
-through FootSim Phase 1, apart from the approved `?artifact=` auto-load hook.
-It now carries replay, artifact loading, heatmaps, player-relative diagnostics,
-stats, events, and workbench-adjacent concerns. Before adding comparison views,
-side-by-side run analysis, or richer replay controls, split it into smaller
-route/page, pitch, controls, inspector, heatmap, and event-log components.
+### Complete `VisualiserPage.tsx` decomposition
+FootSim Phase 2 partially decomposed the visualiser by lifting reusable stats,
+heatmap/shape diagnostics, pitch markings, and event-dock components for the
+comparison view. The route file still owns replay controls, artifact loading,
+file/drop handling, inspector state, player diagnostics, and page layout.
+Finish the split when richer replay controls or comparison-linked scrubbing
+force the next natural extraction.
 
 ### Extract shared types package
 API boundary types are currently duplicated between `packages/data/src/types.ts`
@@ -154,11 +154,47 @@ legacy item closed unless the old `/match` route needs separate maintenance.
 
 ## Visualization
 
-### Persist FootSim run history across refreshes
-The `/visualise/run` workbench keeps recent simulation runs in React state only.
-Persist run history once users need to compare runs after page refresh, share
-workbench sessions, or resume analysis later. Until then, artefacts themselves
-remain on disk under `packages/match-engine/artifacts`.
+### Histogram bar tie-breaking picker
+FootSim Phase 2 histogram bars open the lowest-seed representative run in that
+bucket. Future distribution analysis should open a small picker listing all runs
+in the bucket, especially when several seeds share the same scoreline or cards
+count.
+
+### Pagination cursor migration for large run history
+`GET /api/match-engine/runs` uses page/limit pagination for the first persisted
+history slice. If the table grows beyond a few thousand rows or list browsing
+starts skipping/duplicating under active writes, migrate to cursor pagination.
+
+### Cross-batch distribution comparison
+Phase 2 shows one batch's distribution at a time. A later research view should
+compare two batches side-by-side for tactic and seed-set analysis.
+
+### Synchronised event-timeline scrubbing
+The Phase 2 comparison page renders two independent event timelines. Add
+synchronised scrubbing only when users need to compare moment-by-moment
+sequences, not just final shape/stat outputs.
+
+### N-way run comparison
+Phase 2 deliberately compares two runs only. N-way comparison is deferred until
+there is a concrete workflow that needs more than paired analysis.
+
+### Run notes and annotations
+Persist analyst notes against `match_runs` once Mo needs to mark interesting
+seeds, UAT observations, or handoff comments directly in the workbench.
+
+### Run history filtering and search
+Add filters by team, date range, tactics, seed range, and batch once persisted
+history grows beyond the current newest-first list.
+
+### Run history eviction policy
+Phase 2 ships manual delete only. Add retention/eviction rules after real usage
+shows whether artefact volume is a problem.
+
+### ~~Persist FootSim run history across refreshes~~ ✅ Done
+FootSim Phase 2 added the `match_runs` table and persisted `/visualise/run`
+history server-side. Artefact files remain under
+`packages/match-engine/artifacts`, with orphaned rows filtered out of list
+responses.
 
 ### Reference: GallagherAiden's existing visualisers
 Two repos that visualise footballsimulationengine matches:

@@ -9,7 +9,8 @@ The hook: AI-driven match commentary (text + voice) that makes a single match fe
 v0.1 scaffolding in progress. The legacy text-only match playback vertical
 slice is functional at `/match`. In parallel, the standalone TypeScript match
 engine now has a diagnostic snapshot visualiser at `/visualise` and an FC25
-sim-runner workbench at `/visualise/run`.
+sim-runner workbench at `/visualise/run`, with persisted run history,
+side-by-side comparison, and batch distribution analysis.
 
 ## Prerequisites
 
@@ -29,6 +30,8 @@ Admin tooling is available locally at `http://127.0.0.1:5175/admin`.
 Match playback is available at `http://127.0.0.1:5175/match`.
 Match-engine replay diagnostics are available at `http://127.0.0.1:5175/visualise`.
 The FC25 sim-runner workbench is available at `http://127.0.0.1:5175/visualise/run`.
+Persisted run comparison is available at `http://127.0.0.1:5175/visualise/compare`.
+Batch distribution analysis is available at `http://127.0.0.1:5175/visualise/batch/:batchId`.
 
 To import the tracked five-club FC25 fixture for workbench smoke testing:
 
@@ -69,6 +72,10 @@ pnpm typecheck
 - `GET /api/visualiser/artifacts/:filename`
 - `GET /api/match-engine/clubs`
 - `POST /api/match-engine/simulate` — batch-then-load FC25 workbench simulations
+- `GET /api/match-engine/runs`
+- `GET /api/match-engine/runs/:id`
+- `GET /api/match-engine/batches/:batchId/runs`
+- `DELETE /api/match-engine/runs/:id`
 
 ## Documentation
 
@@ -118,13 +125,16 @@ direct file paths rather than `/tree/` directory URLs.
 - [`docs/FC25_DATA_MAPPING.md`](docs/FC25_DATA_MAPPING.md)
 - [`data/fc-25/fixtures/male_players_top5pl.csv`](data/fc-25/fixtures/male_players_top5pl.csv)
 - [`packages/data/migrations/003_fc25.sql`](packages/data/migrations/003_fc25.sql)
+- [`packages/data/migrations/004_match_runs.sql`](packages/data/migrations/004_match_runs.sql)
 - [`packages/data/src/fc25/constants.ts`](packages/data/src/fc25/constants.ts)
 - [`packages/data/src/fc25/parser.ts`](packages/data/src/fc25/parser.ts)
 - [`packages/data/src/fc25/adapter.ts`](packages/data/src/fc25/adapter.ts)
 - [`packages/data/src/fc25/importer.ts`](packages/data/src/fc25/importer.ts)
+- [`packages/data/src/match-runs.ts`](packages/data/src/match-runs.ts)
 - [`packages/data/test/fc25/parser.test.ts`](packages/data/test/fc25/parser.test.ts)
 - [`packages/data/test/fc25/adapter.test.ts`](packages/data/test/fc25/adapter.test.ts)
 - [`packages/data/test/fc25/importer.test.ts`](packages/data/test/fc25/importer.test.ts)
+- [`packages/data/test/match-runs.test.ts`](packages/data/test/match-runs.test.ts)
 
 ### Harnesses, scripts, and artefacts
 
@@ -143,8 +153,15 @@ direct file paths rather than `/tree/` directory URLs.
 
 - [`apps/web/src/match/visualiser/VisualiserPage.tsx`](apps/web/src/match/visualiser/VisualiserPage.tsx)
 - [`apps/web/src/match/visualiser/SimRunnerPage.tsx`](apps/web/src/match/visualiser/SimRunnerPage.tsx)
+- [`apps/web/src/match/visualiser/ComparePage.tsx`](apps/web/src/match/visualiser/ComparePage.tsx)
+- [`apps/web/src/match/visualiser/BatchDistributionPage.tsx`](apps/web/src/match/visualiser/BatchDistributionPage.tsx)
+- [`apps/web/src/match/visualiser/components/StatsPanel.tsx`](apps/web/src/match/visualiser/components/StatsPanel.tsx)
+- [`apps/web/src/match/visualiser/components/HeatmapPanel.tsx`](apps/web/src/match/visualiser/components/HeatmapPanel.tsx)
+- [`apps/web/src/match/visualiser/components/EventDock.tsx`](apps/web/src/match/visualiser/components/EventDock.tsx)
 - [`apps/web/src/match/visualiser/__tests__/visualiser-page.test.tsx`](apps/web/src/match/visualiser/__tests__/visualiser-page.test.tsx)
 - [`apps/web/src/match/visualiser/__tests__/sim-runner-page.test.tsx`](apps/web/src/match/visualiser/__tests__/sim-runner-page.test.tsx)
+- [`apps/web/src/match/visualiser/__tests__/compare-page.test.tsx`](apps/web/src/match/visualiser/__tests__/compare-page.test.tsx)
+- [`apps/web/src/match/visualiser/__tests__/batch-distribution-page.test.tsx`](apps/web/src/match/visualiser/__tests__/batch-distribution-page.test.tsx)
 - [`server/src/routes/visualiser-artifacts.ts`](server/src/routes/visualiser-artifacts.ts)
 - [`server/src/routes/match-engine.ts`](server/src/routes/match-engine.ts)
 - [`server/test/visualiser-artifacts.test.ts`](server/test/visualiser-artifacts.test.ts)
