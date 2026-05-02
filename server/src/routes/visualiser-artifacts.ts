@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -27,6 +27,37 @@ export async function writeVisualiserArtifact(filename: string, content: string)
   await mkdir(ARTIFACTS_DIR, { recursive: true });
   await writeFile(new URL(filename, `file://${ARTIFACTS_DIR}/`), content, "utf8");
   return filename;
+}
+
+export async function visualiserArtifactExists(filename: string): Promise<boolean> {
+  if (!isSafeArtifactFilename(filename)) {
+    return false;
+  }
+
+  try {
+    const details = await stat(new URL(filename, `file://${ARTIFACTS_DIR}/`));
+    return details.isFile();
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return false;
+    }
+    throw error;
+  }
+}
+
+export async function deleteVisualiserArtifact(filename: string): Promise<void> {
+  if (!isSafeArtifactFilename(filename)) {
+    throw new Error(`Invalid artifact filename '${filename}'`);
+  }
+
+  try {
+    await unlink(new URL(filename, `file://${ARTIFACTS_DIR}/`));
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      return;
+    }
+    throw error;
+  }
 }
 
 export function registerVisualiserArtifactRoutes(app: FastifyInstance): void {

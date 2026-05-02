@@ -89,6 +89,19 @@ export function listMatchRuns(
   };
 }
 
+export function listAllMatchRuns(db = getDb()): MatchRun[] {
+  return db
+    .prepare<[], MatchRunRow>(
+      `
+        SELECT *
+        FROM match_runs
+        ORDER BY created_at DESC, id DESC
+      `
+    )
+    .all()
+    .map(mapRunRow);
+}
+
 export function getMatchRun(id: string, db = getDb()): MatchRun | null {
   const row =
     db.prepare<[string], MatchRunRow>("SELECT * FROM match_runs WHERE id = ?").get(id) ?? null;

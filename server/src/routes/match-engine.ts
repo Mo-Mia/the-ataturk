@@ -1,11 +1,19 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import {
   FC25_CLUB_IDS,
+  createMatchRunId,
+  createMatchRuns,
+  deleteMatchRun,
+  getDb,
+  getMatchRun,
   listFc25Clubs,
+  listAllMatchRuns,
+  listMatchRunsByBatch,
   loadFc25Squad,
   type Fc25Club,
-  type Fc25ClubId
+  type Fc25ClubId,
+  type MatchRun
 } from "@the-ataturk/data";
 import {
   simulateMatch,
@@ -15,7 +23,11 @@ import {
 } from "@the-ataturk/match-engine";
 import type { FastifyInstance } from "fastify";
 
-import { writeVisualiserArtifact } from "./visualiser-artifacts";
+import {
+  deleteVisualiserArtifact,
+  visualiserArtifactExists,
+  writeVisualiserArtifact
+} from "./visualiser-artifacts";
 
 interface SimulateBody {
   home?: {
@@ -31,7 +43,12 @@ interface SimulateBody {
 }
 
 interface SimulateRunSuccess {
+  id: string;
   seed: number;
+  batchId: string | null;
+  createdAt: string;
+  homeClubId: Fc25ClubId;
+  awayClubId: Fc25ClubId;
   artefactId: string;
   summary: {
     score: { home: number; away: number };
@@ -56,7 +73,17 @@ interface ErrorReply {
   error: string;
 }
 
+interface RunParams {
+  id: string;
+}
+
+interface BatchParams {
+  batchId: string;
+}
+
 const MAX_BATCH = 50;
+const DEFAULT_RUN_LIST_LIMIT = 50;
+const MAX_RUN_LIST_LIMIT = 100;
 const DEFAULT_TACTICS: TeamTactics = {
   formation: "4-4-2",
   mentality: "balanced",
@@ -86,6 +113,8 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
 
       const runs: SimulateRunSuccess[] = [];
       const errors: SimulateRunError[] = [];
+      const batchId = parsed.batch > 1 ? randomUUID() : null;
+      const now = new Date().toISOString();
 
       for (let offset = 0; offset < parsed.batch; offset += 1) {
         const seed = parsed.seed + offset;
@@ -97,8 +126,14 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
             seed
           });
           const artefactId = await writeSnapshot(snapshot, seed);
+          const id = createMatchRunId();
           runs.push({
+            id,
             seed,
+            batchId,
+            createdAt: now,
+            homeClubId: parsed.home.clubId,
+            awayClubId: parsed.away.clubId,
             artefactId,
             summary: summaryFor(snapshot)
           });
@@ -110,9 +145,69 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
         }
       }
 
+      if (runs.length > 0) {
+        createMatchRuns(
+          runs.map((run) => ({
+            id: run.id,
+            created_at: run.createdAt,
+            batch_id: run.batchId,
+            seed: run.seed,
+            home_club_id: run.homeClubId,
+            away_club_id: run.awayClubId,
+            home_tactics: parsed.home.tactics,
+            away_tactics: parsed.away.tactics,
+            summary: run.summary,
+            artefact_filename: run.artefactId
+          }))
+        );
+      }
+
       return { runs, errors };
     }
   );
+
+  app.get("/api/match-engine/runs", async (request) => {
+    const query = isRecord(request.query) ? request.query : {};
+    const page = parseOptionalPositiveInteger(query.page, 1);
+    const limit = Math.min(parseOptionalPositiveInteger(query.limit, DEFAULT_RUN_LIST_LIMIT), MAX_RUN_LIST_LIMIT);
+    const visibleRuns = await filterRunsWithArtifacts(listAllMatchRuns());
+    const offset = (page - 1) * limit;
+    const runs = visibleRuns.slice(offset, offset + limit);
+
+    return {
+      runs: runs.map(runResponse),
+      total: visibleRuns.length,
+      page,
+      hasMore: offset + runs.length < visibleRuns.length
+    };
+  });
+
+  app.get<{ Params: RunParams }>("/api/match-engine/runs/:id", async (request, reply) => {
+    const run = getMatchRun(request.params.id);
+    if (!run || !(await visualiserArtifactExists(run.artefact_filename))) {
+      return reply.code(404).send({ error: "Run not found" });
+    }
+
+    return runResponse(run);
+  });
+
+  app.get<{ Params: BatchParams }>("/api/match-engine/batches/:batchId/runs", async (request, reply) => {
+    const runs = await filterRunsWithArtifacts(listMatchRunsByBatch(request.params.batchId));
+    if (runs.length === 0) {
+      return reply.code(404).send({ error: "Batch not found" });
+    }
+
+    return { runs: runs.map(runResponse) };
+  });
+
+  app.delete<{ Params: RunParams }>("/api/match-engine/runs/:id", async (request, reply) => {
+    const deleted = deleteMatchRun(request.params.id, getDb());
+    if (deleted) {
+      await deleteVisualiserArtifact(deleted.artefact_filename);
+    }
+
+    return reply.code(204).send();
+  });
 }
 
 function parseSimulateBody(body: SimulateBody):
@@ -296,6 +391,40 @@ function isErrorReply(value: unknown): value is ErrorReply {
 
 function isFc25ClubId(value: string): value is Fc25ClubId {
   return FC25_CLUB_IDS.includes(value as Fc25ClubId);
+}
+
+async function filterRunsWithArtifacts(runs: MatchRun[]): Promise<MatchRun[]> {
+  const visibleRuns: MatchRun[] = [];
+  for (const run of runs) {
+    if (await visualiserArtifactExists(run.artefact_filename)) {
+      visibleRuns.push(run);
+    }
+  }
+  return visibleRuns;
+}
+
+function runResponse(run: MatchRun) {
+  return {
+    id: run.id,
+    createdAt: run.created_at,
+    batchId: run.batch_id,
+    seed: run.seed,
+    homeClubId: run.home_club_id,
+    awayClubId: run.away_club_id,
+    homeTactics: run.home_tactics,
+    awayTactics: run.away_tactics,
+    summary: run.summary,
+    artefactId: run.artefact_filename
+  };
+}
+
+function parseOptionalPositiveInteger(value: unknown, fallback: number): number {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function safeSlug(value: string): string {
