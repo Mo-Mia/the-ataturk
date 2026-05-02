@@ -339,6 +339,58 @@ pre {
   padding: 12px;
 }
 
+.batch-shell {
+  width: min(1760px, calc(100% - 32px));
+  font-family: "Trebuchet MS", sans-serif;
+}
+
+.batch-header,
+.batch-header-links {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.batch-header-links {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.batch-meta,
+.batch-summary,
+.batch-card {
+  border: 1px solid #d4d0c4;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.batch-meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+
+.batch-summary {
+  margin-bottom: 16px;
+}
+
+.batch-summary h2,
+.batch-card h2 {
+  margin-top: 0;
+}
+
+.batch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+}
+
+.batch-card {
+  overflow: hidden;
+}
+
 .sim-runner-history table {
   margin-bottom: 0;
 }
