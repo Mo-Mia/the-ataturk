@@ -45,11 +45,16 @@ console.log(`Wrote forced half-time snapshot to ${outputPath}`);
 console.log(`Wrote compressed snapshot to ${outputPath}.gz`);
 
 function fullMatchConfig(config: MatchConfigV2): MatchConfigV2 {
-  const { preMatchScore: _preMatchScore, ...rest } = config;
-  return {
-    ...rest,
+  const fullConfig: MatchConfigV2 = {
+    homeTeam: config.homeTeam,
+    awayTeam: config.awayTeam,
+    seed: config.seed,
     duration: "full_90"
   };
+  if (config.preMatchStats) {
+    fullConfig.preMatchStats = config.preMatchStats;
+  }
+  return fullConfig;
 }
 
 function primeAttackingHalfTimeState(state: MutableMatchState): void {

@@ -148,12 +148,12 @@ describe("SimRunnerPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
-    expect(fetchMock).toHaveBeenLastCalledWith(
-      "/api/match-engine/simulate",
-      expect.objectContaining({
-        body: expect.stringContaining('"duration":"second_half"')
-      })
-    );
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toBe("/api/match-engine/simulate");
+    const requestInit = fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
+    if (typeof requestInit.body !== "string") {
+      throw new Error("Expected JSON request body");
+    }
+    expect(requestInit.body).toContain('"duration":"second_half"');
 
     fireEvent.click(screen.getByRole("button", { name: "Show XI" }));
     expect(screen.getByText("Home XI")).toBeTruthy();

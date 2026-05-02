@@ -7,8 +7,7 @@ describe("simulateMatch", () => {
   it("simulates a deterministic 1800-tick full match with a half-time marker", () => {
     const config = {
       ...createTestConfigV2(199, { preferredFoot: "either", weakFootRating: 5 }),
-      duration: "full_90" as const,
-      preMatchScore: undefined
+      duration: "full_90" as const
     };
     const first = simulateMatch(config);
     const second = simulateMatch(config);

@@ -1,3 +1,9 @@
+import type {
+  MatchDuration,
+  PlayerInputV2,
+  Position as EnginePosition
+} from "@the-ataturk/match-engine";
+
 export const POSITIONS = ["GK", "CB", "LB", "RB", "DM", "CM", "AM", "LW", "RW", "ST"] as const;
 export type Position = (typeof POSITIONS)[number];
 
@@ -432,8 +438,7 @@ export interface Fc25ParsedPlayerRow {
   gkAttributes: Fc25GoalkeeperAttributes | null;
 }
 
-export interface Fc25SquadPlayer
-  extends import("@the-ataturk/match-engine").PlayerInputV2 {
+export interface Fc25SquadPlayer extends PlayerInputV2 {
   overall: number;
   sourcePosition: Fc25Position;
   alternativePositions: Fc25Position[];
@@ -443,7 +448,7 @@ export interface MatchRunLineupPlayer {
   id: string;
   name: string;
   shortName: string;
-  position: import("@the-ataturk/match-engine").Position;
+  position: EnginePosition;
   squadNumber?: number;
 }
 
@@ -453,7 +458,7 @@ export interface MatchRunSummary {
   fouls: { home: number; away: number };
   cards: { home: number; away: number };
   possession: { home: number; away: number };
-  duration?: import("@the-ataturk/match-engine").MatchDuration;
+  duration?: MatchDuration;
   xi?: {
     home: MatchRunLineupPlayer[];
     away: MatchRunLineupPlayer[];
