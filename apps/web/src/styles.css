@@ -255,6 +255,28 @@ pre {
   padding-left: 20px;
 }
 
+.sim-runner-inline-button {
+  border: 1px solid #151515;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #151515;
+  font: inherit;
+  font-weight: 700;
+  padding: 6px 8px;
+}
+
+.lineup-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  text-align: left;
+}
+
+.lineup-summary h3,
+.lineup-summary p {
+  margin-top: 0;
+}
+
 .sim-runner-table-wrap {
   overflow-x: auto;
 }
@@ -309,6 +331,20 @@ pre {
   flex-wrap: wrap;
 }
 
+.compare-lineups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  border: 1px solid #d4d0c4;
+  background: #ffffff;
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+.compare-lineups p {
+  margin: 6px 0 0;
+}
+
 .compare-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -359,6 +395,7 @@ pre {
 
 .batch-meta,
 .batch-summary,
+.batch-lineup,
 .batch-card {
   border: 1px solid #d4d0c4;
   background: #ffffff;
@@ -376,7 +413,12 @@ pre {
   margin-bottom: 16px;
 }
 
+.batch-lineup {
+  margin-bottom: 16px;
+}
+
 .batch-summary h2,
+.batch-lineup h2,
 .batch-card h2 {
   margin-top: 0;
 }

@@ -26,6 +26,8 @@ describe("BatchDistributionPage", () => {
 
     await waitFor(() => expect(screen.getByText(/liverpool vs manchester-city/)).toBeTruthy());
     expect(screen.getByText(/seeds 10-12/)).toBeTruthy();
+    expect(screen.getByText("Batch XI")).toBeTruthy();
+    expect(screen.getByText(/ST Jota/)).toBeTruthy();
     expect(screen.getByLabelText("Batch summary statistics")).toBeTruthy();
     expect(screen.getByLabelText("Home goals histogram")).toBeTruthy();
     expect(
@@ -88,8 +90,22 @@ function run(
       shots: { home: 8 + (seed % 3), away: 6 },
       fouls: { home: 3, away: 4 },
       cards: { home: 1, away: 1 },
-      possession: { home: homePossession, away: 100 - homePossession }
+      possession: { home: homePossession, away: 100 - homePossession },
+      duration: "full_90",
+      xi: {
+        home: [lineupPlayer("h1", "ST", "Jota")],
+        away: [lineupPlayer("a1", "GK", "Ederson")]
+      }
     }
+  };
+}
+
+function lineupPlayer(id: string, position: string, shortName: string) {
+  return {
+    id,
+    name: shortName,
+    shortName,
+    position
   };
 }
 

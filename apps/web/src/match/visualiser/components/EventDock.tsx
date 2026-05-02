@@ -151,12 +151,26 @@ export function formatEventDetail(snapshot: MatchSnapshot, event: SemanticEvent)
     return score ? `(${detailScore(score)})` : "";
   }
 
+  if (event.type === "half_time") {
+    const score = event.detail.score;
+    const possession = event.detail.possession;
+    const parts = [
+      score ? detailScore(score) : "",
+      possessionText(possession),
+      "second-half kick-off pending"
+    ].filter(Boolean);
+    return parts.length > 0 ? `(${parts.join(", ")})` : "";
+  }
+
   return "";
 }
 
 function eventLabel(event: SemanticEvent): string {
   if (event.type === "full_time") {
     return "Full time";
+  }
+  if (event.type === "half_time") {
+    return "Half time";
   }
   return event.type.replaceAll("_", " ");
 }
@@ -231,6 +245,8 @@ function possessionChangeText(snapshot: MatchSnapshot, event: SemanticEvent): st
       return `${winner} kicks off after the goal${suffix}`;
     case "kickoff_match_start":
       return `${winner} takes the kick-off${suffix}`;
+    case "kickoff_second_half":
+      return `${winner} takes the second-half kick-off${suffix}`;
     default:
       return `cause unknown; ${detailString(detail.from, "?")} to ${detailString(detail.to, "?")}`;
   }
@@ -246,6 +262,21 @@ function detailScore(value: unknown): string {
     typeof value.away === "number"
   ) {
     return `${value.home}-${value.away}`;
+  }
+
+  return "";
+}
+
+function possessionText(value: unknown): string {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "home" in value &&
+    "away" in value &&
+    typeof value.home === "number" &&
+    typeof value.away === "number"
+  ) {
+    return `possession ${value.home}/${value.away}`;
   }
 
   return "";

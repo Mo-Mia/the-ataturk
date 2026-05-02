@@ -37,6 +37,7 @@ describe("ComparePage", () => {
     expect(screen.getByText(/Run B: 0-3, 18 shots/)).toBeTruthy();
     expect(screen.getByText(/attacking-third entries/)).toBeTruthy();
     expect(screen.getAllByRole("img", { name: "Ball-position heatmap" })).toHaveLength(2);
+    expect(screen.getByText("Same XI")).toBeTruthy();
     expect(
       screen
         .getAllByRole("img", { name: "Ball-position heatmap" })
@@ -70,6 +71,44 @@ describe("ComparePage", () => {
     );
 
     expect(await screen.findByText(/different matchups/)).toBeTruthy();
+  });
+
+  it("shows differing XIs and mixed-duration warning", async () => {
+    const runA = run("run-a", 10, "liverpool", "manchester-city", "artifact-a.json", {
+      home: 2,
+      away: 1
+    });
+    const runB = {
+      ...run("run-b", 11, "liverpool", "manchester-city", "artifact-b.json", {
+        home: 1,
+        away: 1
+      }),
+      summary: {
+        ...runA.summary,
+        duration: "second_half",
+        xi: {
+          home: [lineupPlayer("h2", "LW", "Diaz")],
+          away: [lineupPlayer("a1", "GK", "Ederson")]
+        }
+      }
+    };
+    vi.stubGlobal(
+      "fetch",
+      mockCompareFetch([runA, runB], {
+        "artifact-a.json": snapshot("LIV", "MCI", { home: 2, away: 1 }, 820),
+        "artifact-b.json": snapshot("LIV", "MCI", { home: 1, away: 1 }, 350)
+      })
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/visualise/compare?a=run-a&b=run-b"]}>
+        <ComparePage />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText(/per-half stats differ/)).toBeTruthy();
+    expect(screen.getByText("Run A home")).toBeTruthy();
+    expect(screen.getByText(/LW Diaz/)).toBeTruthy();
   });
 });
 
@@ -127,8 +166,22 @@ function run(
       shots: { home: 9, away: 9 },
       fouls: { home: 3, away: 4 },
       cards: { home: 1, away: 2 },
-      possession: { home: 50, away: 50 }
+      possession: { home: 50, away: 50 },
+      duration: "full_90",
+      xi: {
+        home: [lineupPlayer("h1", "ST", "Jota")],
+        away: [lineupPlayer("a1", "GK", "Ederson")]
+      }
     }
+  };
+}
+
+function lineupPlayer(id: string, position: string, shortName: string) {
+  return {
+    id,
+    name: shortName,
+    shortName,
+    position
   };
 }
 

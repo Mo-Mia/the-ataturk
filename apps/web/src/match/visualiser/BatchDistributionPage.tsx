@@ -132,6 +132,13 @@ export function BatchDistributionPage() {
         <span>{metadata.homeTactics}</span>
         <strong>Away tactics</strong>
         <span>{metadata.awayTactics}</span>
+        <strong>Duration</strong>
+        <span>{metadata.duration}</span>
+      </section>
+
+      <section className="batch-lineup" aria-label="Batch line-up">
+        <h2>Batch XI</h2>
+        <BatchLineup run={runs[0]} />
       </section>
 
       <section className="batch-summary" aria-label="Batch summary statistics">
@@ -245,7 +252,8 @@ function batchMetadata(runs: PersistedMatchRun[]) {
       matchup: "No runs",
       seedRange: "-",
       homeTactics: "-",
-      awayTactics: "-"
+      awayTactics: "-",
+      duration: "-"
     };
   }
 
@@ -254,8 +262,29 @@ function batchMetadata(runs: PersistedMatchRun[]) {
     matchup: `${first.homeClubId} vs ${first.awayClubId}`,
     seedRange: `${Math.min(...seeds)}-${Math.max(...seeds)}`,
     homeTactics: tacticsSummary(first.homeTactics),
-    awayTactics: tacticsSummary(first.awayTactics)
+    awayTactics: tacticsSummary(first.awayTactics),
+    duration: first.summary.duration === "full_90" ? "Full match" : "Second half"
   };
+}
+
+function BatchLineup({ run }: { run: PersistedMatchRun | undefined }) {
+  const xi = run?.summary.xi;
+  if (!xi) {
+    return <p>XI not recorded for this batch.</p>;
+  }
+
+  return (
+    <div className="lineup-summary">
+      <div>
+        <strong>Home</strong>
+        <p>{xi.home.map((player) => `${player.position} ${player.shortName}`).join(", ")}</p>
+      </div>
+      <div>
+        <strong>Away</strong>
+        <p>{xi.away.map((player) => `${player.position} ${player.shortName}`).join(", ")}</p>
+      </div>
+    </div>
+  );
 }
 
 function tacticsSummary(tactics: PersistedMatchRun["homeTactics"]): string {

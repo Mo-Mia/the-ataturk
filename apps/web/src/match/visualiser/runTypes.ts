@@ -1,4 +1,12 @@
-import type { TeamTactics } from "@the-ataturk/match-engine";
+import type { MatchDuration, Position, TeamTactics } from "@the-ataturk/match-engine";
+
+export interface RunLineupPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  position: Position;
+  squadNumber?: number;
+}
 
 export interface SimRunSummary {
   score: { home: number; away: number };
@@ -6,6 +14,11 @@ export interface SimRunSummary {
   fouls: { home: number; away: number };
   cards: { home: number; away: number };
   possession: { home: number; away: number };
+  duration?: MatchDuration;
+  xi?: {
+    home: RunLineupPlayer[];
+    away: RunLineupPlayer[];
+  };
 }
 
 export interface PersistedMatchRun {

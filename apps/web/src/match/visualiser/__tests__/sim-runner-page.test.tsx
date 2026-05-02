@@ -39,7 +39,8 @@ describe("SimRunnerPage", () => {
                 shots: { home: 9, away: 7 },
                 fouls: { home: 4, away: 5 },
                 cards: { home: 1, away: 2 },
-                possession: { home: 49, away: 51 }
+                possession: { home: 49, away: 51 },
+                duration: "full_90"
               }
             }
           ],
@@ -84,13 +85,15 @@ describe("SimRunnerPage", () => {
             }
           },
           seed: 42,
-          batch: 1
+          batch: 1,
+          duration: "full_90"
         })
       })
     );
 
     const history = screen.getByLabelText("Run history");
     expect(within(history).getByText("1-2")).toBeTruthy();
+    expect(within(history).getByText("Full match")).toBeTruthy();
     expect(within(history).getByText("9/7")).toBeTruthy();
     expect(within(history).getByText("49%/51%")).toBeTruthy();
     expect(within(history).getByRole("link", { name: "Replay" }).getAttribute("href")).toBe(
@@ -99,6 +102,63 @@ describe("SimRunnerPage", () => {
     expect(within(history).getByRole("link", { name: "Compare" }).getAttribute("href")).toBe(
       "/visualise/compare?a=run-42"
     );
+  });
+
+  it("submits second-half duration and expands recorded XI details", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(clubs))
+      .mockResolvedValueOnce(jsonResponse(runList([])))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          runs: [
+            {
+              id: "run-xi",
+              seed: 52,
+              batchId: null,
+              createdAt: "2026-05-02T12:00:00.000Z",
+              homeClubId: "liverpool",
+              awayClubId: "manchester-city",
+              homeTactics: defaultTactics(),
+              awayTactics: defaultTactics(),
+              artefactId: "match-engine-xi.json",
+              summary: {
+                score: { home: 0, away: 0 },
+                shots: { home: 1, away: 1 },
+                fouls: { home: 0, away: 0 },
+                cards: { home: 0, away: 0 },
+                possession: { home: 50, away: 50 },
+                duration: "second_half",
+                xi: {
+                  home: [lineupPlayer("h1", "ST", "Jota")],
+                  away: [lineupPlayer("a1", "GK", "Ederson")]
+                }
+              }
+            }
+          ],
+          errors: []
+        })
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SimRunnerPage />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    fireEvent.change(screen.getByLabelText("Match duration"), { target: { value: "second_half" } });
+    fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      "/api/match-engine/simulate",
+      expect.objectContaining({
+        body: expect.stringContaining('"duration":"second_half"')
+      })
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Show XI" }));
+    expect(screen.getByText("Home XI")).toBeTruthy();
+    expect(screen.getByText("ST · Jota")).toBeTruthy();
+    expect(screen.getByText("GK · Ederson")).toBeTruthy();
   });
 
   it("renders an empty dataset message when no FC25 clubs are active", async () => {
@@ -174,6 +234,15 @@ function defaultTactics() {
     pressing: "medium",
     lineHeight: "normal",
     width: "normal"
+  };
+}
+
+function lineupPlayer(id: string, position: string, shortName: string) {
+  return {
+    id,
+    name: shortName,
+    shortName,
+    position
   };
 }
 

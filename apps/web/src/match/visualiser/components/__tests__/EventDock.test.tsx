@@ -59,6 +59,13 @@ describe("EventDock", () => {
         minute: 74,
         second: 0,
         detail: { from: "away", to: "home" }
+      },
+      {
+        type: "half_time",
+        team: "home",
+        minute: 45,
+        second: 0,
+        detail: { score: { home: 1, away: 0 }, possession: { home: 52, away: 48 } }
       }
     ];
 
@@ -71,6 +78,8 @@ describe("EventDock", () => {
     expect(screen.getByText(/to HM/)).toBeTruthy();
     expect(screen.getByText(/key pass/)).toBeTruthy();
     expect(screen.getByText(/cause unknown/)).toBeTruthy();
+    expect(screen.getByText(/Half time/)).toBeTruthy();
+    expect(screen.getByText(/possession 52\/48/)).toBeTruthy();
   });
 
   it("exposes the formatter for comparison timelines", () => {

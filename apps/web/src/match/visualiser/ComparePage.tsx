@@ -113,6 +113,9 @@ export function ComparePage() {
       runB &&
       (runA.run.homeClubId !== runB.run.homeClubId || runA.run.awayClubId !== runB.run.awayClubId)
   );
+  const mixedDuration = Boolean(
+    runA && runB && normalisedDuration(runA.run) !== normalisedDuration(runB.run)
+  );
 
   function setRun(slot: CompareSlot, runId: string): void {
     const next = new URLSearchParams(searchParams);
@@ -153,10 +156,17 @@ export function ComparePage() {
           may be noisy.
         </p>
       ) : null}
+      {mixedDuration ? (
+        <p className="compare-warning">
+          Comparing a second-half run with a full-match run; per-half stats differ from per-match
+          stats.
+        </p>
+      ) : null}
 
       {runA && runB ? (
         <>
           <SummaryDiff runA={runA} runB={runB} />
+          <LineupComparison runA={runA.run} runB={runB.run} />
           <section className="compare-grid" aria-label="Run comparison columns">
             <RunColumn title="Run A" loaded={runA} heatmapMax={sharedHeatmapMax} />
             <RunColumn title="Run B" loaded={runB} heatmapMax={sharedHeatmapMax} />
@@ -165,6 +175,61 @@ export function ComparePage() {
       ) : null}
     </main>
   );
+}
+
+function LineupComparison({ runA, runB }: { runA: PersistedMatchRun; runB: PersistedMatchRun }) {
+  const xiA = runA.summary.xi;
+  const xiB = runB.summary.xi;
+  if (!xiA || !xiB) {
+    return (
+      <section className="compare-lineups" aria-label="Line-up comparison">
+        XI not recorded for one or both runs.
+      </section>
+    );
+  }
+
+  if (sameLineup(xiA.home, xiB.home) && sameLineup(xiA.away, xiB.away)) {
+    return (
+      <section className="compare-lineups" aria-label="Line-up comparison">
+        Same XI
+      </section>
+    );
+  }
+
+  return (
+    <section className="compare-lineups" aria-label="Line-up comparison">
+      <LineupBlock title="Run A home" players={xiA.home} />
+      <LineupBlock title="Run B home" players={xiB.home} />
+      <LineupBlock title="Run A away" players={xiA.away} />
+      <LineupBlock title="Run B away" players={xiB.away} />
+    </section>
+  );
+}
+
+function LineupBlock({
+  title,
+  players
+}: {
+  title: string;
+  players: NonNullable<PersistedMatchRun["summary"]["xi"]>["home"];
+}) {
+  return (
+    <div>
+      <strong>{title}</strong>
+      <p>{players.map((player) => `${player.position} ${player.shortName}`).join(", ")}</p>
+    </div>
+  );
+}
+
+function sameLineup(
+  a: NonNullable<PersistedMatchRun["summary"]["xi"]>["home"],
+  b: NonNullable<PersistedMatchRun["summary"]["xi"]>["home"]
+): boolean {
+  return a.length === b.length && a.every((player, index) => player.id === b[index]?.id);
+}
+
+function normalisedDuration(run: PersistedMatchRun): "second_half" | "full_90" {
+  return run.summary.duration ?? "second_half";
 }
 
 function RunSelect({

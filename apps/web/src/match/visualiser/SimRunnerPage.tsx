@@ -1,5 +1,5 @@
-import type { TeamTactics } from "@the-ataturk/match-engine";
-import { useEffect, useMemo, useState } from "react";
+import type { MatchDuration, TeamTactics } from "@the-ataturk/match-engine";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import type { MatchRunListResponse, PersistedMatchRun, SimError, SimResponse } from "./runTypes";
 
 interface Fc25Club {
@@ -34,7 +34,9 @@ export function SimRunnerPage() {
   const [awayTactics, setAwayTactics] = useState<TeamTactics>(DEFAULT_TACTICS);
   const [seed, setSeed] = useState(() => String(randomSeed()));
   const [batch, setBatch] = useState<1 | 50>(1);
+  const [duration, setDuration] = useState<MatchDuration>("full_90");
   const [history, setHistory] = useState<PersistedMatchRun[]>([]);
+  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [runErrors, setRunErrors] = useState<SimError[]>([]);
   const [status, setStatus] = useState<"loading-clubs" | "idle" | "running" | "error">(
     "loading-clubs"
@@ -109,7 +111,8 @@ export function SimRunnerPage() {
           home: { clubId: homeClubId, tactics: homeTactics },
           away: { clubId: awayClubId, tactics: awayTactics },
           seed: parsedSeed,
-          batch
+          batch,
+          duration
         })
       });
       const payload = (await response.json()) as SimResponse | { error: string };
@@ -143,7 +146,7 @@ export function SimRunnerPage() {
         <div>
           <p className="eyebrow">Match Visualiser</p>
           <h1>FC25 Sim Runner</h1>
-          <p className="sim-runner-note">Second-half simulations only: 900 ticks, 0-0 start.</p>
+          <p className="sim-runner-note">Real FC25 squads, formation-aware XIs, batch output.</p>
         </div>
         <a className="sim-runner-link" href="/visualise">
           Replay panel
@@ -175,6 +178,16 @@ export function SimRunnerPage() {
       </section>
 
       <section className="sim-runner-controls" aria-label="Run controls">
+        <label>
+          Match duration
+          <select
+            value={duration}
+            onChange={(event) => setDuration(event.target.value as MatchDuration)}
+          >
+            <option value="full_90">Full match (90 min)</option>
+            <option value="second_half">Second half (calibrated)</option>
+          </select>
+        </label>
         <label>
           Seed
           <input
@@ -225,47 +238,70 @@ export function SimRunnerPage() {
               <thead>
                 <tr>
                   <th>Seed</th>
+                  <th>Duration</th>
                   <th>Score</th>
                   <th>Shots</th>
                   <th>Fouls</th>
                   <th>Cards</th>
                   <th>Possession</th>
+                  <th>XI</th>
                   <th>Links</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map((run) => (
-                  <tr key={run.id}>
-                    <td>{run.seed}</td>
-                    <td>
-                      {run.summary.score.home}-{run.summary.score.away}
-                    </td>
-                    <td>
-                      {run.summary.shots.home}/{run.summary.shots.away}
-                    </td>
-                    <td>
-                      {run.summary.fouls.home}/{run.summary.fouls.away}
-                    </td>
-                    <td>
-                      {run.summary.cards.home}/{run.summary.cards.away}
-                    </td>
-                    <td>
-                      {run.summary.possession.home}%/{run.summary.possession.away}%
-                    </td>
-                    <td>
-                      <a href={`/visualise?artifact=${encodeURIComponent(run.artefactId)}`}>
-                        Replay
-                      </a>
-                      {" · "}
-                      <a href={`/visualise/compare?a=${encodeURIComponent(run.id)}`}>Compare</a>
-                      {run.batchId ? (
-                        <>
-                          {" · "}
-                          <a href={`/visualise/batch/${encodeURIComponent(run.batchId)}`}>Batch</a>
-                        </>
-                      ) : null}
-                    </td>
-                  </tr>
+                  <Fragment key={run.id}>
+                    <tr key={run.id}>
+                      <td>{run.seed}</td>
+                      <td>{durationLabel(run.summary.duration)}</td>
+                      <td>
+                        {run.summary.score.home}-{run.summary.score.away}
+                      </td>
+                      <td>
+                        {run.summary.shots.home}/{run.summary.shots.away}
+                      </td>
+                      <td>
+                        {run.summary.fouls.home}/{run.summary.fouls.away}
+                      </td>
+                      <td>
+                        {run.summary.cards.home}/{run.summary.cards.away}
+                      </td>
+                      <td>
+                        {run.summary.possession.home}%/{run.summary.possession.away}%
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="sim-runner-inline-button"
+                          onClick={() => setExpandedRunId(expandedRunId === run.id ? null : run.id)}
+                        >
+                          {expandedRunId === run.id ? "Hide XI" : "Show XI"}
+                        </button>
+                      </td>
+                      <td>
+                        <a href={`/visualise?artifact=${encodeURIComponent(run.artefactId)}`}>
+                          Replay
+                        </a>
+                        {" · "}
+                        <a href={`/visualise/compare?a=${encodeURIComponent(run.id)}`}>Compare</a>
+                        {run.batchId ? (
+                          <>
+                            {" · "}
+                            <a href={`/visualise/batch/${encodeURIComponent(run.batchId)}`}>
+                              Batch
+                            </a>
+                          </>
+                        ) : null}
+                      </td>
+                    </tr>
+                    {expandedRunId === run.id ? (
+                      <tr key={`${run.id}-xi`}>
+                        <td colSpan={9}>
+                          <LineupSummary run={run} />
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -273,6 +309,41 @@ export function SimRunnerPage() {
         )}
       </section>
     </main>
+  );
+}
+
+function LineupSummary({ run }: { run: PersistedMatchRun }) {
+  const xi = run.summary.xi;
+  if (!xi) {
+    return <p className="sim-runner-note">XI not recorded for this run.</p>;
+  }
+
+  return (
+    <div className="lineup-summary">
+      <LineupColumn title="Home XI" players={xi.home} />
+      <LineupColumn title="Away XI" players={xi.away} />
+    </div>
+  );
+}
+
+function LineupColumn({
+  title,
+  players
+}: {
+  title: string;
+  players: NonNullable<PersistedMatchRun["summary"]["xi"]>["home"];
+}) {
+  return (
+    <section>
+      <h3>{title}</h3>
+      <ol>
+        {players.map((player) => (
+          <li key={player.id}>
+            {player.position} · {player.shortName}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
 
@@ -396,4 +467,8 @@ function formatOption(value: string): string {
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function durationLabel(value: MatchDuration | undefined): string {
+  return value === "full_90" ? "Full match" : "Second half";
 }
