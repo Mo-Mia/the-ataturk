@@ -24,15 +24,25 @@ interface CliOptions {
   seeds: number;
   schema: "v1" | "v2";
   preferredFootMode: "either" | "rated";
+  duration: MatchConfig["duration"];
   writeSnapshotPath?: string;
 }
 
+interface TargetRanges {
+  shotsTarget: [number, number];
+  goalsTarget: [number, number];
+  foulsTarget: [number, number];
+  cardsTarget: [number, number];
+  maxSingleScoreShare: number;
+}
+
 const options = parseArgs(process.argv.slice(2));
+const targets = targetsForDuration(options.duration);
 const results: SeedResult[] = [];
 let representativeConfig: MatchConfig | MatchConfigV2 | null = null;
 
 for (let seed = 1; seed <= options.seeds; seed += 1) {
-  const config = createScenario(seed, options.schema, options.preferredFootMode);
+  const config = createScenario(seed, options.schema, options.preferredFootMode, options.duration);
   representativeConfig = representativeConfig ?? config;
   const startedAt = performance.now();
   const snapshot = simulateMatch(config);
@@ -60,8 +70,8 @@ if (options.writeSnapshotPath && representativeConfig) {
   writeFileSync(outputPath, `${JSON.stringify(simulateMatch(representativeConfig), null, 2)}\n`);
 }
 
-const report = buildReport(results);
-printReport(report, options.seeds);
+const report = buildReport(results, targets);
+printReport(report, options, targets);
 
 if (!report.pass) {
   process.exitCode = 1;
@@ -70,27 +80,29 @@ if (!report.pass) {
 function createScenario(
   seed: number,
   schema: CliOptions["schema"],
-  preferredFootMode: CliOptions["preferredFootMode"]
+  preferredFootMode: CliOptions["preferredFootMode"],
+  duration: CliOptions["duration"]
 ): MatchConfig | MatchConfigV2 {
   const homeTeam = createTeam("liverpool", "Liverpool", "LIV", "4-4-2", "attacking", "fast", 74);
   const awayTeam = createTeam("ac-milan", "AC Milan", "MIL", "4-3-1-2", "balanced", "normal", 77);
+  const preMatchScore = duration === "second_half" ? { home: 0, away: 3 } : undefined;
 
   if (schema === "v2") {
     return {
       homeTeam: toV2Team(homeTeam, preferredFootMode),
       awayTeam: toV2Team(awayTeam, preferredFootMode),
-      duration: "second_half",
+      duration,
       seed,
-      preMatchScore: { home: 0, away: 3 }
+      ...(preMatchScore ? { preMatchScore } : {})
     };
   }
 
   return {
     homeTeam,
     awayTeam,
-    duration: "second_half",
+    duration,
     seed,
-    preMatchScore: { home: 0, away: 3 }
+    ...(preMatchScore ? { preMatchScore } : {})
   };
 }
 
@@ -255,7 +267,10 @@ function playerV2FromV1(
   };
 }
 
-function buildReport(results: SeedResult[]): {
+function buildReport(
+  results: SeedResult[],
+  targetRanges: TargetRanges
+): {
   averages: Record<"shots" | "goals" | "fouls" | "cards" | "elapsedMs", number>;
   scoreDistribution: Array<{ score: string; count: number; pct: number }>;
   pass: boolean;
@@ -276,28 +291,36 @@ function buildReport(results: SeedResult[]): {
     .sort((a, b) => b.count - a.count);
   const topScoreShare = scoreDistribution[0]?.pct ?? 0;
   const pass =
-    inRange(averages.shots, CALIBRATION_TARGETS.shotsTarget) &&
-    inRange(averages.goals, CALIBRATION_TARGETS.goalsTarget) &&
-    inRange(averages.fouls, CALIBRATION_TARGETS.foulsTarget) &&
-    inRange(averages.cards, CALIBRATION_TARGETS.cardsTarget) &&
-    topScoreShare <= CALIBRATION_TARGETS.maxSingleScoreShare;
+    inRange(averages.shots, targetRanges.shotsTarget) &&
+    inRange(averages.goals, targetRanges.goalsTarget) &&
+    inRange(averages.fouls, targetRanges.foulsTarget) &&
+    inRange(averages.cards, targetRanges.cardsTarget) &&
+    topScoreShare <= targetRanges.maxSingleScoreShare;
 
   return { averages, scoreDistribution, pass };
 }
 
-function printReport(report: ReturnType<typeof buildReport>, seeds: number): void {
-  console.log(`=== Match Engine Characterisation (${seeds} seeds, second half) ===`);
+function printReport(
+  report: ReturnType<typeof buildReport>,
+  cliOptions: CliOptions,
+  targetRanges: TargetRanges
+): void {
   console.log(
-    `Shots: ${report.averages.shots.toFixed(2)} target ${range(CALIBRATION_TARGETS.shotsTarget)}`
+    `=== Match Engine Characterisation (${cliOptions.seeds} seeds, ${durationLabel(
+      cliOptions.duration
+    )}, ${cliOptions.schema}, preferred-foot ${cliOptions.preferredFootMode}) ===`
   );
   console.log(
-    `Goals: ${report.averages.goals.toFixed(2)} target ${range(CALIBRATION_TARGETS.goalsTarget)}`
+    `Shots: ${report.averages.shots.toFixed(2)} target ${range(targetRanges.shotsTarget)}`
   );
   console.log(
-    `Fouls: ${report.averages.fouls.toFixed(2)} target ${range(CALIBRATION_TARGETS.foulsTarget)}`
+    `Goals: ${report.averages.goals.toFixed(2)} target ${range(targetRanges.goalsTarget)}`
   );
   console.log(
-    `Cards: ${report.averages.cards.toFixed(2)} target ${range(CALIBRATION_TARGETS.cardsTarget)}`
+    `Fouls: ${report.averages.fouls.toFixed(2)} target ${range(targetRanges.foulsTarget)}`
+  );
+  console.log(
+    `Cards: ${report.averages.cards.toFixed(2)} target ${range(targetRanges.cardsTarget)}`
   );
   console.log(`Average elapsed: ${report.averages.elapsedMs.toFixed(2)}ms`);
   console.log("Score distribution:");
@@ -308,7 +331,12 @@ function printReport(report: ReturnType<typeof buildReport>, seeds: number): voi
 }
 
 function parseArgs(args: string[]): CliOptions {
-  const options: CliOptions = { seeds: 50, schema: "v1", preferredFootMode: "rated" };
+  const options: CliOptions = {
+    seeds: 50,
+    schema: "v1",
+    preferredFootMode: "rated",
+    duration: "second_half"
+  };
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -335,6 +363,11 @@ function parseArgs(args: string[]): CliOptions {
       options.preferredFootMode = parsePreferredFootMode(
         arg.slice("--preferred-foot-mode=".length)
       );
+    } else if (arg === "--duration" && args[index + 1]) {
+      options.duration = parseDuration(args[index + 1]);
+      index += 1;
+    } else if (arg?.startsWith("--duration=")) {
+      options.duration = parseDuration(arg.slice("--duration=".length));
     }
   }
 
@@ -357,6 +390,35 @@ function parsePreferredFootMode(value: string | undefined): CliOptions["preferre
     return value;
   }
   throw new Error("Expected --preferred-foot-mode to be either or rated");
+}
+
+function parseDuration(value: string | undefined): CliOptions["duration"] {
+  if (value === "second_half" || value === "full_90") {
+    return value;
+  }
+  throw new Error("Expected --duration to be second_half or full_90");
+}
+
+function targetsForDuration(duration: CliOptions["duration"]): TargetRanges {
+  if (duration === "second_half") {
+    return CALIBRATION_TARGETS;
+  }
+
+  return {
+    shotsTarget: doubleRange(CALIBRATION_TARGETS.shotsTarget),
+    goalsTarget: doubleRange(CALIBRATION_TARGETS.goalsTarget),
+    foulsTarget: doubleRange(CALIBRATION_TARGETS.foulsTarget),
+    cardsTarget: doubleRange(CALIBRATION_TARGETS.cardsTarget),
+    maxSingleScoreShare: CALIBRATION_TARGETS.maxSingleScoreShare
+  };
+}
+
+function doubleRange(value: [number, number]): [number, number] {
+  return [value[0] * 2, value[1] * 2];
+}
+
+function durationLabel(duration: CliOptions["duration"]): string {
+  return duration === "second_half" ? "second half" : "full 90";
 }
 
 function avg(values: number[]): number {
