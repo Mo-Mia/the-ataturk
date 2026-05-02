@@ -299,7 +299,10 @@ describe("match-engine simulation routes", () => {
     const app = buildApp();
 
     try {
-      const first = await app.inject({ method: "DELETE", url: "/api/match-engine/runs/delete-run" });
+      const first = await app.inject({
+        method: "DELETE",
+        url: "/api/match-engine/runs/delete-run"
+      });
       expect(first.statusCode).toBe(204);
 
       const row = await app.inject({ method: "GET", url: "/api/match-engine/runs/delete-run" });
@@ -311,7 +314,10 @@ describe("match-engine simulation routes", () => {
       });
       expect(artifact.statusCode).toBe(404);
 
-      const second = await app.inject({ method: "DELETE", url: "/api/match-engine/runs/delete-run" });
+      const second = await app.inject({
+        method: "DELETE",
+        url: "/api/match-engine/runs/delete-run"
+      });
       expect(second.statusCode).toBe(204);
     } finally {
       await app.close();

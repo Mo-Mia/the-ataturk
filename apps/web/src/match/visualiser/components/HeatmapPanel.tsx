@@ -206,7 +206,13 @@ export function HeatmapDiagnostics({
   );
 }
 
-export function MomentumDiagnostics({ snapshot, tick }: { snapshot: MatchSnapshot; tick: MatchTick }) {
+export function MomentumDiagnostics({
+  snapshot,
+  tick
+}: {
+  snapshot: MatchSnapshot;
+  tick: MatchTick;
+}) {
   const momentum = tick.attackMomentum;
   const streak = tick.possessionStreak;
 

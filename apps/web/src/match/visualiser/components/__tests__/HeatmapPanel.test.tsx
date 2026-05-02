@@ -35,7 +35,12 @@ describe("HeatmapPanel", () => {
     const snapshot = createSnapshot();
 
     render(
-      <HeatmapDiagnostics snapshot={snapshot} tick={snapshot.ticks[0]!} filter="all" subject="ball" />
+      <HeatmapDiagnostics
+        snapshot={snapshot}
+        tick={snapshot.ticks[0]!}
+        filter="all"
+        subject="ball"
+      />
     );
 
     expect(screen.getByText(/LIV momentum: 42/)).toBeTruthy();

@@ -15,12 +15,22 @@ export function EventDock({
         <h2 style={styles.panelTitle}>{title}</h2>
         <span style={styles.muted}>{events.length} events</span>
       </div>
-      {snapshot ? <EventLog snapshot={snapshot} events={events} /> : <p style={styles.muted}>No events.</p>}
+      {snapshot ? (
+        <EventLog snapshot={snapshot} events={events} />
+      ) : (
+        <p style={styles.muted}>No events.</p>
+      )}
     </section>
   );
 }
 
-export function EventLog({ snapshot, events }: { snapshot: MatchSnapshot; events: SemanticEvent[] }) {
+export function EventLog({
+  snapshot,
+  events
+}: {
+  snapshot: MatchSnapshot;
+  events: SemanticEvent[];
+}) {
   if (events.length === 0) {
     return <p style={styles.muted}>No events yet.</p>;
   }

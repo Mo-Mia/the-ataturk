@@ -104,7 +104,10 @@ describe("SimRunnerPage", () => {
   it("renders an empty dataset message when no FC25 clubs are active", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValueOnce(jsonResponse([])).mockResolvedValueOnce(jsonResponse(runList([])))
+      vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse([]))
+        .mockResolvedValueOnce(jsonResponse(runList([])))
     );
 
     render(<SimRunnerPage />);

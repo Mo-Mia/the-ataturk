@@ -85,7 +85,9 @@ export function ComparePage() {
           setRunA(null);
           setRunB(null);
           setStatus("error");
-          setError(requestError instanceof Error ? requestError.message : "Could not load comparison");
+          setError(
+            requestError instanceof Error ? requestError.message : "Could not load comparison"
+          );
         }
       }
     }

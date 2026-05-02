@@ -88,13 +88,17 @@ function mockCompareFetch(runs: unknown[], snapshots: Record<string, MatchSnapsh
           "id" in candidate &&
           candidate.id === decodeURIComponent(runMatch[1]!)
       );
-      return Promise.resolve(found ? jsonResponse(found) : jsonResponse({ error: "not found" }, 404));
+      return Promise.resolve(
+        found ? jsonResponse(found) : jsonResponse({ error: "not found" }, 404)
+      );
     }
     const artifactMatch = url.match(/^\/api\/visualiser\/artifacts\/(.+)$/);
     if (artifactMatch) {
       const filename = decodeURIComponent(artifactMatch[1]!);
       const found = snapshots[filename];
-      return Promise.resolve(found ? jsonResponse(found) : jsonResponse({ error: "not found" }, 404));
+      return Promise.resolve(
+        found ? jsonResponse(found) : jsonResponse({ error: "not found" }, 404)
+      );
     }
     return Promise.resolve(jsonResponse({ error: "not found" }, 404));
   });
@@ -195,7 +199,13 @@ function tick(
     matchClock: { half: 2, minute: 45, seconds: iteration * 3 },
     ball: { position: ballPosition, inFlight: false, carrierPlayerId: "h1" },
     players: [
-      { id: "h1", teamId: "home", position: [ballPosition[0], ballPosition[1]], hasBall: true, onPitch: true },
+      {
+        id: "h1",
+        teamId: "home",
+        position: [ballPosition[0], ballPosition[1]],
+        hasBall: true,
+        onPitch: true
+      },
       { id: "a1", teamId: "away", position: [340, 420], hasBall: false, onPitch: true }
     ],
     score,

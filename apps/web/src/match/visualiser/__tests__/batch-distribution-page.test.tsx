@@ -28,7 +28,9 @@ describe("BatchDistributionPage", () => {
     expect(screen.getByText(/seeds 10-12/)).toBeTruthy();
     expect(screen.getByLabelText("Batch summary statistics")).toBeTruthy();
     expect(screen.getByLabelText("Home goals histogram")).toBeTruthy();
-    expect(within(screen.getByLabelText("Batch summary statistics")).getByText("Mean")).toBeTruthy();
+    expect(
+      within(screen.getByLabelText("Batch summary statistics")).getByText("Mean")
+    ).toBeTruthy();
     expect(screen.getByText("1.3")).toBeTruthy();
 
     const firstBar = document.querySelector(".recharts-bar-rectangle");
@@ -39,7 +41,10 @@ describe("BatchDistributionPage", () => {
   });
 
   it("shows a clean error state for an unknown batch", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(jsonResponse({ error: "not found" }, 404)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(jsonResponse({ error: "not found" }, 404))
+    );
 
     render(
       <MemoryRouter initialEntries={["/visualise/batch/missing"]}>

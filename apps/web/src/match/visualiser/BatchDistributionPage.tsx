@@ -56,7 +56,9 @@ export function BatchDistributionPage() {
       }
 
       try {
-        const response = await fetch(`/api/match-engine/batches/${encodeURIComponent(batchId)}/runs`);
+        const response = await fetch(
+          `/api/match-engine/batches/${encodeURIComponent(batchId)}/runs`
+        );
         if (!response.ok) {
           throw new Error(`Batch request failed with ${response.status}`);
         }
@@ -165,7 +167,9 @@ export function BatchDistributionPage() {
             key={metric.id}
             metric={metric}
             runs={runs}
-            onOpen={(run) => navigate(`/visualise?artifact=${encodeURIComponent(run.artefactId)}`)}
+            onOpen={(run) => {
+              void navigate(`/visualise?artifact=${encodeURIComponent(run.artefactId)}`);
+            }}
           />
         ))}
       </section>
@@ -187,7 +191,12 @@ function HistogramCard({
   return (
     <article className="batch-card" aria-label={`${metric.label} histogram`}>
       <h2>{metric.label}</h2>
-      <BarChart width={340} height={220} data={buckets} margin={{ top: 12, right: 12, bottom: 24, left: 0 }}>
+      <BarChart
+        width={340}
+        height={220}
+        data={buckets}
+        margin={{ top: 12, right: 12, bottom: 24, left: 0 }}
+      >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="bucket" />
         <YAxis allowDecimals={false} />
@@ -224,7 +233,9 @@ function buildBuckets(runs: PersistedMatchRun[], metric: MetricDefinition): Hist
     }
   }
 
-  return [...buckets.values()].sort((left, right) => bucketSortValue(left.bucket) - bucketSortValue(right.bucket));
+  return [...buckets.values()].sort(
+    (left, right) => bucketSortValue(left.bucket) - bucketSortValue(right.bucket)
+  );
 }
 
 function batchMetadata(runs: PersistedMatchRun[]) {

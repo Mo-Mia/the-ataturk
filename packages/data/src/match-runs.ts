@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { getDb, type SqliteDatabase } from "./db";
+import { getDb } from "./db";
 import type {
   CreateMatchRunInput,
   MatchRun,

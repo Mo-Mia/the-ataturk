@@ -169,7 +169,10 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
   app.get("/api/match-engine/runs", async (request) => {
     const query = isRecord(request.query) ? request.query : {};
     const page = parseOptionalPositiveInteger(query.page, 1);
-    const limit = Math.min(parseOptionalPositiveInteger(query.limit, DEFAULT_RUN_LIST_LIMIT), MAX_RUN_LIST_LIMIT);
+    const limit = Math.min(
+      parseOptionalPositiveInteger(query.limit, DEFAULT_RUN_LIST_LIMIT),
+      MAX_RUN_LIST_LIMIT
+    );
     const visibleRuns = await filterRunsWithArtifacts(listAllMatchRuns());
     const offset = (page - 1) * limit;
     const runs = visibleRuns.slice(offset, offset + limit);
@@ -191,14 +194,17 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
     return runResponse(run);
   });
 
-  app.get<{ Params: BatchParams }>("/api/match-engine/batches/:batchId/runs", async (request, reply) => {
-    const runs = await filterRunsWithArtifacts(listMatchRunsByBatch(request.params.batchId));
-    if (runs.length === 0) {
-      return reply.code(404).send({ error: "Batch not found" });
-    }
+  app.get<{ Params: BatchParams }>(
+    "/api/match-engine/batches/:batchId/runs",
+    async (request, reply) => {
+      const runs = await filterRunsWithArtifacts(listMatchRunsByBatch(request.params.batchId));
+      if (runs.length === 0) {
+        return reply.code(404).send({ error: "Batch not found" });
+      }
 
-    return { runs: runs.map(runResponse) };
-  });
+      return { runs: runs.map(runResponse) };
+    }
+  );
 
   app.delete<{ Params: RunParams }>("/api/match-engine/runs/:id", async (request, reply) => {
     const deleted = deleteMatchRun(request.params.id, getDb());
