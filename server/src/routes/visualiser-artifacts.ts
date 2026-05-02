@@ -1,4 +1,4 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,8 +19,19 @@ const ARTIFACTS_DIR = fileURLToPath(
 );
 const JSON_ARTIFACT_PATTERN = /^[A-Za-z0-9._-]+\.json$/;
 
+export async function writeVisualiserArtifact(filename: string, content: string): Promise<string> {
+  if (!isSafeArtifactFilename(filename)) {
+    throw new Error(`Invalid artifact filename '${filename}'`);
+  }
+
+  await mkdir(ARTIFACTS_DIR, { recursive: true });
+  await writeFile(new URL(filename, `file://${ARTIFACTS_DIR}/`), content, "utf8");
+  return filename;
+}
+
 export function registerVisualiserArtifactRoutes(app: FastifyInstance): void {
   app.get("/api/visualiser/artifacts", async () => {
+    await mkdir(ARTIFACTS_DIR, { recursive: true });
     const entries = await readdir(ARTIFACTS_DIR, { withFileTypes: true });
     const files: ArtifactFile[] = [];
 

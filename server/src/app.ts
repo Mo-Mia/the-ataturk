@@ -4,6 +4,7 @@ import { registerAttributeAdminRoutes } from "./routes/admin/attributes";
 import { registerProfileAdminRoutes } from "./routes/admin/profiles";
 import { registerDataRoutes } from "./routes/data";
 import { registerHealthRoute } from "./routes/health";
+import { registerMatchEngineRoutes } from "./routes/match-engine";
 import { registerMatchRoute } from "./routes/match";
 import { registerSmokeMatchRoute } from "./routes/smoke-match";
 import { registerVisualiserArtifactRoutes } from "./routes/visualiser-artifacts";
@@ -21,6 +22,7 @@ export function buildApp() {
   registerProfileAdminRoutes(app);
   registerHealthRoute(app);
   registerSmokeMatchRoute(app);
+  registerMatchEngineRoutes(app);
   registerMatchRoute(app);
   registerVisualiserArtifactRoutes(app);
 
