@@ -47,6 +47,21 @@ describe("UAT scenario artefacts", () => {
     expect(supportTicks.length).toBeGreaterThanOrEqual(5);
     expect(existsSync(`${outputPath}.gz`)).toBe(true);
   });
+
+  it("generates a forced half-time crossing replay with second-half kickoff", () => {
+    const outputPath = runScenarioScript("forcedHalfTimeCrossing.ts", "forced-half-time-v2.json");
+    const snapshot = readSnapshot(outputPath);
+    const events = snapshot.ticks.flatMap((tick) => tick.events);
+
+    expect(snapshot.ticks).toHaveLength(1800);
+    expect(events.some((event) => event.type === "half_time" && event.minute === 45)).toBe(true);
+    expect(
+      events.some(
+        (event) => event.type === "kick_off" && event.team === "away" && event.detail?.secondHalf
+      )
+    ).toBe(true);
+    expect(existsSync(`${outputPath}.gz`)).toBe(true);
+  });
 });
 
 function runScenarioScript(scriptName: string, fileName: string): string {

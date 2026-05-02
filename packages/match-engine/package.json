@@ -16,7 +16,8 @@
     "responsiveness": "tsx scripts/responsiveness.ts",
     "forced-second-yellow": "tsx scripts/forcedSecondYellow.ts",
     "forced-early-goal": "tsx scripts/forcedEarlyGoal.ts",
-    "forced-high-momentum-attack": "tsx scripts/forcedHighMomentumAttack.ts"
+    "forced-high-momentum-attack": "tsx scripts/forcedHighMomentumAttack.ts",
+    "forced-half-time": "tsx scripts/forcedHalfTimeCrossing.ts"
   },
   "devDependencies": {
     "tsx": "4.21.0",

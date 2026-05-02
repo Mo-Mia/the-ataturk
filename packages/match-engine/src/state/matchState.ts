@@ -79,6 +79,8 @@ export interface MutableMatchState {
   eventsThisTick: SemanticEvent[];
   allEvents: SemanticEvent[];
   openingKickoffPending: boolean;
+  halfTimeKickoffPending: boolean;
+  halfTimeEmitted: boolean;
 }
 
 export function emptyTeamStatistics(): TeamStatistics {

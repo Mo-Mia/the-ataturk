@@ -1,9 +1,32 @@
 import { describe, expect, it } from "vitest";
 
 import { simulateMatch } from "../../src";
-import { createTestConfig } from "../helpers";
+import { createTestConfig, createTestConfigV2 } from "../helpers";
 
 describe("simulateMatch", () => {
+  it("simulates a deterministic 1800-tick full match with a half-time marker", () => {
+    const config = {
+      ...createTestConfigV2(199, { preferredFoot: "either", weakFootRating: 5 }),
+      duration: "full_90" as const,
+      preMatchScore: undefined
+    };
+    const first = simulateMatch(config);
+    const second = simulateMatch(config);
+
+    expect(first).toEqual(second);
+    expect(first.ticks).toHaveLength(1800);
+    expect(first.ticks[0]?.matchClock).toEqual({ half: 1, minute: 0, seconds: 3 });
+    expect(first.ticks[899]?.matchClock).toEqual({ half: 1, minute: 45, seconds: 0 });
+    expect(first.ticks[899]?.events.some((event) => event.type === "half_time")).toBe(true);
+    expect(
+      first.ticks[900]?.events.some(
+        (event) => event.type === "kick_off" && event.team === "away" && event.detail?.secondHalf
+      )
+    ).toBe(true);
+    expect(first.ticks.at(-1)?.matchClock).toEqual({ half: 2, minute: 90, seconds: 0 });
+    expect(first.ticks.at(-1)?.events.at(-1)?.type).toBe("full_time");
+  });
+
   it("simulates a deterministic 900-tick second half", () => {
     const first = simulateMatch(createTestConfig(99));
     const second = simulateMatch(createTestConfig(99));

@@ -8,6 +8,7 @@ import {
 import { restartAfterGoal } from "../resolution/actions/shot";
 import { pressureLevel, rollPressureTackle } from "../resolution/pressure";
 import { continuePendingSetPiece } from "../resolution/setPieces";
+import { giveKickOffToTeam } from "../state/initState";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
 import { updateAttackMomentum } from "../state/momentum";
 import type { SemanticEvent, TeamId } from "../types";
@@ -18,6 +19,13 @@ import { updateMovement } from "./movement";
 export function runTick(state: MutableMatchState): void {
   state.eventsThisTick = [];
   advanceClock(state);
+
+  if (handleHalfTimeBoundary(state)) {
+    updateAttackMomentum(state);
+    updatePossessionStats(state);
+    state.allEvents.push(...state.eventsThisTick);
+    return;
+  }
 
   if (continuePendingGoal(state)) {
     updateAttackMomentum(state);
@@ -95,7 +103,7 @@ function advanceClock(state: MutableMatchState): void {
   const baseSeconds = state.duration === "second_half" ? 45 * 60 : 0;
   const elapsed = baseSeconds + state.iteration * SECONDS_PER_TICK;
   state.matchClock = {
-    half: elapsed >= 45 * 60 ? 2 : 1,
+    half: elapsed > 45 * 60 ? 2 : 1,
     minute: Math.floor(elapsed / 60),
     seconds: elapsed % 60
   };
@@ -191,6 +199,7 @@ export function actionIsVulnerableForTest(action: CarrierAction): boolean {
 
 function emitOpeningKickoff(state: MutableMatchState): void {
   if (!state.openingKickoffPending) {
+    emitHalfTimeKickoff(state);
     return;
   }
 
@@ -207,6 +216,80 @@ function emitOpeningKickoff(state: MutableMatchState): void {
     cause: "kickoff_match_start",
     zone: zoneForPosition(carrier.teamId, carrier.position)
   });
+}
+
+function handleHalfTimeBoundary(state: MutableMatchState): boolean {
+  if (state.duration !== "full_90" || state.halfTimeEmitted || state.iteration !== 900) {
+    return false;
+  }
+
+  state.halfTimeEmitted = true;
+  state.halfTimeKickoffPending = true;
+  state.pendingGoal = null;
+  state.pendingSetPiece = null;
+  state.ball.position = [GOAL_CENTRE_X, PITCH_LENGTH / 2, 0];
+  state.ball.inFlight = false;
+  state.ball.carrierPlayerId = null;
+  state.ball.targetPosition = null;
+  state.ball.targetCarrierPlayerId = null;
+  state.players.forEach((player) => {
+    player.hasBall = false;
+    player.targetPosition = player.anchorPosition;
+  });
+  state.possession.teamId = null;
+
+  emitEvent(state, "half_time", "home", undefined, {
+    score: { ...state.score },
+    elapsedSeconds: 45 * 60,
+    lineups: {
+      home: activeLineup(state, "home"),
+      away: activeLineup(state, "away")
+    },
+    possession: {
+      home: state.stats.home.possession,
+      away: state.stats.away.possession
+    }
+  });
+  giveKickOffToTeam(state, "away");
+  state.players.forEach((player) => {
+    if (!player.hasBall) {
+      player.position = player.anchorPosition;
+      player.targetPosition = player.anchorPosition;
+    }
+  });
+
+  return true;
+}
+
+function emitHalfTimeKickoff(state: MutableMatchState): void {
+  if (!state.halfTimeKickoffPending) {
+    return;
+  }
+
+  state.halfTimeKickoffPending = false;
+  const carrier = currentCarrier(state);
+  if (!carrier) {
+    return;
+  }
+
+  emitEvent(state, "kick_off", carrier.teamId, carrier.id, { secondHalf: true });
+  emitEvent(state, "possession_change", carrier.teamId, carrier.id, {
+    from: null,
+    to: carrier.teamId,
+    cause: "kickoff_second_half",
+    zone: zoneForPosition(carrier.teamId, carrier.position)
+  });
+}
+
+function activeLineup(state: MutableMatchState, teamId: TeamId) {
+  return state.players
+    .filter((player) => player.teamId === teamId && player.onPitch)
+    .map((player) => ({
+      id: player.id,
+      position: player.baseInput.position,
+      x: Math.round(player.position[0]),
+      y: Math.round(player.position[1])
+    }));
 }
 
 function continuePendingGoal(state: MutableMatchState): boolean {

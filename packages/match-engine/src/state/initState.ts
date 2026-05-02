@@ -60,10 +60,12 @@ export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatc
     pendingLooseBallPreviousPossessor: null,
     eventsThisTick: [],
     allEvents: [],
-    openingKickoffPending: true
+    openingKickoffPending: true,
+    halfTimeKickoffPending: false,
+    halfTimeEmitted: false
   };
 
-  giveKickOffToHome(state);
+  giveKickOffToTeam(state, "home");
   return state;
 }
 
@@ -90,20 +92,23 @@ function mutablePlayer(
   };
 }
 
-function giveKickOffToHome(state: MutableMatchState): void {
+export function giveKickOffToTeam(state: MutableMatchState, teamId: "home" | "away"): void {
   const striker =
     state.players.find(
-      (player) => player.teamId === "home" && player.baseInput.position === "ST"
+      (player) => player.teamId === teamId && player.baseInput.position === "ST" && player.onPitch
     ) ??
     state.players.find(
-      (player) => player.teamId === "home" && player.baseInput.position !== "GK"
+      (player) => player.teamId === teamId && player.baseInput.position !== "GK" && player.onPitch
     ) ??
-    state.players.find((player) => player.teamId === "home");
+    state.players.find((player) => player.teamId === teamId && player.onPitch);
 
   if (!striker) {
     return;
   }
 
+  state.players.forEach((player) => {
+    player.hasBall = player.id === striker.id;
+  });
   striker.position = [PITCH_WIDTH / 2, PITCH_LENGTH / 2];
   striker.targetPosition = [PITCH_WIDTH / 2, PITCH_LENGTH / 2];
   striker.hasBall = true;

@@ -32,7 +32,8 @@ export type PossessionChangeCause =
   | "restart_goal_kick"
   | "restart_corner"
   | "kickoff_after_goal"
-  | "kickoff_match_start";
+  | "kickoff_match_start"
+  | "kickoff_second_half";
 export type ShotType = "header" | "volley" | "placed" | "power" | "first_time" | "long_range";
 export type ShotFoot = "preferred" | "weak";
 export type SaveQuality = "routine" | "good" | "spectacular";
@@ -276,6 +277,7 @@ export interface SemanticEvent {
     | "free_kick"
     | "possession_change"
     | "kick_off"
+    | "half_time"
     | "full_time";
   team: TeamId;
   playerId?: string;
