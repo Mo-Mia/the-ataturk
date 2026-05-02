@@ -4,6 +4,16 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-02 — FootSim Phase 2 scope: workbench depth + server-side run persistence
+
+Phase 2 ships in three strands as one combined sprint: server-side run persistence (foundation, new `match_runs` table in the existing Atatürk SQLite + four endpoints), side-by-side comparison view at `/visualise/compare`, and distribution analysis for 50-seed batches at `/visualise/batch/:batchId`. `VisualiserPage.tsx`'s freeze ends — shared components are lifted into `apps/web/src/match/visualiser/components/` organically as the comparison view needs them, with each lift a behaviour-preserving commit.
+
+Run-history persistence is server-side (DB-backed) rather than localStorage. Rejected: localStorage (would have limited comparison and distribution to within-session only, defeating the "research tool" purpose). Rejected: file-on-disk metadata (artefacts already live there; row metadata for fast listing/filtering is the wrong shape for flat files). `/visualise/run` now treats the server as the source of truth for recent runs, while keeping new successful runs visible immediately after simulation. Eviction policy is deferred to Phase 3 — Phase 2 ships with manual delete only.
+
+Comparison view is two runs only. N-way comparison and synchronised event-timeline scrubbing are deferred. Distribution analysis is shape inspection only — histograms with click-through, no regression analysis or hypothesis testing. Histogram bucket clicks open the lowest-seed representative run in the bucket for sprint 2; opening a picker of all runs in the bucket is deferred.
+
+Workflow change effective this sprint: Codex executes full sprints to completion in a single pass, pausing only for genuinely ambiguous decisions, unresolvable test failures, or material plan-changing discoveries. Per-commit pauses are dropped after Phase 1 demonstrated the cost outweighed the protection at Codex's actual throughput.
+
 ## 2026-05-02 — FootSim Phase 1 scope: combined FC25 data + sim-runner workbench slice
 
 Phase 1 ships as one combined sprint, not two sequential ones, to avoid the synthetic-then-retrofit problem in the workbench UI. Scope is tightly fenced: five hardcoded Premier League clubs (Arsenal, Manchester City, Manchester United, Liverpool, Aston Villa), in-memory run history, batch-then-load (no SSE) sim output, server-side artefact writes via the existing `visualiser-artifacts.ts` machinery, and `VisualiserPage.tsx` frozen except for a minimal approved `?artifact=` auto-load hook. The sim runner remains a sibling workbench page; visualiser decomposition is deferred to a later phase.
