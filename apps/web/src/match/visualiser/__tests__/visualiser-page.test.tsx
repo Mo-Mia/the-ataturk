@@ -8,6 +8,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  window.history.pushState({}, "", "/");
 });
 
 describe("VisualiserPage", () => {
@@ -325,6 +326,31 @@ describe("VisualiserPage", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/visualiser/artifacts/representative-seed-1-v2.json"
     );
+  });
+
+  it("auto-loads a snapshot from the artifact query parameter", async () => {
+    const artifactId = "match-engine-20260502120000-liv-mci-seed-42-deadbeef.json";
+    const fetchMock = vi.fn((input: RequestInfo | URL): Promise<Response> => {
+      const url = requestUrl(input);
+
+      if (url === "/api/visualiser/artifacts") {
+        return Promise.resolve(new Response(JSON.stringify({ files: [] })));
+      }
+
+      if (url === `/api/visualiser/artifacts/${artifactId}`) {
+        return Promise.resolve(new Response(JSON.stringify(createSnapshot())));
+      }
+
+      return Promise.resolve(new Response("not found", { status: 404 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    window.history.pushState({}, "", `/visualise?artifact=${encodeURIComponent(artifactId)}`);
+
+    render(<VisualiserPage />);
+
+    await waitFor(() => expect(screen.getByText("LIV 0-3 MIL")).toBeTruthy());
+    expect(fetchMock).toHaveBeenCalledWith("/api/visualiser/artifacts");
+    expect(fetchMock).toHaveBeenCalledWith(`/api/visualiser/artifacts/${artifactId}`);
   });
 
   it("renders player-relative heatmaps split by team possession", async () => {

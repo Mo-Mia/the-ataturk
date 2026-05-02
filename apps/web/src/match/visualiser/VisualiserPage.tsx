@@ -47,6 +47,13 @@ export function VisualiserPage() {
   }, []);
 
   useEffect(() => {
+    const artifact = new URLSearchParams(window.location.search).get("artifact");
+    if (artifact) {
+      void handleArtifact(artifact);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!playing || !snapshot) {
       clearReplayInterval(intervalRef);
       return;
