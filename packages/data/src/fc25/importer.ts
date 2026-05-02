@@ -3,8 +3,6 @@ import { readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { PlayerInputV2 } from "@the-ataturk/match-engine";
-
 import { getDb, getDatabasePath, type SqliteDatabase } from "../db";
 import { migrate } from "../migrate";
 import { resolveRepoPath } from "../paths";
@@ -15,6 +13,7 @@ import type {
   Fc25ParsedPlayerRow,
   Fc25Position,
   Fc25PreferredFoot,
+  Fc25SquadPlayer,
   Fc25StarRating
 } from "../types";
 import { adaptFc25RowToPlayerInputV2 } from "./adapter";
@@ -49,7 +48,7 @@ export interface Fc25LoadedSquad {
   clubId: Fc25ClubId;
   clubName: string;
   shortName: string;
-  players: PlayerInputV2[];
+  players: Fc25SquadPlayer[];
 }
 
 interface Fc25DatasetVersionRow extends Omit<Fc25DatasetVersion, "is_active"> {
@@ -272,7 +271,7 @@ function selectRowsForImport(
 ): Array<{ clubId: Fc25ClubId; row: Fc25ParsedPlayerRow; squadIndex: number }> {
   return FC25_CLUBS.flatMap((club) => {
     const clubRows = rows
-      .filter((row) => row.sourceTeam === club.sourceTeam)
+      .filter((row) => row.sourceTeam === club.sourceTeam && row.league === club.league)
       .sort(compareRowsForSquad);
 
     if (clubRows.length === 0) {
@@ -493,8 +492,8 @@ function mapDatasetVersionRow(row: Fc25DatasetVersionRow): Fc25DatasetVersion {
   };
 }
 
-function mapPlayerRowToV2(row: Fc25PlayerDbRow): PlayerInputV2 {
-  const player: PlayerInputV2 = {
+function mapPlayerRowToV2(row: Fc25PlayerDbRow): Fc25SquadPlayer {
+  const player: Fc25SquadPlayer = {
     id: row.id,
     name: row.name,
     shortName: row.short_name,
@@ -506,6 +505,9 @@ function mapPlayerRowToV2(row: Fc25PlayerDbRow): PlayerInputV2 {
     preferredFoot: row.preferred_foot,
     weakFootRating: row.weak_foot_rating,
     skillMovesRating: row.skill_moves_rating,
+    overall: row.overall,
+    sourcePosition: row.position,
+    alternativePositions: parseAlternativePositions(row.alternative_positions),
     attributes: {
       acceleration: row.acceleration,
       sprintSpeed: row.sprint_speed,
@@ -550,6 +552,13 @@ function mapPlayerRowToV2(row: Fc25PlayerDbRow): PlayerInputV2 {
   }
 
   return player;
+}
+
+function parseAlternativePositions(value: string): Fc25Position[] {
+  const parsed = JSON.parse(value) as unknown;
+  return Array.isArray(parsed)
+    ? parsed.filter((position): position is Fc25Position => typeof position === "string")
+    : [];
 }
 
 function requireNumber(value: number | null, fieldName: string): number {

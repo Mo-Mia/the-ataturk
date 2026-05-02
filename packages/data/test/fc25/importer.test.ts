@@ -35,19 +35,19 @@ describe("FC25 importer", () => {
     expect(result).toMatchObject({
       datasetVersionId: "fc25-test-v1",
       clubs: 5,
-      players: 125,
-      squads: 125
+      players: 123,
+      squads: 123
     });
 
     const db = new Database(testDatabase.path);
     try {
       expect(countRows(db, "fc25_dataset_versions")).toBe(1);
       expect(countRows(db, "fc25_clubs")).toBe(5);
-      expect(countRows(db, "fc25_players")).toBe(125);
-      expect(countRows(db, "fc25_squads")).toBe(125);
+      expect(countRows(db, "fc25_players")).toBe(123);
+      expect(countRows(db, "fc25_squads")).toBe(123);
       expect(countRows(db, "fc25_squads WHERE squad_role = 'starter'")).toBe(55);
       expect(countRows(db, "fc25_squads WHERE squad_role = 'sub'")).toBe(35);
-      expect(countRows(db, "fc25_squads WHERE squad_role = 'reserve'")).toBe(35);
+      expect(countRows(db, "fc25_squads WHERE squad_role = 'reserve'")).toBe(33);
     } finally {
       db.close();
     }
@@ -84,8 +84,8 @@ describe("FC25 importer", () => {
     try {
       expect(countRows(db, "fc25_dataset_versions")).toBe(2);
       expect(countRows(db, "fc25_dataset_versions WHERE is_active = 1")).toBe(1);
-      expect(countRows(db, "fc25_players WHERE dataset_version_id = 'fc25-test-v1'")).toBe(125);
-      expect(countRows(db, "fc25_players WHERE dataset_version_id = 'fc25-test-v2'")).toBe(125);
+      expect(countRows(db, "fc25_players WHERE dataset_version_id = 'fc25-test-v1'")).toBe(123);
+      expect(countRows(db, "fc25_players WHERE dataset_version_id = 'fc25-test-v2'")).toBe(123);
     } finally {
       db.close();
     }
@@ -105,9 +105,12 @@ describe("FC25 importer", () => {
     const fullSquad = loadFc25Squad("liverpool", "fc25-test-v1", { include: "all" });
 
     expect(starters.players).toHaveLength(11);
-    expect(fullSquad.players).toHaveLength(25);
+    expect(fullSquad.players).toHaveLength(23);
     expect(starters.players.find((player) => player.name === "Mohamed Salah")).toMatchObject({
       name: "Mohamed Salah",
+      overall: 89,
+      sourcePosition: "RW",
+      alternativePositions: ["RM"],
       preferredFoot: "left",
       position: "RW"
     });

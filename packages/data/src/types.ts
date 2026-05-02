@@ -432,12 +432,32 @@ export interface Fc25ParsedPlayerRow {
   gkAttributes: Fc25GoalkeeperAttributes | null;
 }
 
+export interface Fc25SquadPlayer
+  extends import("@the-ataturk/match-engine").PlayerInputV2 {
+  overall: number;
+  sourcePosition: Fc25Position;
+  alternativePositions: Fc25Position[];
+}
+
+export interface MatchRunLineupPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  position: import("@the-ataturk/match-engine").Position;
+  squadNumber?: number;
+}
+
 export interface MatchRunSummary {
   score: { home: number; away: number };
   shots: { home: number; away: number };
   fouls: { home: number; away: number };
   cards: { home: number; away: number };
   possession: { home: number; away: number };
+  duration?: import("@the-ataturk/match-engine").MatchDuration;
+  xi?: {
+    home: MatchRunLineupPlayer[];
+    away: MatchRunLineupPlayer[];
+  };
 }
 
 export interface MatchRun {
