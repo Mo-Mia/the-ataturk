@@ -54,7 +54,9 @@ describe("SimRunnerPage", () => {
     render(<SimRunnerPage />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
-    fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "42" } });
+    fireEvent.change(within(screen.getByLabelText("Run controls")).getByLabelText("Seed"), {
+      target: { value: "42" }
+    });
     fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
@@ -95,7 +97,7 @@ describe("SimRunnerPage", () => {
 
     const history = screen.getByLabelText("Run history");
     expect(within(history).getByText("1-2")).toBeTruthy();
-    expect(within(history).getByText("Full match")).toBeTruthy();
+    expect(within(history).getAllByText("Full match").length).toBeGreaterThan(0);
     expect(within(history).getByText("9/7")).toBeTruthy();
     expect(within(history).getByText("49%/51%")).toBeTruthy();
     expect(within(history).getByRole("link", { name: "Replay" }).getAttribute("href")).toBe(
@@ -218,8 +220,9 @@ describe("SimRunnerPage", () => {
     render(<SimRunnerPage />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
-    fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "50" } });
-    fireEvent.change(screen.getByLabelText("Batch"), { target: { value: "50" } });
+    const runControls = screen.getByLabelText("Run controls");
+    fireEvent.change(within(runControls).getByLabelText("Seed"), { target: { value: "50" } });
+    fireEvent.change(within(runControls).getByLabelText("Batch"), { target: { value: "50" } });
     fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
@@ -254,6 +257,36 @@ describe("SimRunnerPage", () => {
     }
     expect(requestInit.body).toContain('"startingPlayerIds"');
     expect(requestInit.body).toContain('"home-2"');
+  });
+
+  it("applies run-history filters", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(clubs))
+      .mockResolvedValueOnce(jsonResponse(runList([])))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("liverpool", "home")))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("manchester-city", "away")))
+      .mockResolvedValueOnce(jsonResponse(runList([])));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SimRunnerPage />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
+    const filters = screen.getByLabelText("Run history filters");
+    fireEvent.change(within(filters).getByLabelText("Club"), { target: { value: "liverpool" } });
+    fireEvent.change(within(filters).getByLabelText("Duration"), {
+      target: { value: "full_90" }
+    });
+    fireEvent.change(within(filters).getByLabelText("Formation"), {
+      target: { value: "4-3-3" }
+    });
+    fireEvent.change(within(filters).getByLabelText("Seed"), { target: { value: "99" } });
+    fireEvent.click(within(filters).getByRole("button", { name: "Apply filters" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toBe(
+      "/api/match-engine/runs?page=1&limit=50&clubId=liverpool&duration=full_90&formation=4-3-3&seed=99"
+    );
   });
 });
 

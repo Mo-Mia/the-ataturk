@@ -50,6 +50,16 @@ interface TeamSelectionState {
   error: string | null;
 }
 
+interface RunFilters {
+  clubId: string;
+  duration: "" | MatchDuration;
+  formation: string;
+  batchId: string;
+  seed: string;
+  from: string;
+  to: string;
+}
+
 const DEFAULT_TACTICS: TeamTactics = {
   formation: "4-4-2",
   mentality: "balanced",
@@ -73,6 +83,15 @@ const EMPTY_TEAM_SELECTION: TeamSelectionState = {
   status: "idle",
   error: null
 };
+const EMPTY_RUN_FILTERS: RunFilters = {
+  clubId: "",
+  duration: "",
+  formation: "",
+  batchId: "",
+  seed: "",
+  from: "",
+  to: ""
+};
 
 export function SimRunnerPage() {
   const [clubs, setClubs] = useState<Fc25Club[]>([]);
@@ -86,6 +105,7 @@ export function SimRunnerPage() {
   const [homeSelection, setHomeSelection] = useState<TeamSelectionState>(EMPTY_TEAM_SELECTION);
   const [awaySelection, setAwaySelection] = useState<TeamSelectionState>(EMPTY_TEAM_SELECTION);
   const [history, setHistory] = useState<PersistedMatchRun[]>([]);
+  const [runFilters, setRunFilters] = useState<RunFilters>(EMPTY_RUN_FILTERS);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [runErrors, setRunErrors] = useState<SimError[]>([]);
   const [status, setStatus] = useState<"loading-clubs" | "idle" | "running" | "error">(
@@ -100,7 +120,7 @@ export function SimRunnerPage() {
       try {
         const [clubResponse, runResponse] = await Promise.all([
           fetch("/api/match-engine/clubs"),
-          fetch("/api/match-engine/runs?page=1&limit=50")
+          fetch(runHistoryUrl(EMPTY_RUN_FILTERS))
         ]);
         if (!clubResponse.ok) {
           throw new Error(`Club request failed with ${clubResponse.status}`);
@@ -194,6 +214,19 @@ export function SimRunnerPage() {
         status: "error",
         error: requestError instanceof Error ? requestError.message : "Could not load squad"
       }));
+    }
+  }
+
+  async function loadRunHistory(filters: RunFilters): Promise<void> {
+    try {
+      const response = await fetch(runHistoryUrl(filters));
+      if (!response.ok) {
+        throw new Error(`Run history request failed with ${response.status}`);
+      }
+      const payload = (await response.json()) as MatchRunListResponse;
+      setHistory(payload.runs);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not load run history");
     }
   }
 
@@ -350,6 +383,16 @@ export function SimRunnerPage() {
 
       <section className="sim-runner-history" aria-label="Run history">
         <h2>Run history</h2>
+        <RunHistoryFilters
+          clubs={clubs}
+          filters={runFilters}
+          onChange={setRunFilters}
+          onApply={() => void loadRunHistory(runFilters)}
+          onReset={() => {
+            setRunFilters(EMPTY_RUN_FILTERS);
+            void loadRunHistory(EMPTY_RUN_FILTERS);
+          }}
+        />
         {history.length === 0 ? (
           <p>No runs yet.</p>
         ) : (
@@ -476,6 +519,104 @@ function LineupColumn({
         ))}
       </ol>
     </section>
+  );
+}
+
+function RunHistoryFilters({
+  clubs,
+  filters,
+  onChange,
+  onApply,
+  onReset
+}: {
+  clubs: Fc25Club[];
+  filters: RunFilters;
+  onChange: (filters: RunFilters) => void;
+  onApply: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="run-history-filters" aria-label="Run history filters">
+      <label>
+        Club
+        <select
+          value={filters.clubId}
+          onChange={(event) => onChange({ ...filters, clubId: event.target.value })}
+        >
+          <option value="">Any club</option>
+          {clubs.map((club) => (
+            <option key={club.id} value={club.id}>
+              {club.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Duration
+        <select
+          value={filters.duration}
+          onChange={(event) =>
+            onChange({ ...filters, duration: event.target.value as RunFilters["duration"] })
+          }
+        >
+          <option value="">Any duration</option>
+          <option value="full_90">Full match</option>
+          <option value="second_half">Second half</option>
+        </select>
+      </label>
+      <label>
+        Formation
+        <select
+          value={filters.formation}
+          onChange={(event) => onChange({ ...filters, formation: event.target.value })}
+        >
+          <option value="">Any formation</option>
+          {FORMATIONS.map((formation) => (
+            <option key={formation} value={formation}>
+              {formatOption(formation)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Batch ID
+        <input
+          value={filters.batchId}
+          onChange={(event) => onChange({ ...filters, batchId: event.target.value })}
+        />
+      </label>
+      <label>
+        Seed
+        <input
+          type="number"
+          min="1"
+          value={filters.seed}
+          onChange={(event) => onChange({ ...filters, seed: event.target.value })}
+        />
+      </label>
+      <label>
+        From
+        <input
+          type="datetime-local"
+          value={filters.from}
+          onChange={(event) => onChange({ ...filters, from: event.target.value })}
+        />
+      </label>
+      <label>
+        To
+        <input
+          type="datetime-local"
+          value={filters.to}
+          onChange={(event) => onChange({ ...filters, to: event.target.value })}
+        />
+      </label>
+      <button type="button" onClick={onApply}>
+        Apply filters
+      </button>
+      <button type="button" onClick={onReset}>
+        Reset filters
+      </button>
+    </div>
   );
 }
 
@@ -749,4 +890,15 @@ function validateSelection(selection: TeamSelectionState): { valid: boolean; mes
     };
   }
   return { valid: true, message: null };
+}
+
+function runHistoryUrl(filters: RunFilters): string {
+  const params = new URLSearchParams({ page: "1", limit: "50" });
+  for (const [key, value] of Object.entries(filters)) {
+    if (value.length === 0) {
+      continue;
+    }
+    params.set(key, key === "from" || key === "to" ? new Date(value).toISOString() : value);
+  }
+  return `/api/match-engine/runs?${params.toString()}`;
 }

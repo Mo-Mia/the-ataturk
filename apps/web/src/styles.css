@@ -336,6 +336,37 @@ pre {
   overflow-x: auto;
 }
 
+.run-history-filters {
+  align-items: end;
+  border: 1px solid #e4dfd3;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin-bottom: 14px;
+  padding: 12px;
+}
+
+.run-history-filters label {
+  display: grid;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.run-history-filters input,
+.run-history-filters select {
+  min-height: 34px;
+  border: 1px solid #bdb6a7;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #151515;
+  font: inherit;
+  padding: 6px;
+}
+
+.run-history-filters button {
+  min-height: 34px;
+}
+
 .compare-shell {
   width: min(1760px, calc(100% - 32px));
   font-family: "Trebuchet MS", sans-serif;
