@@ -136,6 +136,9 @@ importers:
 
   server:
     dependencies:
+      '@google/genai':
+        specifier: ^1.50.1
+        version: 1.50.1
       '@the-ataturk/data':
         specifier: workspace:*
         version: link:../packages/data

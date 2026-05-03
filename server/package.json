@@ -11,6 +11,7 @@
     "characterise": "tsx src/match/characterise.ts"
   },
   "dependencies": {
+    "@google/genai": "^1.50.1",
     "@the-ataturk/data": "workspace:*",
     "@the-ataturk/engine": "workspace:*",
     "@the-ataturk/match-engine": "workspace:*",

@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 
+import { registerAiRoutes } from "./routes/ai";
 import { registerAttributeAdminRoutes } from "./routes/admin/attributes";
 import { registerProfileAdminRoutes } from "./routes/admin/profiles";
 import { registerDataRoutes } from "./routes/data";
@@ -18,6 +19,7 @@ export function buildApp() {
   });
 
   registerDataRoutes(app);
+  registerAiRoutes(app);
   registerAttributeAdminRoutes(app);
   registerProfileAdminRoutes(app);
   registerHealthRoute(app);
