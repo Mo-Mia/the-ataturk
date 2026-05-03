@@ -50,8 +50,9 @@ function forceProgressiveChance(): void {
     player.hasBall = player.id === carrier.id;
     player.onPitch = player.onPitch && ["home", "away"].includes(player.teamId);
   });
-  carrier.position = [330, 655];
-  striker.position = [340, 835];
+  const direction = state.attackDirection.home;
+  carrier.position = [330, direction === 1 ? 655 : 395];
+  striker.position = [340, carrier.position[1] + direction * 180];
   keeper.baseInput.attributes.saving = 0;
   carrier.baseInput.attributes.passing = 100;
   striker.baseInput.attributes.shooting = 100;

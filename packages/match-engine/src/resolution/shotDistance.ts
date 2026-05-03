@@ -1,7 +1,8 @@
 import { AWAY_GOAL_Y, GOAL_CENTRE_X, HOME_GOAL_Y } from "../calibration/constants";
 import { SUCCESS_PROBABILITIES, type ShotDistanceBand } from "../calibration/probabilities";
-import type { Coordinate2D, TeamId } from "../types";
+import type { AttackDirection, Coordinate2D, TeamId } from "../types";
 import { distance } from "../utils/geometry";
+import { attackingGoalY } from "../zones/pitchZones";
 
 export interface ShotDistanceContext {
   band: ShotDistanceBand;
@@ -11,8 +12,21 @@ export interface ShotDistanceContext {
   save: number;
 }
 
+// LEGACY: fixed first-half-throughout perspective for pre-Phase-7 compatibility.
 export function shotDistanceContext(teamId: TeamId, position: Coordinate2D): ShotDistanceContext {
   const distanceToGoal = distance(position, attackingGoalCentre(teamId));
+  return shotDistanceContextForDistance(distanceToGoal);
+}
+
+export function shotDistanceContextForDirection(
+  direction: AttackDirection,
+  position: Coordinate2D
+): ShotDistanceContext {
+  const distanceToGoal = distance(position, [GOAL_CENTRE_X, attackingGoalY(direction)]);
+  return shotDistanceContextForDistance(distanceToGoal);
+}
+
+function shotDistanceContextForDistance(distanceToGoal: number): ShotDistanceContext {
   const band = shotDistanceBand(distanceToGoal);
   const modifiers = SUCCESS_PROBABILITIES.shotDistance[band];
   return {

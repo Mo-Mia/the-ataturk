@@ -68,6 +68,7 @@ export function createTestConfig(seed = 1): MatchConfig {
     awayTeam: createTestTeam("away", "Milan", { formation: "4-3-1-2" }, 78),
     duration: "second_half",
     seed,
+    dynamics: { sideSwitch: false },
     preMatchScore: { home: 0, away: 3 }
   };
 }
@@ -90,6 +91,7 @@ export function createTestConfigV2(
     awayTeam: createTestTeamV2("away", "Milan", { formation: "4-3-1-2" }, 78, options),
     duration: "second_half",
     seed,
+    dynamics: { sideSwitch: false },
     preMatchScore: { home: 0, away: 3 }
   };
 }

@@ -12,11 +12,11 @@ import { emitEvent } from "../../ticks/runTick";
 import type { PassType } from "../../types";
 import { distance, distanceSquared } from "../../utils/geometry";
 import { flankSide, isWideCarrier, isWideChannelX, isWidePosition } from "../../utils/playerRoles";
-import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
+import { zoneForPositionWithDirection } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
 import { maybeCreateChanceFromPass } from "../chanceCreation";
 import { awardThrowIn } from "../setPieces";
-import { shotDistanceContext } from "../shotDistance";
+import { shotDistanceContextForDirection } from "../shotDistance";
 
 export function performPass(state: MutableMatchState, carrier: MutablePlayer): void {
   const target = selectPassTarget(state, carrier);
@@ -53,7 +53,7 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer): v
 }
 
 function selectPassTarget(state: MutableMatchState, carrier: MutablePlayer): MutablePlayer | null {
-  const direction = attackDirection(carrier.teamId);
+  const direction = state.attackDirection[carrier.teamId];
   const teammates = state.players.filter(
     (player) => player.teamId === carrier.teamId && player.id !== carrier.id && player.onPitch
   );
@@ -62,7 +62,8 @@ function selectPassTarget(state: MutableMatchState, carrier: MutablePlayer): Mut
     return null;
   }
 
-  const deliveryReady = hasRecentWideCarry(state, carrier) || isWideFinalThirdCarrier(carrier);
+  const deliveryReady =
+    hasRecentWideCarry(state, carrier) || isWideFinalThirdCarrier(state, carrier);
   const minimumProgress = deliveryReady ? -170 : -35;
   const progressive = teammates.filter(
     (player) => (player.position[1] - carrier.position[1]) * direction > minimumProgress
@@ -139,7 +140,7 @@ function completeTurnover(
   emitPossessionChange(state, carrier.teamId, interceptor.teamId, interceptor.id, {
     cause: "intercepted_pass",
     previousPossessor: carrier.id,
-    zone: zoneForPosition(interceptor.teamId, interceptor.position)
+    zone: zoneForState(state, interceptor.teamId, interceptor.position)
   });
 }
 
@@ -185,8 +186,11 @@ function wideCarrierTargetAdjustment(
     (isWideChannelX(candidate.position[0]) || isWidePosition(candidate.baseInput.position));
   const targetCentral = candidate.position[0] > 220 && candidate.position[0] < PITCH_WIDTH - 220;
   const progress = (candidate.position[1] - carrier.position[1]) * direction;
-  const targetAttackingZone = zoneForPosition(candidate.teamId, candidate.position) === "att";
-  const targetDistanceBand = shotDistanceContext(candidate.teamId, candidate.position).band;
+  const targetAttackingZone = zoneForState(state, candidate.teamId, candidate.position) === "att";
+  const targetDistanceBand = shotDistanceContextForDirection(
+    state.attackDirection[candidate.teamId],
+    candidate.position
+  ).band;
   const shotCapableTarget = ["close", "box", "edge"].includes(targetDistanceBand);
   const attackingRole = isAttackingDeliveryRole(candidate);
   const postCarryDelivery = hasRecentWideCarry(state, carrier);
@@ -226,8 +230,8 @@ function hasRecentWideCarry(state: MutableMatchState, carrier: MutablePlayer): b
   );
 }
 
-function isWideFinalThirdCarrier(carrier: MutablePlayer): boolean {
-  return isWideCarrier(carrier) && zoneForPosition(carrier.teamId, carrier.position) === "att";
+function isWideFinalThirdCarrier(state: MutableMatchState, carrier: MutablePlayer): boolean {
+  return isWideCarrier(carrier) && zoneForState(state, carrier.teamId, carrier.position) === "att";
 }
 
 function forwardRunBonus(
@@ -274,16 +278,18 @@ function passContext(
   keyPass: boolean;
   progressive: boolean;
 } {
-  const direction = attackDirection(carrier.teamId);
+  const direction = state.attackDirection[carrier.teamId];
   const progress = (target.position[1] - carrier.position[1]) * direction;
   const lateralDistance = Math.abs(target.position[0] - carrier.position[0]);
   const passDistance = distance(carrier.position, target.position);
-  const targetZone = zoneForPosition(target.teamId, target.position);
+  const targetZone = zoneForState(state, target.teamId, target.position);
   const progressive = progress >= PITCH_LENGTH * 0.1;
   const keyPass =
     complete &&
     targetZone === "att" &&
-    ["close", "box", "edge"].includes(shotDistanceContext(target.teamId, target.position).band);
+    ["close", "box", "edge"].includes(
+      shotDistanceContextForDirection(state.attackDirection[target.teamId], target.position).band
+    );
 
   return {
     passType: classifyPass(state, carrier, target, progress, lateralDistance, passDistance),
@@ -303,7 +309,7 @@ function classifyPass(
 ): PassType {
   const carrierWide = isWideCarrier(carrier);
   const targetCentral = target.position[0] > 190 && target.position[0] < PITCH_WIDTH - 190;
-  const targetAttackingZone = zoneForPosition(target.teamId, target.position) === "att";
+  const targetAttackingZone = zoneForState(state, target.teamId, target.position) === "att";
   const attackingRole = isAttackingDeliveryRole(target);
   const postCarryDelivery =
     carrierWide && hasRecentWideCarry(state, carrier) && targetCentral && attackingRole;
@@ -336,4 +342,12 @@ function classifyPass(
 
 function isAttackingDeliveryRole(player: MutablePlayer): boolean {
   return ["ST", "AM", "LW", "RW", "LM", "RM"].includes(player.baseInput.position);
+}
+
+function zoneForState(
+  state: MutableMatchState,
+  teamId: MutablePlayer["teamId"],
+  position: MutablePlayer["position"]
+) {
+  return zoneForPositionWithDirection(position, state.attackDirection[teamId]);
 }

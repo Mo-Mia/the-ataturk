@@ -9,12 +9,12 @@ import { restartAfterGoal } from "../resolution/actions/shot";
 import { pressureLevel, rollPressureTackle } from "../resolution/pressure";
 import { continuePendingSetPiece } from "../resolution/setPieces";
 import { processSubstitutions } from "../resolution/substitutions";
-import { giveKickOffToTeam } from "../state/initState";
+import { giveKickOffToTeam, rotateTeamOrientation } from "../state/initState";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
 import { updateAttackMomentum } from "../state/momentum";
 import { applyActionFatigue, applyBaselineFatigue } from "../state/stamina";
 import type { SemanticEvent, TeamId } from "../types";
-import { zoneForPosition } from "../zones/pitchZones";
+import { zoneForPositionWithDirection } from "../zones/pitchZones";
 import { updateBallPhysics } from "./ballPhysics";
 import { updateMovement } from "./movement";
 
@@ -126,7 +126,7 @@ function determinePossessionState(state: MutableMatchState): void {
   state.ball.carrierPlayerId = carrier.id;
   state.possession = {
     teamId: carrier.teamId,
-    zone: zoneForPosition(carrier.teamId, carrier.position),
+    zone: zoneForState(state, carrier.teamId, carrier.position),
     pressureLevel: pressureLevel(state, carrier)
   };
 }
@@ -187,7 +187,7 @@ function claimLooseBall(state: MutableMatchState): MutablePlayer | null {
       to: nearest.teamId,
       cause,
       previousPossessor,
-      zone: zoneForPosition(nearest.teamId, nearest.position)
+      zone: zoneForState(state, nearest.teamId, nearest.position)
     });
   }
   state.pendingLooseBallCause = null;
@@ -221,7 +221,7 @@ function emitOpeningKickoff(state: MutableMatchState): void {
     from: null,
     to: carrier.teamId,
     cause: "kickoff_match_start",
-    zone: zoneForPosition(carrier.teamId, carrier.position)
+    zone: zoneForState(state, carrier.teamId, carrier.position)
   });
 }
 
@@ -232,6 +232,12 @@ function handleHalfTimeBoundary(state: MutableMatchState): boolean {
 
   state.halfTimeEmitted = true;
   state.halfTimeKickoffPending = true;
+  if (state.dynamics.sideSwitch) {
+    state.attackDirection.home *= -1;
+    state.attackDirection.away *= -1;
+    rotateTeamOrientation(state.players, "home");
+    rotateTeamOrientation(state.players, "away");
+  }
   state.pendingGoal = null;
   state.pendingSetPiece = null;
   state.ball.position = [GOAL_CENTRE_X, PITCH_LENGTH / 2, 0];
@@ -284,7 +290,7 @@ function emitHalfTimeKickoff(state: MutableMatchState): void {
     from: null,
     to: carrier.teamId,
     cause: "kickoff_second_half",
-    zone: zoneForPosition(carrier.teamId, carrier.position)
+    zone: zoneForState(state, carrier.teamId, carrier.position)
   });
 }
 
@@ -297,6 +303,10 @@ function activeLineup(state: MutableMatchState, teamId: TeamId) {
       x: Math.round(player.position[0]),
       y: Math.round(player.position[1])
     }));
+}
+
+function zoneForState(state: MutableMatchState, teamId: TeamId, position: [number, number]) {
+  return zoneForPositionWithDirection(position, state.attackDirection[teamId]);
 }
 
 function continuePendingGoal(state: MutableMatchState): boolean {

@@ -12,7 +12,7 @@ import { performClearance } from "./actions/clearance";
 import { performDribble } from "./actions/dribble";
 import { performPass } from "./actions/pass";
 import { performShot } from "./actions/shot";
-import { shotDistanceContext } from "./shotDistance";
+import { shotDistanceContextForDirection } from "./shotDistance";
 
 export function selectCarrierAction(
   state: MutableMatchState,
@@ -31,7 +31,8 @@ export function selectCarrierAction(
     mentality.shoot *
     tempo.shoot *
     (carrier.baseInput.attributes.shooting / 100) *
-    shotDistanceContext(carrier.teamId, carrier.position).actionWeight;
+    shotDistanceContextForDirection(state.attackDirection[carrier.teamId], carrier.position)
+      .actionWeight;
   weights.dribble *=
     mentality.dribble * tempo.dribble * (carrier.baseInput.attributes.control / 100);
   weights.hold *= mentality.hold * tempo.hold * (carrier.baseInput.attributes.perception / 100);
@@ -81,7 +82,10 @@ function applyLateChaseShotIntent(
     return;
   }
 
-  const distance = shotDistanceContext(carrier.teamId, carrier.position);
+  const distance = shotDistanceContextForDirection(
+    state.attackDirection[carrier.teamId],
+    carrier.position
+  );
   if (!["close", "box", "edge"].includes(distance.band)) {
     return;
   }

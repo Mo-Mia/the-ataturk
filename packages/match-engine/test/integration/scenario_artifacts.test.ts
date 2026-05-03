@@ -63,6 +63,23 @@ describe("UAT scenario artefacts", () => {
     expect(existsSync(`${outputPath}.gz`)).toBe(true);
   });
 
+  it("generates a forced side-switch replay with flipped second-half direction", () => {
+    const outputPath = runScenarioScript("forcedSideSwitch.ts", "forced-side-switch-v2.json");
+    const snapshot = readSnapshot(outputPath);
+    const events = snapshot.ticks.flatMap((tick) => tick.events);
+
+    expect(snapshot.meta.sideSwitchVersion).toBe(1);
+    expect(snapshot.ticks[899]?.attackDirection).toEqual({ home: -1, away: 1 });
+    expect(snapshot.ticks[900]?.attackDirection).toEqual({ home: -1, away: 1 });
+    expect(events.some((event) => event.type === "half_time" && event.minute === 45)).toBe(true);
+    expect(
+      events.some(
+        (event) => event.type === "kick_off" && event.team === "away" && event.detail?.secondHalf
+      )
+    ).toBe(true);
+    expect(existsSync(`${outputPath}.gz`)).toBe(true);
+  });
+
   it("generates a forced substitution replay", () => {
     const outputPath = runScenarioScript("forcedSubstitution.ts", "forced-substitution-v2.json");
     const snapshot = readSnapshot(outputPath);

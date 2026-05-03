@@ -7,7 +7,8 @@ describe("simulateMatch", () => {
   it("simulates a deterministic 1800-tick full match with a half-time marker", () => {
     const config = {
       ...createTestConfigV2(199, { preferredFoot: "either", weakFootRating: 5 }),
-      duration: "full_90" as const
+      duration: "full_90" as const,
+      dynamics: { sideSwitch: true }
     };
     const first = simulateMatch(config);
     const second = simulateMatch(config);
@@ -17,6 +18,8 @@ describe("simulateMatch", () => {
     expect(first.ticks[0]?.matchClock).toEqual({ half: 1, minute: 0, seconds: 3 });
     expect(first.ticks[899]?.matchClock).toEqual({ half: 1, minute: 45, seconds: 0 });
     expect(first.ticks[899]?.events.some((event) => event.type === "half_time")).toBe(true);
+    expect(first.ticks[898]?.attackDirection).toEqual({ home: 1, away: -1 });
+    expect(first.ticks[899]?.attackDirection).toEqual({ home: -1, away: 1 });
     expect(
       first.ticks[900]?.events.some(
         (event) => event.type === "kick_off" && event.team === "away" && event.detail?.secondHalf

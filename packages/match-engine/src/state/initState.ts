@@ -27,7 +27,8 @@ export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatc
     scoreState: config.dynamics?.scoreState ?? true,
     autoSubs: config.dynamics?.autoSubs ?? true,
     chanceCreation: config.dynamics?.chanceCreation ?? true,
-    setPieces: config.dynamics?.setPieces ?? true
+    setPieces: config.dynamics?.setPieces ?? true,
+    sideSwitch: config.dynamics?.sideSwitch ?? true
   };
   const players: MutablePlayer[] = [
     ...config.homeTeam.players.map((player) => mutablePlayer(player, "home")),
@@ -44,12 +45,19 @@ export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatc
     players.filter((player) => player.teamId === "away" && player.onPitch),
     config.awayTeam.tactics.formation
   );
+  if (isSecondHalf && dynamics.sideSwitch) {
+    rotateTeamOrientation(players, "home");
+    rotateTeamOrientation(players, "away");
+  }
 
   const state: MutableMatchState = {
     iteration: 0,
     matchClock: { half: isSecondHalf ? 2 : 1, minute: isSecondHalf ? 45 : 0, seconds: 0 },
     duration: config.duration,
     dynamics,
+    sideSwitchVersion: dynamics.sideSwitch ? 1 : 0,
+    attackDirection:
+      isSecondHalf && dynamics.sideSwitch ? { home: -1, away: 1 } : { home: 1, away: -1 },
     seed: config.seed,
     rng: createSeededRng(config.seed),
     homeTeam: config.homeTeam,
@@ -117,6 +125,24 @@ export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatc
 
   giveKickOffToTeam(state, "home");
   return state;
+}
+
+export function rotateTeamOrientation(players: MutablePlayer[], teamId: "home" | "away"): void {
+  for (const player of players) {
+    if (player.teamId !== teamId) {
+      continue;
+    }
+    player.anchorPosition = [
+      PITCH_WIDTH - player.anchorPosition[0],
+      PITCH_LENGTH - player.anchorPosition[1]
+    ];
+    player.lateralAnchor = player.anchorPosition[0];
+    player.position = [PITCH_WIDTH - player.position[0], PITCH_LENGTH - player.position[1]];
+    player.targetPosition = [
+      PITCH_WIDTH - player.targetPosition[0],
+      PITCH_LENGTH - player.targetPosition[1]
+    ];
+  }
 }
 
 function selectSetPieceTakers(players: MutablePlayer[], teamId: "home" | "away"): SetPieceTakers {

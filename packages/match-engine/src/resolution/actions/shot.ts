@@ -1,9 +1,4 @@
-import {
-  AWAY_GOAL_Y,
-  GOAL_CELEBRATION_TICKS,
-  GOAL_CENTRE_X,
-  HOME_GOAL_Y
-} from "../../calibration/constants";
+import { GOAL_CELEBRATION_TICKS, GOAL_CENTRE_X } from "../../calibration/constants";
 import {
   SET_PIECES,
   SHOT_PREFERRED_FOOT_PROBABILITY_BY_WEAK_FOOT_RATING,
@@ -16,10 +11,10 @@ import { otherTeam } from "../../state/matchState";
 import { recordScoreStateEvent } from "../../state/scoreState";
 import { staminaEffectMultiplier } from "../../state/stamina";
 import type { SaveQuality, SaveResult, ShotFoot, ShotType, StarRating, TeamId } from "../../types";
-import { zoneForPosition } from "../../zones/pitchZones";
+import { attackingGoalY, zoneForPositionWithDirection } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
 import { awardCorner, awardGoalKick } from "../setPieces";
-import { shotDistanceContext, type ShotDistanceContext } from "../shotDistance";
+import { shotDistanceContextForDirection, type ShotDistanceContext } from "../shotDistance";
 
 export interface ShotContext {
   source?: "chance_creation" | "set_piece";
@@ -37,7 +32,10 @@ export function performShot(
   if (context.source === "set_piece") {
     state.setPieceStats[shooter.teamId].setPieceShots += 1;
   }
-  const shotDistance = shotDistanceContext(shooter.teamId, shooter.position);
+  const shotDistance = shotDistanceContextForDirection(
+    state.attackDirection[shooter.teamId],
+    shooter.position
+  );
   const shotType = shotTypeFor(shooter, shotDistance.band, state.possession.pressureLevel);
   const shotFoot = shotFootFor(state, shooter, shotType);
 
@@ -119,7 +117,7 @@ function commitGoal(
     state.setPieceStats[shooter.teamId].setPieceGoals += 1;
   }
   state.score[shooter.teamId] += 1;
-  state.ball.position = [GOAL_CENTRE_X, shooter.teamId === "home" ? AWAY_GOAL_Y : HOME_GOAL_Y, 0];
+  state.ball.position = [GOAL_CENTRE_X, attackingGoalY(state.attackDirection[shooter.teamId]), 0];
   state.ball.inFlight = false;
   state.ball.targetPosition = null;
   state.ball.targetCarrierPlayerId = null;
@@ -237,7 +235,7 @@ function givePossession(
   emitPossessionChange(state, previousTeam, receiver.teamId, receiver.id, {
     cause: "goalkeeper_save",
     previousPossessor,
-    zone: zoneForPosition(receiver.teamId, receiver.position)
+    zone: zoneForState(state, receiver.teamId, receiver.position)
   });
 }
 
@@ -268,8 +266,16 @@ export function restartAfterGoal(
   emitPossessionChange(state, otherTeam(restartTeam), restartTeam, receiver.id, {
     cause: "kickoff_after_goal",
     ...(previousPossessor ? { previousPossessor } : {}),
-    zone: zoneForPosition(restartTeam, receiver.position)
+    zone: zoneForState(state, restartTeam, receiver.position)
   });
+}
+
+function zoneForState(
+  state: MutableMatchState,
+  teamId: MutablePlayer["teamId"],
+  position: MutablePlayer["position"]
+) {
+  return zoneForPositionWithDirection(position, state.attackDirection[teamId]);
 }
 
 function goalkeeperFor(state: MutableMatchState, teamId: TeamId): MutablePlayer | null {

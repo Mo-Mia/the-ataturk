@@ -6,12 +6,11 @@ import {
 } from "../calibration/constants";
 import { setPieceTargetForPlayer } from "../resolution/setPieces";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
-import { attackingThirdProgress } from "../state/momentum";
+import { attackingThirdProgressForDirection } from "../state/momentum";
 import { urgencyMultiplier } from "../state/scoreState";
 import { applyMovementFatigue, staminaEffectMultiplier } from "../state/stamina";
 import type { Coordinate2D, TeamId } from "../types";
 import { clamp, clamp2D, distanceSquared, moveTowards } from "../utils/geometry";
-import { attackDirection } from "../zones/pitchZones";
 
 const BASE_SPEED_PER_TICK = 10;
 const BALL_PRESS_DISTANCE = 230;
@@ -54,7 +53,7 @@ function targetForPlayer(
   ballPosition: Coordinate2D,
   carrier: MutablePlayer | null
 ): Coordinate2D {
-  const direction = attackDirection(player.teamId);
+  const direction = state.attackDirection[player.teamId];
   const goalResetTarget = goalResetTargetForPlayer(state, player);
   if (goalResetTarget) {
     return clamp2D(goalResetTarget, PITCH_WIDTH, PITCH_LENGTH);
@@ -124,7 +123,10 @@ function supportingTarget(
 
   const momentum = state.attackMomentum[player.teamId];
   const urgency = urgencyMultiplier(state, player.teamId);
-  const progress = attackingThirdProgress(carrier.teamId, carrier.position[1]);
+  const progress = attackingThirdProgressForDirection(
+    carrier.position[1],
+    state.attackDirection[carrier.teamId]
+  );
   const supportY =
     carrier.position[1] +
     direction *
@@ -230,14 +232,14 @@ function goalResetTargetForPlayer(
   }
 
   if (player.id === kickoffReceiverId(state, pendingGoal.restartTeam)) {
-    return kickoffTargetForTeam(pendingGoal.restartTeam);
+    return kickoffTargetForTeam(state, pendingGoal.restartTeam);
   }
 
   return player.anchorPosition;
 }
 
-function kickoffTargetForTeam(teamId: TeamId): Coordinate2D {
-  const direction = attackDirection(teamId);
+function kickoffTargetForTeam(state: MutableMatchState, teamId: TeamId): Coordinate2D {
+  const direction = state.attackDirection[teamId];
   return [GOAL_CENTRE_X, PITCH_LENGTH / 2 - direction * 18];
 }
 
@@ -447,7 +449,9 @@ function wideRunTarget(
   const nearSide = side !== "centre" && side === ownSide;
   const farSide = side !== "centre" && side !== ownSide;
   const momentum = state.attackMomentum[player.teamId];
-  const progress = carrier ? attackingThirdProgress(carrier.teamId, carrier.position[1]) : 0;
+  const progress = carrier
+    ? attackingThirdProgressForDirection(carrier.position[1], state.attackDirection[carrier.teamId])
+    : 0;
   const verticalBoost = momentum >= 24 && progress >= 0.5 ? 24 : 0;
 
   if (nearSide && centralCarrier && ["LW", "RW", "LM", "RM"].includes(player.baseInput.position)) {

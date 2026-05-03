@@ -9,7 +9,7 @@ import {
 import { urgencyMultiplier } from "../state/scoreState";
 import type { PossessionChangeCause, PressureLevel, TeamId, Zone } from "../types";
 import { distanceSquared } from "../utils/geometry";
-import { zoneForPosition } from "../zones/pitchZones";
+import { zoneForPositionWithDirection } from "../zones/pitchZones";
 import type { CarrierAction } from "../calibration/probabilities";
 import { resolveTackleAttempt } from "./actions/tackle";
 
@@ -119,6 +119,10 @@ export function emitPossessionChange(
     from,
     to,
     ...detail,
-    zone: detail.zone ?? (player ? zoneForPosition(to, player.position) : state.possession.zone)
+    zone:
+      detail.zone ??
+      (player
+        ? zoneForPositionWithDirection(player.position, state.attackDirection[to])
+        : state.possession.zone)
   });
 }

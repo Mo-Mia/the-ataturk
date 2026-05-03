@@ -15,6 +15,7 @@ export type Position =
 export type Zone = "def" | "mid" | "att";
 export type PressureLevel = "low" | "medium" | "high";
 export type MatchDuration = "full_90" | "second_half";
+export type AttackDirection = 1 | -1;
 export type Coordinate2D = [x: number, y: number];
 export type Coordinate3D = [x: number, y: number, z: number];
 export type PreferredFoot = "left" | "right" | "either";
@@ -185,6 +186,7 @@ export interface MatchDynamicsConfig {
   autoSubs?: boolean;
   chanceCreation?: boolean;
   setPieces?: boolean;
+  sideSwitch?: boolean;
 }
 
 export interface ScheduledSubstitution {
@@ -207,6 +209,7 @@ export interface MatchSnapshot {
     duration: MatchConfig["duration"];
     preMatchScore: { home: number; away: number };
     generatedAt: string;
+    sideSwitchVersion?: 0 | 1;
     targets: CalibrationTargets;
     diagnostics?: {
       warnings: string[];
@@ -295,6 +298,7 @@ export interface MatchTick {
   possession: { teamId: TeamId | null; zone: Zone };
   attackMomentum?: { home: number; away: number };
   possessionStreak?: { teamId: TeamId | null; ticks: number };
+  attackDirection?: { home: AttackDirection; away: AttackDirection };
   diagnostics?: MatchTickDiagnostics;
   events: SemanticEvent[];
 }

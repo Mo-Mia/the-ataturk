@@ -1,6 +1,6 @@
 import { PITCH_LENGTH } from "../calibration/constants";
 import type { MutableMatchState } from "./matchState";
-import type { PassType, SemanticEvent, TeamId } from "../types";
+import type { AttackDirection, PassType, SemanticEvent, TeamId } from "../types";
 
 const MAX_MOMENTUM = 100;
 const POSSESSION_DECAY = 0.97;
@@ -152,6 +152,11 @@ function clampMomentum(value: number): number {
   return Math.max(0, Math.min(MAX_MOMENTUM, value));
 }
 
+// LEGACY: fixed first-half-throughout progress for pre-Phase-7 tests/helpers.
 export function attackingThirdProgress(teamId: TeamId, y: number): number {
   return teamId === "home" ? y / PITCH_LENGTH : (PITCH_LENGTH - y) / PITCH_LENGTH;
+}
+
+export function attackingThirdProgressForDirection(y: number, direction: AttackDirection): number {
+  return direction === 1 ? y / PITCH_LENGTH : (PITCH_LENGTH - y) / PITCH_LENGTH;
 }

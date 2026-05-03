@@ -5,8 +5,7 @@ import { emitEvent } from "../../ticks/runTick";
 import type { CarrierAction } from "../../calibration/probabilities";
 import type { FoulSeverity, TackleType } from "../../types";
 import { distanceSquared } from "../../utils/geometry";
-import { attackDirection } from "../../zones/pitchZones";
-import { shotDistanceContext } from "../shotDistance";
+import { shotDistanceContextForDirection } from "../shotDistance";
 import { awardFreeKick, awardPenalty } from "../setPieces";
 
 export type TackleOutcome = "missed" | "won" | "foul";
@@ -58,7 +57,10 @@ function commitFoul(
     sendOff(state, tackler, carrier, "straight_red");
   }
 
-  const distanceBand = shotDistanceContext(carrier.teamId, carrier.position).band;
+  const distanceBand = shotDistanceContextForDirection(
+    state.attackDirection[carrier.teamId],
+    carrier.position
+  ).band;
   const penaltyProbability = SET_PIECES.penaltyFromFoulByDistanceBand[distanceBand];
   if (
     state.dynamics.setPieces &&
@@ -92,7 +94,7 @@ function foulSeverityFor(
   context: TackleContext,
   tackleType: TackleType
 ): FoulSeverity {
-  const direction = attackDirection(carrier.teamId);
+  const direction = state.attackDirection[carrier.teamId];
   const tacklerBehindCarrier = (tackler.position[1] - carrier.position[1]) * direction < -8;
   if (
     tackleType === "sliding" &&

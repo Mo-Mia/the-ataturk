@@ -5,9 +5,9 @@ import { urgencyMultiplier } from "../state/scoreState";
 import { staminaEffectMultiplier } from "../state/stamina";
 import type { PassType } from "../types";
 import { clamp } from "../utils/geometry";
-import { zoneForPosition } from "../zones/pitchZones";
+import { zoneForPositionWithDirection } from "../zones/pitchZones";
 import { performShot } from "./actions/shot";
-import { shotDistanceContext } from "./shotDistance";
+import { shotDistanceContextForDirection } from "./shotDistance";
 
 export type ChanceSource =
   | "progressive_pass"
@@ -73,12 +73,18 @@ function maybeCreateChance(
   shooter: MutablePlayer,
   source: ChanceSource
 ): boolean {
-  const zone = zoneForPosition(shooter.teamId, shooter.position);
+  const zone = zoneForPositionWithDirection(
+    shooter.position,
+    state.attackDirection[shooter.teamId]
+  );
   if (zone !== "att") {
     return false;
   }
 
-  const shotDistance = shotDistanceContext(shooter.teamId, shooter.position);
+  const shotDistance = shotDistanceContextForDirection(
+    state.attackDirection[shooter.teamId],
+    shooter.position
+  );
   const distanceMultiplier = CHANCE_CREATION.distanceBand[shotDistance.band];
   const pressureMultiplier = CHANCE_CREATION.pressure[state.possession.pressureLevel];
   if (distanceMultiplier <= 0 || pressureMultiplier <= 0) {

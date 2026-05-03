@@ -1,6 +1,7 @@
 import type {
   Coordinate2D,
   Coordinate3D,
+  AttackDirection,
   MatchDuration,
   MatchDynamicsConfig,
   PlayerInput,
@@ -72,6 +73,8 @@ export interface MutableMatchState {
   matchClock: { half: 1 | 2; minute: number; seconds: number };
   duration: MatchDuration;
   dynamics: Required<MatchDynamicsConfig>;
+  sideSwitchVersion: 0 | 1;
+  attackDirection: { home: AttackDirection; away: AttackDirection };
   seed: number;
   rng: Rng;
   homeTeam: Team | TeamV2;

@@ -1,7 +1,7 @@
 import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import { SET_PIECES, SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import { otherTeam, type MutableMatchState, type MutablePlayer } from "../../state/matchState";
-import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
+import { zoneForPositionWithDirection } from "../../zones/pitchZones";
 import { awardCorner, awardThrowIn } from "../setPieces";
 
 export function performClearance(state: MutableMatchState, carrier: MutablePlayer): void {
@@ -11,7 +11,8 @@ export function performClearance(state: MutableMatchState, carrier: MutablePlaye
   if (state.rng.next() <= SUCCESS_PROBABILITIES.clearanceOutOfPlay) {
     if (
       state.dynamics.setPieces &&
-      zoneForPosition(carrier.teamId, carrier.position) === "def" &&
+      zoneForPositionWithDirection(carrier.position, state.attackDirection[carrier.teamId]) ===
+        "def" &&
       state.rng.next() <= SET_PIECES.defensiveClearanceCorner
     ) {
       awardCorner(
@@ -27,7 +28,7 @@ export function performClearance(state: MutableMatchState, carrier: MutablePlaye
     return;
   }
 
-  const direction = attackDirection(carrier.teamId);
+  const direction = state.attackDirection[carrier.teamId];
   const targetY = Math.max(80, Math.min(PITCH_LENGTH - 80, carrier.position[1] + direction * 280));
   const targetX = Math.max(
     35,

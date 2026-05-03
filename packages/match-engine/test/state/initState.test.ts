@@ -22,6 +22,24 @@ describe("buildInitState", () => {
     ).toBe(true);
   });
 
+  it("initialises new side-switch second-half runs in post-half-time direction", () => {
+    const config = createTestConfig(42);
+    config.dynamics = { sideSwitch: true };
+    const state = buildInitState(config);
+
+    expect(state.sideSwitchVersion).toBe(1);
+    expect(state.attackDirection).toEqual({ home: -1, away: 1 });
+  });
+
+  it("keeps validation-only side-switch disabled runs in legacy direction", () => {
+    const config = createTestConfig(42);
+    config.dynamics = { sideSwitch: false };
+    const state = buildInitState(config);
+
+    expect(state.sideSwitchVersion).toBe(0);
+    expect(state.attackDirection).toEqual({ home: 1, away: -1 });
+  });
+
   it("rejects teams without exactly eleven players", () => {
     const config = createTestConfig(42);
     config.homeTeam.players = config.homeTeam.players.slice(0, 10);

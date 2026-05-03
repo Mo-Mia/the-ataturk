@@ -3,6 +3,7 @@ export { CALIBRATION_TARGETS } from "./calibration/constants";
 export { adaptV2ToV1 } from "./adapter/v2ToV1";
 export type {
   CalibrationTargets,
+  AttackDirection,
   Coordinate2D,
   Coordinate3D,
   GoalkeeperAttributesV2,

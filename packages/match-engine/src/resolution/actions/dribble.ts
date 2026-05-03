@@ -6,7 +6,7 @@ import { otherTeam } from "../../state/matchState";
 import { emitEvent } from "../../ticks/runTick";
 import { clamp2D } from "../../utils/geometry";
 import { flankSide, isWideCarrier } from "../../utils/playerRoles";
-import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
+import { zoneForPositionWithDirection } from "../../zones/pitchZones";
 import { maybeCreateChanceFromCarry } from "../chanceCreation";
 import { emitPossessionChange } from "../pressure";
 
@@ -18,7 +18,7 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
     staminaEffectMultiplier(carrier);
 
   if (state.rng.next() <= successProbability) {
-    const direction = attackDirection(carrier.teamId);
+    const direction = state.attackDirection[carrier.teamId];
     const previousPosition = carrier.position;
     const nextPosition: [number, number] = isWideCarrier(carrier)
       ? wideDribbleTarget(state, carrier, direction)
@@ -29,7 +29,7 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
       carrier.lastWideCarryTick = state.iteration;
       emitWideCarryEvent(state, carrier, direction, previousPosition);
       maybeCreateChanceFromCarry(state, carrier, "wide_carry");
-    } else if (zoneForPosition(carrier.teamId, carrier.position) === "att") {
+    } else if (zoneForState(state, carrier.teamId, carrier.position) === "att") {
       maybeCreateChanceFromCarry(state, carrier, "central_carry");
     }
     return;
@@ -57,7 +57,7 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
   emitPossessionChange(state, carrier.teamId, opponent.teamId, opponent.id, {
     cause: "failed_dribble",
     previousPossessor: carrier.id,
-    zone: zoneForPosition(opponent.teamId, opponent.position)
+    zone: zoneForState(state, opponent.teamId, opponent.position)
   });
 }
 
@@ -68,7 +68,7 @@ function emitWideCarryEvent(
   previousPosition: [number, number]
 ): void {
   const progress = (carrier.position[1] - previousPosition[1]) * direction;
-  const zone = zoneForPosition(carrier.teamId, carrier.position);
+  const zone = zoneForState(state, carrier.teamId, carrier.position);
   if (zone !== "att" && progress < 28) {
     return;
   }
@@ -93,4 +93,12 @@ function wideDribbleTarget(
   const forwardCarry = direction * 44;
 
   return [carrier.position[0] + channelPull + insideJitter, carrier.position[1] + forwardCarry];
+}
+
+function zoneForState(
+  state: MutableMatchState,
+  teamId: MutablePlayer["teamId"],
+  position: MutablePlayer["position"]
+) {
+  return zoneForPositionWithDirection(position, state.attackDirection[teamId]);
 }

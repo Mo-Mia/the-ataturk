@@ -10,6 +10,7 @@ import { isPlayerInputV2 } from "./adapter/v2ToV1";
 import type { MutableMatchState } from "./state/matchState";
 import { emitEvent } from "./ticks/runTick";
 import type {
+  AttackDirection,
   MatchConfig,
   MatchConfigV2,
   MatchSnapshot,
@@ -23,6 +24,7 @@ import type {
   TeamStatistics,
   TeamV2
 } from "./types";
+import { normalisedAttackingY } from "./zones/pitchZones";
 
 export function emitFullTime(state: MutableMatchState): void {
   emitEvent(state, "full_time", "home", undefined, {
@@ -56,6 +58,7 @@ export function toMatchTick(state: MutableMatchState): MatchTick {
     possession: { teamId: state.possession.teamId, zone: state.possession.zone },
     attackMomentum: { ...state.attackMomentum },
     possessionStreak: { ...state.possessionStreak },
+    attackDirection: { ...state.attackDirection },
     diagnostics: {
       shape: {
         home: teamShapeDiagnostics(state, "home"),
@@ -83,6 +86,7 @@ export function buildSnapshot(
       duration: config.duration,
       preMatchScore: config.preMatchScore ? { ...config.preMatchScore } : { home: 0, away: 0 },
       generatedAt: DETERMINISTIC_GENERATED_AT,
+      sideSwitchVersion: state.sideSwitchVersion,
       targets: CALIBRATION_TARGETS,
       diagnostics: {
         warnings: [...state.engineWarnings]
@@ -171,7 +175,9 @@ function cloneEvent(event: import("./types").SemanticEvent): import("./types").S
 
 function teamShapeDiagnostics(state: MutableMatchState, teamId: TeamId): TeamShapeDiagnostics {
   const players = state.players.filter((player) => player.teamId === teamId && player.onPitch);
-  const normalisedY = players.map((player) => normaliseY(teamId, player.position[1]));
+  const normalisedY = players.map((player) =>
+    normaliseY(state.attackDirection[teamId], player.position[1])
+  );
   const xs = players.map((player) => player.position[0]);
   const centroid = centroidFor(players.map((player) => player.position));
   const ballSide = state.ball.position[0] < PITCH_WIDTH / 2 ? "left" : "right";
@@ -180,9 +186,9 @@ function teamShapeDiagnostics(state: MutableMatchState, teamId: TeamId): TeamSha
     activePlayers: players.length,
     lineHeight: {
       team: roundedAverage(normalisedY) ?? 0,
-      defence: roundedAverage(lineY(players, teamId, "defence")),
-      midfield: roundedAverage(lineY(players, teamId, "midfield")),
-      attack: roundedAverage(lineY(players, teamId, "attack"))
+      defence: roundedAverage(lineY(players, state.attackDirection[teamId], "defence")),
+      midfield: roundedAverage(lineY(players, state.attackDirection[teamId], "midfield")),
+      attack: roundedAverage(lineY(players, state.attackDirection[teamId], "attack"))
     },
     spread: {
       width: roundedRange(xs),
@@ -209,12 +215,12 @@ function teamShapeDiagnostics(state: MutableMatchState, teamId: TeamId): TeamSha
 
 function lineY(
   players: MutableMatchState["players"],
-  teamId: TeamId,
+  direction: AttackDirection,
   line: "defence" | "midfield" | "attack"
 ): number[] {
   return players
     .filter((player) => playerLine(player.baseInput.position) === line)
-    .map((player) => normaliseY(teamId, player.position[1]));
+    .map((player) => normaliseY(direction, player.position[1]));
 }
 
 function playerLine(position: import("./types").Position): "defence" | "midfield" | "attack" {
@@ -227,8 +233,8 @@ function playerLine(position: import("./types").Position): "defence" | "midfield
   return "midfield";
 }
 
-function normaliseY(teamId: TeamId, y: number): number {
-  return teamId === "home" ? y : PITCH_LENGTH - y;
+function normaliseY(direction: AttackDirection, y: number): number {
+  return normalisedAttackingY(y, direction);
 }
 
 function thirdsFor(normalisedY: number[]): TeamShapeDiagnostics["thirds"] {
