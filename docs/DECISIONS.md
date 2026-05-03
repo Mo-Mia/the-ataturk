@@ -4,6 +4,35 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-03 — FootSim Phase 7 scope: true half-time side-switch
+
+Phase 7 ships true half-time side-switching as a fidelity refactor, not a new
+behaviour mechanic. New full-match runs default to `sideSwitchVersion: 1`, with
+home and away attack directions flipping at the half-time boundary. Old
+persisted runs without the field are treated as `sideSwitchVersion: 0` and keep
+legacy rendering.
+
+The refactor touched the audited direction surfaces: movement, pass, dribble,
+tackle, clearance, shot distance, pressure, chance creation, carrier action,
+momentum, set pieces, snapshots, persisted run summaries, and visualiser
+diagnostics. Legacy direction helpers remain in place with explicit comments so
+old-run and compatibility code paths are visible rather than accidental.
+
+`second_half` runs now initialise in the post-half-time direction. This is a
+semantic change with no expected statistical impact. A 500-seed A/B validation
+(`sideSwitch: false` vs `sideSwitch: true`) passed statistical equivalence for
+shots, goals, fouls, cards, possession, corners, and set-piece goals. No
+calibration constants were changed.
+
+Visualiser convention changed for new runs: the home team attacks different
+ends in different halves, matching real broadcast/match convention. Ball
+heatmaps remain raw coordinate maps; team attacking-territory diagnostics
+normalise by the current attacking direction.
+
+Out of scope and tracked in BACKLOG: side-switch animation, pitch slope/wind,
+asymmetric player direction preferences, mid-half side-switching for special
+cases, and a visible pitch direction indicator in replay UI.
+
 ## 2026-05-03 — FootSim Phase 6 scope: chance creation + taker-aware set pieces
 
 Phase 6 ships two coupled shot-generation mechanics: chance creation and

@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-03 14:11 SAST
+Last updated: 2026-05-03 15:35 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -36,6 +36,9 @@ sprint.
 - Taker-aware set pieces: deterministic free-kick, corner, and penalty takers
   are selected from v2 attributes; corners, free kicks, and penalties feed the
   shot pipeline and summary diagnostics.
+- True half-time side-switch: new runs flip attacking direction after the
+  half-time marker, snapshots expose per-tick attack direction, and old
+  persisted runs keep legacy rendering via `sideSwitchVersion`.
 
 ## Real-Squad Responsiveness Findings
 
@@ -80,6 +83,10 @@ agency, public API shape, or obvious UAT realism.
   characterisation now has enough penalty volume for conversion checks, but the
   Liverpool vs Aston Villa real-squad set-piece diagnostic produced only 0.04
   penalties per match. Re-check when more matchups or referee variance exist.
+- **Side-switch interpretation in UAT**: for new runs, the home team attacks a
+  different end in the second half. This is intentional and matches real match
+  convention. Ball heatmaps stay raw; team-attacking-territory diagnostics are
+  direction-aware.
 
 ## Deferred Unless UAT Finds A Blocker
 

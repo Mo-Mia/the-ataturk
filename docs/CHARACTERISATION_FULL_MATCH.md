@@ -1,6 +1,6 @@
 # Full-Match Characterisation
 
-Last updated: 2026-05-03 14:11 SAST
+Last updated: 2026-05-03 15:35 SAST
 
 ## Scope
 
@@ -204,3 +204,59 @@ penalties now average `0.15` per match, giving enough 200-seed signal to check
 conversion. Penalty conversion is inside the 70-85% target band on the full-90
 sample. Corner conversion lands at roughly `0.11 / 2.41 = 4.6%`, inside the
 2-6% target band.
+
+## Phase 7 Side-Switch Refactor Validation
+
+Phase 7 added true half-time side-switching without changing calibration
+constants. New full-match runs default to `sideSwitchVersion: 1`; pre-Phase-7
+runs render as `sideSwitchVersion: 0`. `second_half` runs now initialise in the
+post-half-time direction. This is a semantic change with no expected
+statistical impact, validated by the side-switch A/B run below.
+
+Second-half 200-seed check:
+
+```text
+=== Match Engine Characterisation (200 seeds, second half, v2, preferred-foot rated) ===
+Shots: 10.45 target [8, 12]
+Goals: 1.63 target [1, 3]
+Fouls: 5.18 target [4, 8]
+Cards: 1.43 target [1, 3]
+Set pieces: corners 1.31, direct FKs 0.06, indirect FKs 5.04, penalties 0.08, set-piece goals 0.13
+Set-piece goals by source: corners 0.06, direct FKs 0.01, penalties 0.07
+Penalty conversion: 81.3%
+Calibration pass: yes
+```
+
+Full-match 200-seed check:
+
+```text
+=== Match Engine Characterisation (200 seeds, full 90, v2, preferred-foot rated) ===
+Shots: 18.06 target [16, 24]
+Goals: 2.73 target [2, 6]
+Fouls: 9.62 target [8, 16]
+Cards: 2.77 target [2, 6]
+Set pieces: corners 2.45, direct FKs 0.06, indirect FKs 9.38, penalties 0.14, set-piece goals 0.21
+Set-piece goals by source: corners 0.11, direct FKs 0.00, penalties 0.10
+Penalty conversion: 72.4%
+Calibration pass: yes
+```
+
+500-seed side-switch A/B validation:
+
+```text
+=== Side-switch A/B (500 seeds per mode) ===
+Criterion: abs(mean OFF - mean ON) < 2 * pooled standard error
+PASS shots: off=13.152 on=13.292 diff=0.140 threshold=0.529
+PASS goals: off=5.104 on=5.006 diff=0.098 threshold=0.175
+PASS fouls: off=7.304 on=7.422 diff=0.118 threshold=0.328
+PASS cards: off=2.026 on=2.112 diff=0.086 threshold=0.212
+PASS possession: off=47.184 on=47.378 diff=0.194 threshold=0.222
+PASS corners: off=2.064 on=2.070 diff=0.006 threshold=0.195
+PASS setPieceGoals: off=0.136 on=0.126 diff=0.010 threshold=0.045
+```
+
+Spatial validation over 50 side-switch-on runs confirmed the refactor is
+spatially active: home shots averaged `y=660.3` in the first half and `y=373.9`
+in the second half, so the home team now attacks opposite ends after half-time.
+Ball heatmaps remain raw coordinate maps; team attacking-territory diagnostics
+normalise by the current team direction.

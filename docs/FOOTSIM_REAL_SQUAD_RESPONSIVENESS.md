@@ -1,6 +1,6 @@
 # FootSim Real-Squad Responsiveness
 
-Last updated: 2026-05-03 14:11 SAST
+Last updated: 2026-05-03 15:35 SAST
 
 ## Purpose
 
@@ -144,3 +144,40 @@ The Liverpool vs Aston Villa penalty sample is small (`0.04` per match), so the
 canonical set-piece calibration check remains the synthetic 200-seed
 characterisation in `docs/CHARACTERISATION_FULL_MATCH.md`, where full-match
 penalty volume is `0.15` and conversion is `83.9%`.
+
+## Phase 7 Side-Switch Regression
+
+Phase 7 re-ran the real-squad harness over 50 seeds after adding true
+half-time side-switching. The run used the tracked FC25 fixture
+`data/fc-25/fixtures/male_players_top5pl.csv` and wrote the ignored runtime
+artefact `packages/match-engine/artifacts/real-squad-responsiveness-phase7.json`.
+
+Summary:
+
+```json
+{
+  "pass": true,
+  "comparisons": [
+    { "name": "Mentality", "status": "PASS" },
+    { "name": "Pressing", "status": "PASS" },
+    { "name": "Tempo", "status": "PASS" },
+    { "name": "Manual XI rotation", "status": "PASS" }
+  ],
+  "phase5": {
+    "fatigue": "PASS",
+    "subs": "PASS",
+    "score": "PASS"
+  },
+  "phase6": {
+    "chance": "FAIL",
+    "score": "PASS"
+  }
+}
+```
+
+The isolated Phase 6 chance-creation feature-flag diagnostic remains weak, as
+already documented in the Phase 6 section. It is not the release gate; the
+score-state shot-impact composition still passes. Set-piece volume in the
+Phase 7 real-squad sample averaged `7.26` set-piece events, `0.06` set-piece
+goals, `2.10` corners, `0.02` direct free kicks, `5.10` indirect free kicks,
+and `0.04` penalties per match.

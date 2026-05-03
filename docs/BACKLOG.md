@@ -73,6 +73,29 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
+### Visualiser pitch direction indicator
+New Phase 7 runs are side-switch-aware, but the replay UI does not yet show a
+clear "home attacking this way" indicator. Add only if UAT users misread the
+intentional half-time direction flip.
+
+### Side-switch animation in visualiser
+Phase 7 flips direction instantly at half-time. A later polish pass can animate
+the reset/side-switch transition if the instant flip reads as visually abrupt.
+
+### Pitch slope and wind effects
+Direction-aware engine state makes these possible, but there is no pitch or
+weather model yet. Add only if match context or venue variance becomes a
+gameplay feature.
+
+### Asymmetric player direction preferences
+Some players or teams may prefer attacking a particular end/flank. The engine
+does not model that preference; current side-switching is neutral by design.
+
+### Mid-half side-switching for special cases
+Current direction changes happen only at half-time. Extra-time quirks, abandoned
+matches, or special tournament rules could require more general break-state
+side-switching later.
+
 ### Chance-creation standalone strength
 Phase 6 fixed the score-state composition issue: trailing teams now produce more
 late shots. The isolated chance-creation feature flag is still a weak standalone
@@ -139,17 +162,12 @@ changes such as defender-for-striker formation shifts are deferred.
 Useful once substitutions, fatigue, and user-player involvement need a readable
 summary, but not needed for the current diagnostic workbench.
 
-### True half-time side-switch
-Phase 3 added full-90 tick support and a `half_time` marker but deliberately
-deferred flipping attacking direction at tick 900. This must audit and update
-all direction/zone consumers, including:
-`packages/match-engine/src/ticks/movement.ts`,
-`resolution/actions/pass.ts`, `dribble.ts`, `tackle.ts`, `shot.ts`,
-`resolution/pressure.ts`, set-piece logic, shot-distance helpers, and visualiser
-pitch/heatmap assumptions where team direction is inferred. Re-run second-half
-and full-match characterisation after the refactor. Specific risk: changing
-attacking-goal perspective may shift shot-distance and shot-quality
-distribution, even if raw shot volume stays in range.
+### ~~True half-time side-switch~~ ✅ Done
+Phase 7 added side-switch-aware match state, direction-aware action resolution,
+snapshot diagnostics, persisted `sideSwitchVersion`, old-run compatibility, and
+visualiser handling. The 500-seed side-switch A/B validation passed statistical
+equivalence across shots, goals, fouls, cards, possession, corners, and
+set-piece goals.
 
 ### ~~Player fatigue modelling~~ ✅ Done
 Phase 5 added stamina drain, stamina-scaled movement/action effectiveness, and
