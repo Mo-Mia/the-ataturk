@@ -49,7 +49,8 @@ export function toMatchTick(state: MutableMatchState): MatchTick {
       teamId: player.teamId,
       position: [...player.position],
       hasBall: player.hasBall,
-      onPitch: player.onPitch
+      onPitch: player.onPitch,
+      stamina: Math.round(player.stamina)
     })),
     score: { ...state.score },
     possession: { teamId: state.possession.teamId, zone: state.possession.zone },
@@ -82,7 +83,10 @@ export function buildSnapshot(
       duration: config.duration,
       preMatchScore: config.preMatchScore ? { ...config.preMatchScore } : { home: 0, away: 0 },
       generatedAt: DETERMINISTIC_GENERATED_AT,
-      targets: CALIBRATION_TARGETS
+      targets: CALIBRATION_TARGETS,
+      diagnostics: {
+        warnings: [...state.engineWarnings]
+      }
     },
     ticks,
     finalSummary: {
@@ -90,7 +94,16 @@ export function buildSnapshot(
       statistics: {
         home: cloneStats(state.stats.home),
         away: cloneStats(state.stats.away)
-      }
+      },
+      endStamina: {
+        home: endStamina(state, "home"),
+        away: endStamina(state, "away")
+      },
+      substitutions: {
+        home: [...state.substitutions.home],
+        away: [...state.substitutions.away]
+      },
+      scoreStateEvents: structuredClone(state.scoreStateEvents)
     }
   };
 }
@@ -104,7 +117,7 @@ function teamMeta(team: Team | TeamV2): { id: string; name: string; shortName: s
 }
 
 function roster(team: Team | TeamV2): SnapshotRosterPlayer[] {
-  return team.players.map(rosterPlayer);
+  return [...team.players, ...(team.bench ?? [])].map(rosterPlayer);
 }
 
 function rosterPlayer(player: PlayerInput | PlayerInputV2): SnapshotRosterPlayer {
@@ -135,6 +148,12 @@ function rosterPlayer(player: PlayerInput | PlayerInputV2): SnapshotRosterPlayer
 
 function cloneStats(stats: TeamStatistics): TeamStatistics {
   return structuredClone(stats);
+}
+
+function endStamina(state: MutableMatchState, teamId: TeamId) {
+  return state.players
+    .filter((player) => player.teamId === teamId)
+    .map((player) => ({ playerId: player.id, stamina: Math.round(player.stamina) }));
 }
 
 function cloneEvent(event: import("./types").SemanticEvent): import("./types").SemanticEvent {

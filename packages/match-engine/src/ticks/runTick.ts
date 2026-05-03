@@ -8,9 +8,11 @@ import {
 import { restartAfterGoal } from "../resolution/actions/shot";
 import { pressureLevel, rollPressureTackle } from "../resolution/pressure";
 import { continuePendingSetPiece } from "../resolution/setPieces";
+import { processSubstitutions } from "../resolution/substitutions";
 import { giveKickOffToTeam } from "../state/initState";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
 import { updateAttackMomentum } from "../state/momentum";
+import { applyActionFatigue, applyBaselineFatigue } from "../state/stamina";
 import type { SemanticEvent, TeamId } from "../types";
 import { zoneForPosition } from "../zones/pitchZones";
 import { updateBallPhysics } from "./ballPhysics";
@@ -19,6 +21,8 @@ import { updateMovement } from "./movement";
 export function runTick(state: MutableMatchState): void {
   state.eventsThisTick = [];
   advanceClock(state);
+  processSubstitutions(state);
+  applyBaselineFatigue(state);
 
   if (handleHalfTimeBoundary(state)) {
     updateAttackMomentum(state);
@@ -51,6 +55,9 @@ export function runTick(state: MutableMatchState): void {
   const carrier = currentCarrier(state);
   if (carrier) {
     const action = selectCarrierAction(state, carrier);
+    if (state.dynamics.fatigue) {
+      applyActionFatigue(carrier, action);
+    }
     const dispossessed =
       isVulnerableAction(action) &&
       rollPressureTackle(state, carrierForAction(state, carrier), action);

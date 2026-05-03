@@ -1,6 +1,12 @@
-import { SUCCESS_PROBABILITIES, TACTIC_MODIFIERS } from "../calibration/probabilities";
+import { SCORE_STATE, SUCCESS_PROBABILITIES, TACTIC_MODIFIERS } from "../calibration/probabilities";
 import { emitEvent } from "../ticks/runTick";
 import { otherTeam, type MutableMatchState, type MutablePlayer } from "../state/matchState";
+import {
+  applyActionFatigue,
+  applyPressingFatigue,
+  staminaEffectMultiplier
+} from "../state/stamina";
+import { urgencyMultiplier } from "../state/scoreState";
 import type { PossessionChangeCause, PressureLevel, TeamId, Zone } from "../types";
 import { distanceSquared } from "../utils/geometry";
 import { zoneForPosition } from "../zones/pitchZones";
@@ -39,12 +45,20 @@ export function rollPressureTackle(
     const attemptProbability =
       SUCCESS_PROBABILITIES.tackleAttemptByPressure[state.possession.pressureLevel] *
       TACTIC_MODIFIERS.pressing[tacklerTactics.pressing] *
-      (tackler.baseInput.attributes.tackling / 100);
+      Math.max(0.2, 1 + (urgencyMultiplier(state, tackler.teamId) - 1) * SCORE_STATE.pressing) *
+      (tackler.baseInput.attributes.tackling / 100) *
+      staminaEffectMultiplier(tackler);
+    if (state.dynamics.fatigue) {
+      applyPressingFatigue(tackler);
+    }
 
     if (state.rng.next() > attemptProbability) {
       continue;
     }
 
+    if (state.dynamics.fatigue) {
+      applyActionFatigue(tackler, "tackle");
+    }
     const outcome = resolveTackleAttempt(state, tackler, carrier, { carrierAction });
     if (outcome === "foul") {
       return true;

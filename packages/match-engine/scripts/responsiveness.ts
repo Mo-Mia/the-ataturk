@@ -390,6 +390,7 @@ function scenario(
     awayTeam,
     duration: "second_half",
     seed,
+    dynamics: { fatigue: true, scoreState: true, autoSubs: true },
     preMatchScore: { home: 0, away: 3 }
   };
 }
@@ -410,6 +411,7 @@ function calibrationScenarioV2(seed: number): MatchConfigV2 {
     }),
     duration: "second_half",
     seed,
+    dynamics: { fatigue: true, scoreState: true, autoSubs: true },
     preMatchScore: { home: 0, away: 3 }
   };
 }
@@ -468,6 +470,9 @@ function createTeam(
     name,
     shortName,
     players: positions.map((position, index) => player(id, names[index]!, position, index, base)),
+    bench: benchPositions().map((position, index) =>
+      player(id, `${shortName} Sub ${index + 1}`, position, positions.length + index, base - 4)
+    ),
     tactics: baselineTactics(formation)
   };
 }
@@ -476,8 +481,13 @@ function toV2Team(team: Team, tacticOverrides: Partial<TeamTactics>): TeamV2 {
   return {
     ...team,
     tactics: { ...team.tactics, ...tacticOverrides },
-    players: team.players.map(playerV2FromV1)
+    players: team.players.map(playerV2FromV1),
+    bench: (team.bench ?? []).map(playerV2FromV1)
   };
+}
+
+function benchPositions(): PlayerInput["position"][] {
+  return ["GK", "CB", "LB", "RB", "CM", "AM", "RW", "ST"];
 }
 
 function playerV2FromV1(playerInput: PlayerInput, index: number): PlayerInputV2 {

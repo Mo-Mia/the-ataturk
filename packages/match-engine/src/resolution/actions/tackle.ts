@@ -1,5 +1,6 @@
 import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
+import { staminaEffectMultiplier } from "../../state/stamina";
 import { emitEvent } from "../../ticks/runTick";
 import type { CarrierAction } from "../../calibration/probabilities";
 import type { FoulSeverity, TackleType } from "../../types";
@@ -26,7 +27,9 @@ export function resolveTackleAttempt(
   }
 
   const successProbability =
-    SUCCESS_PROBABILITIES.tackleSuccessBase * (tackler.baseInput.attributes.tackling / 100);
+    SUCCESS_PROBABILITIES.tackleSuccessBase *
+    (tackler.baseInput.attributes.tackling / 100) *
+    staminaEffectMultiplier(tackler);
   return state.rng.next() <= successProbability ? "won" : "missed";
 }
 

@@ -72,6 +72,72 @@ export const TACTIC_MODIFIERS = {
   } satisfies Record<TeamTactics["pressing"], number>
 };
 
+export const FATIGUE = {
+  baselineDrainPerTick: 0.0286,
+  movementDrainAtMaxSpeed: 0.0154,
+  pressingProximityDrain: 0.011,
+  actionDrain: {
+    hold: 0.011,
+    pass: 0.0385,
+    clear: 0.088,
+    dribble: 0.176,
+    tackle: 0.198,
+    shoot: 0.242
+  } satisfies Record<CarrierAction | "tackle", number>,
+  staminaScaling: {
+    lowAttribute: 1.5,
+    midAttribute: 1,
+    highAttribute: 0.6
+  },
+  effect: {
+    noPenaltyAbove: 65,
+    mildFloor: 35,
+    severeFloor: 20,
+    mildMultiplier: 0.94,
+    severeMultiplier: 0.82,
+    exhaustedMultiplier: 0.68
+  }
+};
+
+export const SUBSTITUTIONS = {
+  maxPerTeam: 5,
+  aiStartMinute: 62,
+  fatigueThreshold: 51,
+  cooldownTicks: 160,
+  tacticalChaseMinute: 70,
+  tacticalDeficit: 2
+};
+
+export const SCORE_STATE = {
+  minUrgency: 0.7,
+  maxUrgency: 1.4,
+  levelLateBoost: {
+    last30: 0.03,
+    last15: 0.08,
+    last5: 0.12
+  },
+  deficitBoost: {
+    one: 0.12,
+    two: 0.22,
+    threePlus: 0.3
+  },
+  timeFactor: {
+    early: 0.25,
+    last30: 0.65,
+    last15: 1,
+    last5: 1.2
+  },
+  action: {
+    pass: 1.04,
+    shoot: 1.28,
+    dribble: 1.12,
+    hold: -0.42,
+    clear: -0.2
+  } satisfies Record<CarrierAction, number>,
+  pressing: 0.45,
+  passRisk: 34
+};
+
 export const SUCCESS_PROBABILITIES = {
   passByZone: { def: 1.02, mid: 0.94, att: 0.86 } satisfies Record<Zone, number>,
   pressureModifier: { low: 1, medium: 0.9, high: 0.78 } satisfies Record<PressureLevel, number>,
@@ -82,7 +148,7 @@ export const SUCCESS_PROBABILITIES = {
   >,
   shotOnTargetByZone: { def: 0, mid: 0.32, att: 0.58 } satisfies Record<Zone, number>,
   shotPressureModifier: { low: 1, medium: 0.86, high: 0.7 } satisfies Record<PressureLevel, number>,
-  saveBase: 0.42,
+  saveBase: 0.405,
   tackleAttemptByPressure: { low: 0.01, medium: 0.02, high: 0.034 } satisfies Record<
     PressureLevel,
     number

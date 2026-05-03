@@ -12,6 +12,8 @@ import {
 import { emitEvent } from "../../ticks/runTick";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { otherTeam } from "../../state/matchState";
+import { recordScoreStateEvent } from "../../state/scoreState";
+import { staminaEffectMultiplier } from "../../state/stamina";
 import type { SaveQuality, SaveResult, ShotFoot, ShotType, StarRating, TeamId } from "../../types";
 import { zoneForPosition } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
@@ -30,7 +32,8 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
     SUCCESS_PROBABILITIES.shotPressureModifier[state.possession.pressureLevel] *
     (shooter.baseInput.attributes.shooting / 100) *
     shotDistance.onTarget *
-    shotFoot.onTargetMultiplier;
+    shotFoot.onTargetMultiplier *
+    staminaEffectMultiplier(shooter);
 
   const onTarget = state.rng.next() <= onTargetProbability;
   emitEvent(state, "shot", shooter.teamId, shooter.id, {
@@ -115,6 +118,7 @@ function commitGoal(
     score: { ...state.score },
     restartTeam: otherTeam(shooter.teamId)
   });
+  recordScoreStateEvent(state);
 }
 
 function givePossession(

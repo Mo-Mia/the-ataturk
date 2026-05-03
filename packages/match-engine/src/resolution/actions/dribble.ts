@@ -1,6 +1,7 @@
 import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
+import { staminaEffectMultiplier } from "../../state/stamina";
 import { otherTeam } from "../../state/matchState";
 import { emitEvent } from "../../ticks/runTick";
 import { clamp2D } from "../../utils/geometry";
@@ -12,7 +13,8 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
   const successProbability =
     SUCCESS_PROBABILITIES.dribbleBase *
     SUCCESS_PROBABILITIES.dribblePressureModifier[state.possession.pressureLevel] *
-    (carrier.baseInput.attributes.control / 100);
+    (carrier.baseInput.attributes.control / 100) *
+    staminaEffectMultiplier(carrier);
 
   if (state.rng.next() <= successProbability) {
     const direction = attackDirection(carrier.teamId);

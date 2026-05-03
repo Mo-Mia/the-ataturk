@@ -93,6 +93,7 @@ function createScenario(
       awayTeam: toV2Team(awayTeam, preferredFootMode),
       duration,
       seed,
+      dynamics: { fatigue: true, scoreState: true, autoSubs: true },
       ...(preMatchScore ? { preMatchScore } : {})
     };
   }
@@ -102,6 +103,7 @@ function createScenario(
     awayTeam,
     duration,
     seed,
+    dynamics: { fatigue: true, scoreState: true, autoSubs: true },
     ...(preMatchScore ? { preMatchScore } : {})
   };
 }
@@ -136,6 +138,9 @@ function createTeam(
     primaryColor: id === "liverpool" ? "#c8102e" : "#ffffff",
     secondaryColor: id === "liverpool" ? "#ffffff" : "#111111",
     players: positions.map((position, index) => player(id, name, position, index, base)),
+    bench: benchPositions().map((position, index) =>
+      player(id, name, position, positions.length + index, base - 4)
+    ),
     tactics: {
       formation,
       mentality,
@@ -145,6 +150,10 @@ function createTeam(
       width: "normal"
     }
   };
+}
+
+function benchPositions(): PlayerInput["position"][] {
+  return ["GK", "CB", "LB", "RB", "CM", "AM", "RW", "ST"];
 }
 
 function player(
@@ -187,6 +196,9 @@ function toV2Team(
     ...team,
     players: team.players.map((teamPlayer, index) =>
       playerV2FromV1(teamPlayer, index, preferredFootMode)
+    ),
+    bench: (team.bench ?? []).map((teamPlayer, index) =>
+      playerV2FromV1(teamPlayer, team.players.length + index, preferredFootMode)
     )
   };
 }

@@ -41,6 +41,7 @@ export type SaveResult = "caught" | "parried_safe" | "parried_dangerous";
 export type FoulSeverity = "minor" | "cynical" | "reckless";
 export type TackleType = "standing" | "sliding";
 export type PassType = "short" | "long" | "through_ball" | "cross" | "cutback" | "switch" | "back";
+export type SubstitutionReason = "manual" | "auto-fatigue" | "auto-tactical" | "auto-injury-future";
 
 export interface PlayerAttributes {
   passing: number;
@@ -100,6 +101,7 @@ export interface Team {
   name: string;
   shortName: string;
   players: PlayerInput[];
+  bench?: PlayerInput[];
   tactics: TeamTactics;
   primaryColor?: string;
   secondaryColor?: string;
@@ -115,8 +117,9 @@ export interface PlayerInput {
   overrides?: PlayerOverrides;
 }
 
-export interface TeamV2 extends Omit<Team, "players"> {
+export interface TeamV2 extends Omit<Team, "players" | "bench"> {
   players: PlayerInputV2[];
+  bench?: PlayerInputV2[];
 }
 
 export interface PlayerInputV2 {
@@ -159,6 +162,8 @@ export interface MatchConfig {
   awayTeam: Team;
   duration: MatchDuration;
   seed: number;
+  dynamics?: MatchDynamicsConfig;
+  scheduledSubstitutions?: ScheduledSubstitution[];
   preMatchScore?: { home: number; away: number };
   preMatchStats?: {
     home?: TeamStatistics;
@@ -169,6 +174,20 @@ export interface MatchConfig {
 export interface MatchConfigV2 extends Omit<MatchConfig, "homeTeam" | "awayTeam"> {
   homeTeam: TeamV2;
   awayTeam: TeamV2;
+}
+
+export interface MatchDynamicsConfig {
+  fatigue?: boolean;
+  scoreState?: boolean;
+  autoSubs?: boolean;
+}
+
+export interface ScheduledSubstitution {
+  teamId: TeamId;
+  playerOutId: string;
+  playerInId: string;
+  minute: number;
+  second?: number;
 }
 
 export interface MatchSnapshot {
@@ -184,12 +203,38 @@ export interface MatchSnapshot {
     preMatchScore: { home: number; away: number };
     generatedAt: string;
     targets: CalibrationTargets;
+    diagnostics?: {
+      warnings: string[];
+    };
   };
   ticks: MatchTick[];
   finalSummary: {
     finalScore: { home: number; away: number };
     statistics: { home: TeamStatistics; away: TeamStatistics };
+    endStamina?: { home: PlayerStaminaSummary[]; away: PlayerStaminaSummary[] };
+    substitutions?: { home: SubstitutionSummary[]; away: SubstitutionSummary[] };
+    scoreStateEvents?: ScoreStateEventSummary[];
   };
+}
+
+export interface PlayerStaminaSummary {
+  playerId: string;
+  stamina: number;
+}
+
+export interface SubstitutionSummary {
+  minute: number;
+  second: number;
+  playerOutId: string;
+  playerInId: string;
+  reason: SubstitutionReason;
+  mode: "manual" | "auto";
+}
+
+export interface ScoreStateEventSummary {
+  tick: number;
+  score: { home: number; away: number };
+  urgency: { home: number; away: number };
 }
 
 export interface SnapshotRosterPlayer {
@@ -222,6 +267,7 @@ export interface MatchTick {
     position: Coordinate2D;
     hasBall: boolean;
     onPitch: boolean;
+    stamina?: number;
   }>;
   score: { home: number; away: number };
   possession: { teamId: TeamId | null; zone: Zone };
@@ -277,6 +323,7 @@ export interface SemanticEvent {
     | "free_kick"
     | "possession_change"
     | "kick_off"
+    | "substitution"
     | "half_time"
     | "full_time";
   team: TeamId;

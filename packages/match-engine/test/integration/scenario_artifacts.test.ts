@@ -62,6 +62,41 @@ describe("UAT scenario artefacts", () => {
     ).toBe(true);
     expect(existsSync(`${outputPath}.gz`)).toBe(true);
   });
+
+  it("generates a forced substitution replay", () => {
+    const outputPath = runScenarioScript("forcedSubstitution.ts", "forced-substitution-v2.json");
+    const snapshot = readSnapshot(outputPath);
+    const events = snapshot.ticks.flatMap((tick) => tick.events);
+    const finalTick = snapshot.ticks.at(-1);
+
+    expect(events.some((event) => event.type === "substitution" && event.team === "home")).toBe(
+      true
+    );
+    expect(finalTick?.players.find((player) => player.id === "home-5")?.onPitch).toBe(false);
+    expect(finalTick?.players.find((player) => player.id === "home-sub-5")?.onPitch).toBe(true);
+    expect(existsSync(`${outputPath}.gz`)).toBe(true);
+  });
+
+  it("generates a forced fatigue-impact replay", () => {
+    const outputPath = runScenarioScript("forcedFatigueImpact.ts", "forced-fatigue-impact-v2.json");
+    const snapshot = readSnapshot(outputPath);
+    const homeStamina = snapshot.finalSummary.endStamina?.home ?? [];
+
+    expect(homeStamina.some((player) => player.playerId !== "home-0" && player.stamina < 45)).toBe(
+      true
+    );
+    expect(existsSync(`${outputPath}.gz`)).toBe(true);
+  });
+
+  it("generates a forced late-comeback replay", () => {
+    const outputPath = runScenarioScript("forcedLateComeback.ts", "forced-late-comeback-v2.json");
+    const snapshot = readSnapshot(outputPath);
+
+    expect(snapshot.finalSummary.scoreStateEvents?.some((event) => event.urgency.home > 1.2)).toBe(
+      true
+    );
+    expect(existsSync(`${outputPath}.gz`)).toBe(true);
+  });
 });
 
 function runScenarioScript(scriptName: string, fileName: string): string {

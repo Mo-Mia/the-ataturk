@@ -2,11 +2,15 @@ import type {
   Coordinate2D,
   Coordinate3D,
   MatchDuration,
+  MatchDynamicsConfig,
   PlayerInput,
   PlayerInputV2,
   PressureLevel,
   PossessionChangeCause,
+  ScoreStateEventSummary,
   SemanticEvent,
+  ScheduledSubstitution,
+  SubstitutionSummary,
   Team,
   TeamV2,
   TeamId,
@@ -24,9 +28,14 @@ export interface MutablePlayer {
   lateralAnchor: number;
   hasBall: boolean;
   onPitch: boolean;
+  substitutedIn: boolean;
+  substitutedOut: boolean;
   yellowCards: number;
   redCard: boolean;
   lastWideCarryTick: number | null;
+  stamina: number;
+  staminaAttribute: number;
+  staminaSource: "v2-stamina" | "v1-agility";
   baseInput: PlayerInput;
   v2Input?: PlayerInputV2;
 }
@@ -60,6 +69,7 @@ export interface MutableMatchState {
   iteration: number;
   matchClock: { half: 1 | 2; minute: number; seconds: number };
   duration: MatchDuration;
+  dynamics: Required<MatchDynamicsConfig>;
   seed: number;
   rng: Rng;
   homeTeam: Team | TeamV2;
@@ -72,6 +82,12 @@ export interface MutableMatchState {
   possessionTicks: { home: number; away: number };
   possessionStreak: { teamId: TeamId | null; ticks: number };
   attackMomentum: { home: number; away: number };
+  substitutions: { home: SubstitutionSummary[]; away: SubstitutionSummary[] };
+  substitutionCounts: { home: number; away: number };
+  lastSubstitutionTick: { home: number | null; away: number | null };
+  scheduledSubstitutions: ScheduledSubstitution[];
+  scoreStateEvents: ScoreStateEventSummary[];
+  engineWarnings: string[];
   pendingGoal: PendingGoal | null;
   pendingSetPiece: PendingSetPiece | null;
   pendingLooseBallCause: PossessionChangeCause | null;

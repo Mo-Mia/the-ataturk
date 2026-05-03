@@ -1,7 +1,13 @@
-import { PASS_TARGET_WEIGHTS, SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
+import {
+  PASS_TARGET_WEIGHTS,
+  SCORE_STATE,
+  SUCCESS_PROBABILITIES
+} from "../../calibration/probabilities";
 import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
+import { staminaEffectMultiplier } from "../../state/stamina";
 import { otherTeam } from "../../state/matchState";
+import { urgencyMultiplier } from "../../state/scoreState";
 import { emitEvent } from "../../ticks/runTick";
 import type { PassType } from "../../types";
 import { distance, distanceSquared } from "../../utils/geometry";
@@ -20,7 +26,8 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer): v
   const completionProbability =
     SUCCESS_PROBABILITIES.passByZone[state.possession.zone] *
     SUCCESS_PROBABILITIES.pressureModifier[state.possession.pressureLevel] *
-    (carrier.baseInput.attributes.passing / 100);
+    (carrier.baseInput.attributes.passing / 100) *
+    staminaEffectMultiplier(carrier);
 
   if (state.rng.next() <= completionProbability) {
     emitPassEvent(state, carrier, target, true);
@@ -68,12 +75,30 @@ function selectPassTarget(state: MutableMatchState, carrier: MutablePlayer): Mut
         widePassBonus(carrier, player, direction) +
         wideCarrierTargetAdjustment(state, carrier, player, direction) +
         forwardRunBonus(carrier, player, direction) -
-        strikerToStrikerPenalty(carrier, player)
+        strikerToStrikerPenalty(carrier, player) +
+        scoreStatePassRiskBonus(state, carrier, player, direction)
     }))
     .sort((a, b) => b.score - a.score);
 
   const upper = Math.min(weighted.length, 4);
   return weighted[state.rng.int(0, upper - 1)]?.player ?? weighted[0]?.player ?? null;
+}
+
+function scoreStatePassRiskBonus(
+  state: MutableMatchState,
+  carrier: MutablePlayer,
+  candidate: MutablePlayer,
+  direction: 1 | -1
+): number {
+  const progress = (candidate.position[1] - carrier.position[1]) * direction;
+  if (progress <= 0) {
+    return 0;
+  }
+  return (
+    (urgencyMultiplier(state, carrier.teamId) - 1) *
+    SCORE_STATE.passRisk *
+    Math.min(1, progress / 180)
+  );
 }
 
 function strikerToStrikerPenalty(carrier: MutablePlayer, candidate: MutablePlayer): number {

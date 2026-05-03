@@ -1,10 +1,12 @@
 import {
   ACTION_WEIGHTS,
   type CarrierAction,
+  SCORE_STATE,
   TACTIC_MODIFIERS,
   WIDE_CARRIER_ACTION_MODIFIERS
 } from "../calibration/probabilities";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
+import { urgencyMultiplier } from "../state/scoreState";
 import { isWideCarrier } from "../utils/playerRoles";
 import { performClearance } from "./actions/clearance";
 import { performDribble } from "./actions/dribble";
@@ -22,6 +24,7 @@ export function selectCarrierAction(
   const tactics = carrier.teamId === "home" ? state.homeTeam.tactics : state.awayTeam.tactics;
   const mentality = TACTIC_MODIFIERS.mentality[tactics.mentality];
   const tempo = TACTIC_MODIFIERS.tempo[tactics.tempo];
+  const urgency = urgencyMultiplier(state, carrier.teamId);
 
   weights.pass *= mentality.pass * tempo.pass * (carrier.baseInput.attributes.passing / 100);
   weights.shoot *=
@@ -33,6 +36,7 @@ export function selectCarrierAction(
     mentality.dribble * tempo.dribble * (carrier.baseInput.attributes.control / 100);
   weights.hold *= mentality.hold * tempo.hold * (carrier.baseInput.attributes.perception / 100);
   weights.clear *= mentality.clear * tempo.clear;
+  applyScoreStateWeights(weights, urgency);
 
   if (isWideCarrier(carrier)) {
     const wideModifiers = WIDE_CARRIER_ACTION_MODIFIERS[zone];
@@ -57,6 +61,13 @@ export function selectCarrierAction(
   }
 
   return "hold";
+}
+
+function applyScoreStateWeights(weights: Record<CarrierAction, number>, urgency: number): void {
+  const delta = urgency - 1;
+  for (const action of ["pass", "shoot", "dribble", "hold", "clear"] as const) {
+    weights[action] *= Math.max(0.05, 1 + delta * SCORE_STATE.action[action]);
+  }
 }
 
 export function executeCarrierAction(

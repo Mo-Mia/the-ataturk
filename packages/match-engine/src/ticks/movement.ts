@@ -7,6 +7,8 @@ import {
 import { setPieceTargetForPlayer } from "../resolution/setPieces";
 import type { MutableMatchState, MutablePlayer } from "../state/matchState";
 import { attackingThirdProgress } from "../state/momentum";
+import { urgencyMultiplier } from "../state/scoreState";
+import { applyMovementFatigue, staminaEffectMultiplier } from "../state/stamina";
 import type { Coordinate2D, TeamId } from "../types";
 import { clamp, clamp2D, distanceSquared, moveTowards } from "../utils/geometry";
 import { attackDirection } from "../zones/pitchZones";
@@ -33,7 +35,11 @@ export function updateMovement(state: MutableMatchState): void {
 
     player.targetPosition = targetForPlayer(state, player, ballPosition, carrier);
     const speed = speedForPlayer(player, state);
+    const previousPosition = player.position;
     player.position = moveTowards(player.position, player.targetPosition, speed);
+    if (state.dynamics.fatigue) {
+      applyMovementFatigue(player, Math.sqrt(distanceSquared(previousPosition, player.position)));
+    }
   }
 
   const updatedCarrier = currentCarrier(state);
@@ -117,9 +123,13 @@ function supportingTarget(
   }
 
   const momentum = state.attackMomentum[player.teamId];
+  const urgency = urgencyMultiplier(state, player.teamId);
   const progress = attackingThirdProgress(carrier.teamId, carrier.position[1]);
   const supportY =
-    carrier.position[1] + direction * verticalSupportOffset(player, momentum, progress, carrier);
+    carrier.position[1] +
+    direction *
+      (verticalSupportOffset(player, momentum, progress, carrier) +
+        urgencySupportBoost(player, urgency));
   const supportX = anchorTarget[0] + (carrier.position[0] - PITCH_WIDTH / 2) * 0.12;
   const supportInfluence = supportInfluenceForPlayer(player, momentum, progress);
   const supportTarget: Coordinate2D = [
@@ -132,6 +142,16 @@ function supportingTarget(
     player,
     channelRunTarget(state, player, supportTarget, direction, ballPosition, carrier),
     1
+  );
+}
+
+function urgencySupportBoost(player: MutablePlayer, urgency: number): number {
+  if (player.baseInput.position === "GK") {
+    return 0;
+  }
+  return (
+    (urgency - 1) *
+    (["ST", "LW", "RW", "AM", "LM", "RM"].includes(player.baseInput.position) ? 60 : 35)
   );
 }
 
@@ -156,7 +176,9 @@ function speedForPlayer(player: MutablePlayer, state: MutableMatchState): number
   const tempo = tactics.tempo === "fast" ? 1.12 : tactics.tempo === "slow" ? 0.92 : 1;
   return Math.min(
     MAX_PLAYER_DELTA_PER_TICK,
-    (BASE_SPEED_PER_TICK + player.baseInput.attributes.agility / 6) * tempo
+    (BASE_SPEED_PER_TICK + player.baseInput.attributes.agility / 6) *
+      tempo *
+      staminaEffectMultiplier(player)
   );
 }
 
