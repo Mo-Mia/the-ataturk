@@ -4,6 +4,40 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-03 — FootSim Phase 6 scope: chance creation + taker-aware set pieces
+
+Phase 6 ships two coupled shot-generation mechanics: chance creation and
+taker-aware set pieces. Chance creation adds a branch from attacking-third
+progression and late chase intent into the existing shot pipeline. Set pieces
+select deterministic free-kick, corner, and penalty takers from v2 attributes
+at simulate time and resolve corners, direct/indirect free kicks, and penalties
+through the existing shot/save/goal machinery.
+
+The Phase 5 score-state finding is closed at the headline level. In the
+200-seed real-squad harness, forcing Liverpool 0-2 down at 75:00 increased
+final-15 shots from 0.99 to 1.23 (+23.62%), clearing the Phase 6 +15% target.
+The isolated chance-creation feature-flag diagnostic is deliberately recorded
+as weak (+2.05% final-15 shots); the useful behaviour comes from composition
+with score-state urgency rather than the feature flag alone.
+
+Set-piece calibration uses empirical checks rather than assumed rates. Organic
+penalties were initially below the useful diagnostic floor, so the coarse
+attacking-foul-near-box penalty proxy was tuned before conversion was judged.
+The final full-match 200-seed characterisation averages 2.41 corners, 0.15
+penalties, and 0.25 set-piece goals. Corner conversion is approximately 4.6%;
+penalty conversion is 83.9%. Both are inside the sprint target bands.
+
+True half-time side-switch remains deferred. Set-piece direction follows the
+same first-half-direction-throughout convention as the rest of the engine until
+the dedicated side-switch refactor audits movement, pressure, action
+resolution, shot distance, set-piece direction, and visualiser assumptions.
+
+Out of scope and tracked in BACKLOG: corner routine choreography, wall-jumping
+for free kicks, set-piece tactics, designated set-piece defending,
+counter-attack speed differentiation, individual player instructions,
+goalkeeper distribution, dribble-into-shot mechanics, shot-blocking, and
+indirect-FK routine variety.
+
 ## 2026-05-03 — FootSim Phase 5 scope: fatigue, substitutions, score-state
 
 Phase 5 adds the first in-match dynamics bundle: fatigue, substitutions, and

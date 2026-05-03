@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-03 13:01 SAST
+Last updated: 2026-05-03 14:11 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -31,6 +31,11 @@ sprint.
   events, active-player replacement, and persisted substitution summaries.
 - Score-state urgency: late/deficit urgency multiplier that shifts pressing,
   passing risk, and carrier action weighting around the user's baseline tactics.
+- Chance creation: attacking-third progression and late chase shot intent now
+  give score-state urgency a path to extra final-15 shots.
+- Taker-aware set pieces: deterministic free-kick, corner, and penalty takers
+  are selected from v2 attributes; corners, free kicks, and penalties feed the
+  shot pipeline and summary diagnostics.
 
 ## Real-Squad Responsiveness Findings
 
@@ -51,6 +56,8 @@ real FC25 data path:
 - Auto Subs are active at realistic frequency after anchoring the fatigue
   threshold to the 25th percentile of real-squad minute-70+ stamina samples:
   4.92 total subs/match, 0 zero-sub matches in the 200-seed run.
+- Phase 6 score-state shot impact passed: forcing Liverpool 0-2 down at 75:00
+  increased final-15 shots by 23.62% (`0.99 -> 1.23`).
 
 See `docs/FOOTSIM_REAL_SQUAD_RESPONSIVENESS.md` for the full table.
 
@@ -65,9 +72,14 @@ agency, public API shape, or obvious UAT realism.
   engine does not yet model morale, chemistry, familiarity, or
   out-of-position discomfort beyond the attributes and position assignments
   already present.
-- **Score-state chance creation**: score-state urgency increases progressive
-  risk-taking, which currently produces more turnovers than chances.
-  Translating risk into elevated shot generation is a Phase 6+ concern.
+- **Chance-creation standalone strength**: the isolated chance-creation
+  feature flag only moved final-15 shots by +2.05% in the Phase 6 real-squad
+  harness. The headline score-state composition passes, but future tuning may
+  need to make progression-to-shot behaviour more visible outside chase states.
+- **Penalty frequency in real-squad matchups**: synthetic full-match
+  characterisation now has enough penalty volume for conversion checks, but the
+  Liverpool vs Aston Villa real-squad set-piece diagnostic produced only 0.04
+  penalties per match. Re-check when more matchups or referee variance exist.
 
 ## Deferred Unless UAT Finds A Blocker
 

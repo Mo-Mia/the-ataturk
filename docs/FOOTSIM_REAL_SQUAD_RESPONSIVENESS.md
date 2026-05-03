@@ -1,6 +1,6 @@
 # FootSim Real-Squad Responsiveness
 
-Last updated: 2026-05-03 13:01 SAST
+Last updated: 2026-05-03 14:11 SAST
 
 ## Purpose
 
@@ -105,3 +105,42 @@ produces roughly 3.5x the Liverpool crosses/cutbacks of `4-4-2`.
   sufficient for current testing.
 - Use real-squad responsiveness results as input to the modelling-gap review
   rather than tuning the engine immediately.
+
+## Phase 6 Chance Creation + Set Pieces
+
+Phase 6 re-ran the real-squad harness over 200 seeds after adding the
+shot-generation bundle. Existing Phase 4 and Phase 5 checks still pass.
+
+| Test | Metric | Baseline | Variant | Change | Threshold | Result |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| Mentality: defensive -> attacking | Liverpool shots | 3.58 | 8.51 | +137.24% | 30% | PASS |
+| Pressing: low -> high | Liverpool fouls | 1.20 | 4.08 | +241.84% | 20% | PASS |
+| Tempo: slow -> fast | Liverpool possession streak | 3.54 | 2.91 | -17.81% | 15% | PASS |
+| Manual XI: auto -> rotated, Auto Subs off | Liverpool goals | 0.91 | 0.79 | -13.19% | 10% | PASS |
+| Fatigue on/off | Late action success | 54.46% | 52.54% | -3.53% | 3% | PASS |
+| Score-state urgency | Final-15 urgency | 1.05 | 1.23 | +16.69% | 5% | PASS |
+| Score-state shot impact | Final-15 Liverpool shots | 0.99 | 1.23 | +23.62% | 15% | PASS |
+
+The headline Phase 6 result is the final row: forcing Liverpool 0-2 down at
+75:00 now increases final-15 shot volume by 23.62%. This closes the Phase 5
+finding where urgency increased risk-taking but did not create more shots.
+
+The isolated chance-creation feature-flag diagnostic moved final-15 shots only
+from `0.97` to `0.99` (+2.05%), so it is recorded as a weak standalone signal,
+not a release gate. The useful behaviour emerges when chance creation composes
+with score-state urgency.
+
+Set-piece baseline, Liverpool vs Aston Villa over 200 seeds:
+
+| Metric | Average |
+| --- | ---: |
+| Set-piece events | 7.03 |
+| Set-piece goals | 0.14 |
+| Corners | 2.00 |
+| Penalties | 0.04 |
+| Penalty conversion | 88.9% |
+
+The Liverpool vs Aston Villa penalty sample is small (`0.04` per match), so the
+canonical set-piece calibration check remains the synthetic 200-seed
+characterisation in `docs/CHARACTERISATION_FULL_MATCH.md`, where full-match
+penalty volume is `0.15` and conversion is `83.9%`.

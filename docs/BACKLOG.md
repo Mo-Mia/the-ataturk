@@ -73,12 +73,51 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
-### Score-state chance creation
-Phase 5 urgency correctly increases progressive risk-taking for trailing teams,
-but the 200-seed real-squad diagnostics showed that this can reduce possession
-without increasing final-15 shot volume. Future work should add a mechanism for
-trailing teams to attempt earlier/wider shots or more direct chance creation,
-not just riskier passes.
+### Chance-creation standalone strength
+Phase 6 fixed the score-state composition issue: trailing teams now produce more
+late shots. The isolated chance-creation feature flag is still a weak standalone
+signal in the real-squad harness. Revisit if UAT shows progressive carries and
+through-balls still do not visibly resolve into enough open-play chances outside
+late chase states.
+
+### Corner routine choreography
+Current corners have calibrated takers, deliveries, aerial targets, and shot
+resolution, but no near-post/far-post/short-corner routine choreography.
+
+### Wall-jumping for free kicks
+Direct free kicks currently resolve through taker and goalkeeper quality only.
+Wall positioning/jumping is deferred.
+
+### Set-piece tactics as tactical lever
+Existing tactical levers do not influence set-piece preferences. Add only if
+set-piece behaviour becomes a meaningful user-facing choice.
+
+### Designated set-piece defending
+No zonal vs man-marking or designated set-piece defensive assignments yet.
+
+### Counter-attack speed differentiation
+Transitions after turnovers do not yet distinguish fast counters from slower
+settled attacks beyond current tempo/action weighting.
+
+### Individual player instructions
+No per-player instructions such as "attempt shots", "hold up ball", or "stay
+forward" beyond the earlier accepted override fields.
+
+### Goalkeeper distribution as tactical surface
+GK kicking is preserved in v2 metadata but goalkeeper distribution is not yet a
+first-class tactical or action-resolution surface.
+
+### Dribble-into-shot mechanics
+Chance creation can turn carries into shot opportunities, but there is no
+bespoke dribble-into-shot animation or resolution branch.
+
+### Shot-blocking from defenders
+Blocked shots exist statistically, but defender positioning and block attempts
+are not yet a dedicated mechanic.
+
+### Indirect-FK routine variety
+Indirect free kicks currently cross/pass into play with light event detail.
+Richer routines are deferred.
 
 ### Live in-replay substitution UI
 Phase 5 supports scheduled substitutions before simulation and AI Auto Subs.

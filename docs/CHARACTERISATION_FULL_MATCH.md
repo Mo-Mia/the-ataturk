@@ -1,6 +1,6 @@
 # Full-Match Characterisation
 
-Last updated: 2026-05-03 13:01 SAST
+Last updated: 2026-05-03 14:11 SAST
 
 ## Scope
 
@@ -160,3 +160,47 @@ calibration bands. Fatigue drain was increased modestly, fatigue effect
 penalties were softened to avoid suppressing full-match goals, and `saveBase`
 was reduced from `0.42` to `0.405` to keep full-match goal conversion above the
 floor.
+
+## Phase 6 Baseline After Chance Creation + Set Pieces
+
+Phase 6 added two shot-generation surfaces: explicit chance creation for late
+attacking-third shot intent, and taker-aware corners, free kicks, and penalties.
+Characterisation still uses the Phase 5 defaults: fatigue on, score-state on,
+Auto Subs on, preferred-foot mode rated.
+
+Second-half 200-seed check:
+
+```text
+=== Match Engine Characterisation (200 seeds, second half, v2, preferred-foot rated) ===
+Shots: 10.38 target [8, 12]
+Goals: 1.68 target [1, 3]
+Fouls: 5.12 target [4, 8]
+Cards: 1.43 target [1, 3]
+Set pieces: corners 1.37, direct FKs 0.04, indirect FKs 4.95, penalties 0.08, set-piece goals 0.13
+Set-piece goals by source: corners 0.05, direct FKs 0.01, penalties 0.07
+Penalty conversion: 87.5%
+Calibration pass: yes
+```
+
+Full-match 200-seed check:
+
+```text
+=== Match Engine Characterisation (200 seeds, full 90, v2, preferred-foot rated) ===
+Shots: 17.80 target [16, 24]
+Goals: 2.65 target [2, 6]
+Fouls: 9.93 target [8, 16]
+Cards: 2.75 target [2, 6]
+Set pieces: corners 2.41, direct FKs 0.07, indirect FKs 9.68, penalties 0.15, set-piece goals 0.25
+Set-piece goals by source: corners 0.11, direct FKs 0.01, penalties 0.13
+Penalty conversion: 83.9%
+Calibration pass: yes
+```
+
+Interpretation: both calibrated duration bands remain green after the Phase 6
+shot-generation bundle. Organic penalty volume was initially below the useful
+diagnostic floor (`<0.1` per full match), so the coarse "attacking foul near the
+box" penalty proxy was tuned before any conversion claim was made. Full-match
+penalties now average `0.15` per match, giving enough 200-seed signal to check
+conversion. Penalty conversion is inside the 70-85% target band on the full-90
+sample. Corner conversion lands at roughly `0.11 / 2.41 = 4.6%`, inside the
+2-6% target band.
