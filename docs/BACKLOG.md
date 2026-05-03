@@ -97,9 +97,18 @@ remain level after 90 minutes.
 The workbench submits tactics at kick-off only. Later Atatürk integration needs
 safe mid-match tactic changes and a clear event/audit trail.
 
-### Manual XI override / drag-and-drop XI builder
-Phase 3 selects deterministic formation-aware XIs automatically. Manual lineup
-control is deferred until there is a concrete workbench or Atatürk UX for it.
+### Manual bench selection
+Phase 4 records an automatic seven-player bench alongside manual/automatic XIs.
+Future work can let users choose the bench explicitly once substitutions exist.
+
+### Drag-and-drop XI builder
+Phase 4 intentionally shipped a simple squad list with starter toggles. Add a
+drag-and-drop pitch/XI builder only when line-up editing becomes a primary UX,
+not just a diagnostic control.
+
+### Saved line-up presets
+Manual XI choices currently apply to one run only. Persist named presets once
+Mo needs to compare repeatable line-ups across sessions.
 
 ### Role-suitability scoring beyond overall + position
 The current XI selector uses primary position, alternative positions, adjacency
@@ -131,6 +140,12 @@ Phase 3 added deterministic simulate-time XI selection from the full FC25 squad
 for the four supported formations. `fc25_squads.squad_role` remains for
 backward compatibility but the simulate endpoint no longer uses it for XI
 selection.
+
+### ~~Manual XI override~~ ✅ Done
+Phase 4 added manual starting-XI selection for the workbench. The selector
+validates exactly 11 players, one goalkeeper, unique squad members, records
+out-of-position warnings, and persists XI/bench/selection-mode metadata in run
+summaries.
 
 ### Movement strategy refactor before the next major movement feature
 `packages/match-engine/src/ticks/movement.ts` now carries several interacting
@@ -234,9 +249,10 @@ there is a concrete workflow that needs more than paired analysis.
 Persist analyst notes against `match_runs` once Mo needs to mark interesting
 seeds, UAT observations, or handoff comments directly in the workbench.
 
-### Run history filtering and search
-Add filters by team, date range, tactics, seed range, and batch once persisted
-history grows beyond the current newest-first list.
+### SQL-backed advanced run-history filtering and search
+Phase 4 added basic server-side filters for club, duration, formation, batch,
+seed, and date range. If run history grows large, move filtering fully into SQL
+queries and add richer search by team pairing, tactics, notes, and seed ranges.
 
 ### Run history eviction policy
 Phase 2 ships manual delete only. Add retention/eviction rules after real usage

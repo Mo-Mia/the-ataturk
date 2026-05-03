@@ -4,6 +4,42 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-03 — FootSim Phase 4 scope: manual XI control + real-squad readiness review
+
+Phase 4 keeps `packages/match-engine/src` frozen and matures the FootSim
+workbench around the validated engine. The workbench now supports manual
+starting-XI selection from the real FC25 squad, while preserving the automatic
+formation-aware selector as the default. Manual selection is intentionally a
+simple squad list with starter toggles plus an "auto-fill remainder" action;
+drag-and-drop, saved presets, and manual bench selection are deferred.
+
+Auto-fill semantics are deliberately conservative: current manual selections
+remain locked, empty starter slots are filled from the current selector using
+the highest-overall remaining squad players for the unfilled roles, and role
+assignment is then run over the combined XI. This keeps the feature usable for
+quick what-if tests without pretending to be a complete squad-management UI.
+
+The simulate endpoint accepts optional `startingPlayerIds` per side and records
+line-up mode, warnings, XI, and bench metadata in the persisted run summary.
+The squad endpoint exposes the full squad, automatic XI, bench, role
+assignments, and warnings for the selected formation. Run history gained basic
+server-side filters for club, duration, formation, batch, seed, and date range.
+
+Real-squad responsiveness now has a dedicated data-package harness. It runs
+Liverpool vs Manchester City over 50 full-match seeds per comparison, varying
+one Liverpool control at a time. The deliberate manual-XI rotation swaps the
+top three highest-overall outfield auto starters for the top three highest-
+overall outfield bench players. In the current FC25 data that removes Van Dijk,
+Salah, and Alexander-Arnold, and adds Chiesa, Gakpo, and Núñez. The rotation
+reduced Liverpool goals by 18.37%, clearing the 15% responsiveness threshold
+and confirming manual XI choices are mechanically consequential.
+
+The modelling-gap review remains intentionally conservative: no new mechanics
+are added just because they are absent. Real-squad tests showed strong
+responsiveness for mentality, pressing, tempo, XI rotation, and formation/wide
+delivery shape, so the next engine work should be driven by observed UAT or
+gameplay-agency needs rather than speculative modelling.
+
 ## 2026-05-02 — FootSim Phase 3 scope: full-match workbench + formation-aware XI
 
 Phase 3 retires two Phase 1 compromises: workbench simulations default to
