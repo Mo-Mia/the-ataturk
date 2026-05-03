@@ -1,4 +1,4 @@
-import { createMatchRuns, getDb, importFc25Dataset } from "@the-ataturk/data";
+import { createMatchRuns, getDb, importFc25Dataset, type MatchRunSummary } from "@the-ataturk/data";
 import { afterEach, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 
@@ -449,6 +449,52 @@ describe("match-engine simulation routes", () => {
     }
   });
 
+  it("filters persisted runs by club, duration, formation, batch, seed, and date", async () => {
+    testDatabase = createServerTestDatabase("match-engine-runs-filter");
+    await writeVisualiserArtifact("phase4-filter-1.json", JSON.stringify({ ok: true }));
+    await writeVisualiserArtifact("phase4-filter-2.json", JSON.stringify({ ok: true }));
+    createMatchRuns(
+      [
+        createRun({
+          id: "filtered-run",
+          created_at: "2026-05-03T09:00:00.000Z",
+          batch_id: "batch-filter",
+          artefact_filename: "phase4-filter-1.json",
+          seed: 99,
+          home_tactics: { ...DEFAULT_TACTICS, formation: "4-3-3" },
+          summary: { duration: "full_90" }
+        }),
+        createRun({
+          id: "other-run",
+          created_at: "2026-05-01T09:00:00.000Z",
+          artefact_filename: "phase4-filter-2.json",
+          seed: 100,
+          home_tactics: { ...DEFAULT_TACTICS, formation: "4-4-2" },
+          summary: { duration: "second_half" }
+        })
+      ],
+      getDb(testDatabase.path)
+    );
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/match-engine/runs?clubId=liverpool&duration=full_90&formation=4-3-3&batchId=batch-filter&seed=99&from=2026-05-03T00:00:00.000Z&to=2026-05-03T23:59:59.999Z"
+      });
+      const body = response.json<{ runs: Array<{ id: string }>; total: number }>();
+
+      expect(response.statusCode).toBe(200);
+      expect(body.total).toBe(1);
+      expect(body.runs.map((run) => run.id)).toEqual(["filtered-run"]);
+    } finally {
+      await app.inject({ method: "DELETE", url: "/api/match-engine/runs/filtered-run" });
+      await app.inject({ method: "DELETE", url: "/api/match-engine/runs/other-run" });
+      await app.close();
+    }
+  });
+
+
   it("returns run detail, batch 404s, and run 404s", async () => {
     testDatabase = createServerTestDatabase("match-engine-run-detail");
     await writeVisualiserArtifact("phase2-detail.json", JSON.stringify({ ok: true }));
@@ -523,25 +569,33 @@ function createRun(overrides: {
   id: string;
   created_at?: string;
   batch_id?: string | null;
+  seed?: number;
+  home_tactics?: unknown;
+  away_tactics?: unknown;
+  summary?: Partial<MatchRunSummary>;
   artefact_filename: string;
 }) {
   return {
     id: overrides.id,
     created_at: overrides.created_at ?? "2026-05-02T12:00:00.000Z",
     batch_id: overrides.batch_id ?? null,
-    seed: 7,
+    seed: overrides.seed ?? 7,
     home_club_id: "liverpool" as const,
     away_club_id: "manchester-city" as const,
-    home_tactics: DEFAULT_TACTICS,
-    away_tactics: DEFAULT_TACTICS,
-    summary: {
-      score: { home: 1, away: 0 },
-      shots: { home: 9, away: 5 },
-      fouls: { home: 3, away: 2 },
-      cards: { home: 1, away: 0 },
-      possession: { home: 52, away: 48 }
-    },
+    home_tactics: overrides.home_tactics ?? DEFAULT_TACTICS,
+    away_tactics: overrides.away_tactics ?? DEFAULT_TACTICS,
+    summary: { ...baseRunSummary(), ...overrides.summary },
     artefact_filename: overrides.artefact_filename
+  };
+}
+
+function baseRunSummary() {
+  return {
+    score: { home: 1, away: 0 },
+    shots: { home: 9, away: 5 },
+    fouls: { home: 3, away: 2 },
+    cards: { home: 1, away: 0 },
+    possession: { home: 52, away: 48 }
   };
 }
 

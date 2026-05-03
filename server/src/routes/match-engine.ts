@@ -112,6 +112,18 @@ interface SquadQuery {
   formation?: unknown;
 }
 
+interface RunsQuery {
+  page?: unknown;
+  limit?: unknown;
+  clubId?: unknown;
+  duration?: unknown;
+  formation?: unknown;
+  batchId?: unknown;
+  seed?: unknown;
+  from?: unknown;
+  to?: unknown;
+}
+
 const MAX_BATCH = 50;
 const DEFAULT_RUN_LIST_LIMIT = 50;
 const MAX_RUN_LIST_LIMIT = 100;
@@ -238,14 +250,14 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
     }
   );
 
-  app.get("/api/match-engine/runs", async (request) => {
+  app.get<{ Querystring: RunsQuery }>("/api/match-engine/runs", async (request) => {
     const query = isRecord(request.query) ? request.query : {};
     const page = parseOptionalPositiveInteger(query.page, 1);
     const limit = Math.min(
       parseOptionalPositiveInteger(query.limit, DEFAULT_RUN_LIST_LIMIT),
       MAX_RUN_LIST_LIMIT
     );
-    const visibleRuns = await filterRunsWithArtifacts(listAllMatchRuns());
+    const visibleRuns = filterRuns(await filterRunsWithArtifacts(listAllMatchRuns()), query);
     const offset = (page - 1) * limit;
     const runs = visibleRuns.slice(offset, offset + limit);
 
@@ -603,6 +615,41 @@ function parseOptionalPositiveInteger(value: unknown, fallback: number): number 
 
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function filterRuns(runs: MatchRun[], query: Record<string, unknown>): MatchRun[] {
+  return runs.filter((run) => {
+    if (typeof query.clubId === "string" && run.home_club_id !== query.clubId && run.away_club_id !== query.clubId) {
+      return false;
+    }
+    if (typeof query.duration === "string" && run.summary.duration !== query.duration) {
+      return false;
+    }
+    if (typeof query.formation === "string" && !runUsesFormation(run, query.formation)) {
+      return false;
+    }
+    if (typeof query.batchId === "string" && run.batch_id !== query.batchId) {
+      return false;
+    }
+    if (query.seed !== undefined && Number(query.seed) !== run.seed) {
+      return false;
+    }
+    if (typeof query.from === "string" && run.created_at < query.from) {
+      return false;
+    }
+    if (typeof query.to === "string" && run.created_at > query.to) {
+      return false;
+    }
+    return true;
+  });
+}
+
+function runUsesFormation(run: MatchRun, formation: string): boolean {
+  return tacticFormation(run.home_tactics) === formation || tacticFormation(run.away_tactics) === formation;
+}
+
+function tacticFormation(tactics: unknown): string | null {
+  return isRecord(tactics) && typeof tactics.formation === "string" ? tactics.formation : null;
 }
 
 function safeSlug(value: string): string {
