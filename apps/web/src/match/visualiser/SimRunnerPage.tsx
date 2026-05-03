@@ -44,10 +44,18 @@ interface SquadResponse {
 interface TeamSelectionState {
   squad: SquadPlayer[];
   autoXi: RunLineupPlayer[];
+  bench: RunLineupPlayer[];
   selectedIds: string[];
   mode: "auto" | "manual";
   status: "idle" | "loading" | "error";
   error: string | null;
+}
+
+interface ScheduledSubState {
+  id: string;
+  minute: string;
+  playerOutId: string;
+  playerInId: string;
 }
 
 interface RunFilters {
@@ -78,6 +86,7 @@ const WIDTHS: TeamTactics["width"][] = ["normal", "wide", "narrow"];
 const EMPTY_TEAM_SELECTION: TeamSelectionState = {
   squad: [],
   autoXi: [],
+  bench: [],
   selectedIds: [],
   mode: "auto",
   status: "idle",
@@ -102,8 +111,11 @@ export function SimRunnerPage() {
   const [seed, setSeed] = useState(() => String(randomSeed()));
   const [batch, setBatch] = useState<1 | 50>(1);
   const [duration, setDuration] = useState<MatchDuration>("full_90");
+  const [autoSubs, setAutoSubs] = useState(true);
   const [homeSelection, setHomeSelection] = useState<TeamSelectionState>(EMPTY_TEAM_SELECTION);
   const [awaySelection, setAwaySelection] = useState<TeamSelectionState>(EMPTY_TEAM_SELECTION);
+  const [homeScheduledSubs, setHomeScheduledSubs] = useState<ScheduledSubState[]>([]);
+  const [awayScheduledSubs, setAwayScheduledSubs] = useState<ScheduledSubState[]>([]);
   const [history, setHistory] = useState<PersistedMatchRun[]>([]);
   const [runFilters, setRunFilters] = useState<RunFilters>(EMPTY_RUN_FILTERS);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
@@ -173,8 +185,19 @@ export function SimRunnerPage() {
       awayClubId.length > 0 &&
       seed.length > 0 &&
       validateSelection(homeSelection).valid &&
-      validateSelection(awaySelection).valid,
-    [awayClubId, awaySelection, homeClubId, homeSelection, seed, status]
+      validateSelection(awaySelection).valid &&
+      validateScheduledSubs(homeScheduledSubs, homeSelection).valid &&
+      validateScheduledSubs(awayScheduledSubs, awaySelection).valid,
+    [
+      awayClubId,
+      awayScheduledSubs,
+      awaySelection,
+      homeClubId,
+      homeScheduledSubs,
+      homeSelection,
+      seed,
+      status
+    ]
   );
 
   async function loadSquad(
@@ -203,6 +226,7 @@ export function SimRunnerPage() {
       setSelection({
         squad: squad.squad,
         autoXi: squad.autoXi,
+        bench: squad.bench,
         selectedIds: autoIds,
         mode: "auto",
         status: "idle",
@@ -250,18 +274,21 @@ export function SimRunnerPage() {
             tactics: homeTactics,
             ...(homeSelection.mode === "manual"
               ? { startingPlayerIds: homeSelection.selectedIds }
-              : {})
+              : {}),
+            scheduledSubstitutions: scheduledSubPayload(homeScheduledSubs)
           },
           away: {
             clubId: awayClubId,
             tactics: awayTactics,
             ...(awaySelection.mode === "manual"
               ? { startingPlayerIds: awaySelection.selectedIds }
-              : {})
+              : {}),
+            scheduledSubstitutions: scheduledSubPayload(awayScheduledSubs)
           },
           seed: parsedSeed,
           batch,
-          duration
+          duration,
+          autoSubs
         })
       });
       const payload = (await response.json()) as SimResponse | { error: string };
@@ -317,6 +344,8 @@ export function SimRunnerPage() {
           onClubChange={setHomeClubId}
           onTacticsChange={(nextTactics) => updateTactics("home", nextTactics)}
           onSelectionChange={setHomeSelection}
+          scheduledSubs={homeScheduledSubs}
+          onScheduledSubsChange={setHomeScheduledSubs}
         />
         <TeamPanel
           title="Away"
@@ -327,6 +356,8 @@ export function SimRunnerPage() {
           onClubChange={setAwayClubId}
           onTacticsChange={(nextTactics) => updateTactics("away", nextTactics)}
           onSelectionChange={setAwaySelection}
+          scheduledSubs={awayScheduledSubs}
+          onScheduledSubsChange={setAwayScheduledSubs}
         />
       </section>
 
@@ -340,6 +371,14 @@ export function SimRunnerPage() {
             <option value="full_90">Full match (90 min)</option>
             <option value="second_half">Second half (calibrated)</option>
           </select>
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={autoSubs}
+            onChange={(event) => setAutoSubs(event.target.checked)}
+          />
+          Auto Subs
         </label>
         <label>
           Seed
@@ -486,6 +525,7 @@ function LineupSummary({ run }: { run: PersistedMatchRun }) {
       <div className="lineup-mode-summary">
         <span>Home: {selectionLabel(run.summary.xiSelection?.home)}</span>
         <span>Away: {selectionLabel(run.summary.xiSelection?.away)}</span>
+        <span>Auto Subs: {run.summary.autoSubs === false ? "Off" : "On"}</span>
       </div>
       <div className="lineup-summary">
         <LineupColumn title="Home XI" players={xi.home} />
@@ -497,7 +537,52 @@ function LineupSummary({ run }: { run: PersistedMatchRun }) {
           </>
         ) : null}
       </div>
+      <SubstitutionSummary run={run} />
     </>
+  );
+}
+
+function SubstitutionSummary({ run }: { run: PersistedMatchRun }) {
+  const substitutions = run.summary.substitutions;
+  const home = substitutions?.home ?? [];
+  const away = substitutions?.away ?? [];
+  if (home.length === 0 && away.length === 0) {
+    return <p className="sim-runner-note">No substitutions recorded.</p>;
+  }
+
+  return (
+    <div className="lineup-summary">
+      <SubstitutionColumn title="Home substitutions" substitutions={home} />
+      <SubstitutionColumn title="Away substitutions" substitutions={away} />
+    </div>
+  );
+}
+
+function SubstitutionColumn({
+  title,
+  substitutions
+}: {
+  title: string;
+  substitutions: NonNullable<PersistedMatchRun["summary"]["substitutions"]>["home"];
+}) {
+  return (
+    <section>
+      <h3>{title}</h3>
+      {substitutions.length === 0 ? (
+        <p className="sim-runner-note">None</p>
+      ) : (
+        <ol>
+          {substitutions.map((substitution) => (
+            <li
+              key={`${substitution.playerOutId}-${substitution.playerInId}-${substitution.minute}`}
+            >
+              {substitution.minute}: {substitution.playerOutId} to {substitution.playerInId} (
+              {substitution.reason})
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }
 
@@ -628,7 +713,9 @@ function TeamPanel({
   selection,
   onClubChange,
   onTacticsChange,
-  onSelectionChange
+  onSelectionChange,
+  scheduledSubs,
+  onScheduledSubsChange
 }: {
   title: string;
   clubs: Fc25Club[];
@@ -638,6 +725,8 @@ function TeamPanel({
   onClubChange: (clubId: string) => void;
   onTacticsChange: (tactics: TeamTactics) => void;
   onSelectionChange: (selection: TeamSelectionState) => void;
+  scheduledSubs: ScheduledSubState[];
+  onScheduledSubsChange: (substitutions: ScheduledSubState[]) => void;
 }) {
   return (
     <section className="sim-runner-panel" aria-label={`${title} team setup`}>
@@ -654,6 +743,130 @@ function TeamPanel({
       </label>
       <TacticsControls tactics={tactics} onChange={onTacticsChange} />
       <SquadPicker title={`${title} squad`} selection={selection} onChange={onSelectionChange} />
+      <ScheduledSubsPanel
+        title={`${title} scheduled substitutions`}
+        selection={selection}
+        substitutions={scheduledSubs}
+        onChange={onScheduledSubsChange}
+      />
+    </section>
+  );
+}
+
+function ScheduledSubsPanel({
+  title,
+  selection,
+  substitutions,
+  onChange
+}: {
+  title: string;
+  selection: TeamSelectionState;
+  substitutions: ScheduledSubState[];
+  onChange: (substitutions: ScheduledSubState[]) => void;
+}) {
+  const starters = selection.selectedIds
+    .map((playerId) => selection.squad.find((player) => player.id === playerId))
+    .filter((player): player is SquadPlayer => Boolean(player));
+  const bench = selection.squad.filter((player) => !selection.selectedIds.includes(player.id));
+  const validation = validateScheduledSubs(substitutions, selection);
+
+  function updateSubstitution(id: string, patch: Partial<ScheduledSubState>): void {
+    onChange(
+      substitutions.map((substitution) =>
+        substitution.id === id ? { ...substitution, ...patch } : substitution
+      )
+    );
+  }
+
+  function addSubstitution(): void {
+    if (substitutions.length >= 5) {
+      return;
+    }
+    onChange([
+      ...substitutions,
+      {
+        id: String(Date.now() + substitutions.length),
+        minute: "65",
+        playerOutId: starters.find((player) => player.sourcePosition !== "GK")?.id ?? "",
+        playerInId: bench.find((player) => player.sourcePosition !== "GK")?.id ?? ""
+      }
+    ]);
+  }
+
+  return (
+    <section className="scheduled-subs" aria-label={title}>
+      <div className="squad-picker-header">
+        <div>
+          <h3>{title}</h3>
+          <p>Pre-match scheduled only. Manual picks override Auto Subs.</p>
+        </div>
+        <button type="button" onClick={addSubstitution} disabled={substitutions.length >= 5}>
+          Add sub
+        </button>
+      </div>
+      {!validation.valid ? <p className="error">{validation.message}</p> : null}
+      {substitutions.length === 0 ? (
+        <p className="sim-runner-note">No scheduled substitutions.</p>
+      ) : (
+        <div className="scheduled-subs-list">
+          {substitutions.map((substitution) => (
+            <div className="scheduled-sub-row" key={substitution.id}>
+              <label>
+                Minute
+                <input
+                  type="number"
+                  min="1"
+                  max="90"
+                  value={substitution.minute}
+                  onChange={(event) =>
+                    updateSubstitution(substitution.id, { minute: event.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Off
+                <select
+                  value={substitution.playerOutId}
+                  onChange={(event) =>
+                    updateSubstitution(substitution.id, { playerOutId: event.target.value })
+                  }
+                >
+                  <option value="">Select starter</option>
+                  {starters.map((player) => (
+                    <option key={player.id} value={player.id}>
+                      {player.shortName} ({player.sourcePosition})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                On
+                <select
+                  value={substitution.playerInId}
+                  onChange={(event) =>
+                    updateSubstitution(substitution.id, { playerInId: event.target.value })
+                  }
+                >
+                  <option value="">Select bench player</option>
+                  {bench.map((player) => (
+                    <option key={player.id} value={player.id}>
+                      {player.shortName} ({player.sourcePosition})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() =>
+                  onChange(substitutions.filter((candidate) => candidate.id !== substitution.id))
+                }
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -860,6 +1073,18 @@ function selectionLabel(selection: LineupSelectionSummary | undefined): string {
   return `${selection.mode === "manual" ? "Manual XI" : "Auto XI"} (${warningText})`;
 }
 
+function scheduledSubPayload(substitutions: ScheduledSubState[]): Array<{
+  minute: number;
+  playerOutId: string;
+  playerInId: string;
+}> {
+  return substitutions.map((substitution) => ({
+    minute: Number(substitution.minute),
+    playerOutId: substitution.playerOutId,
+    playerInId: substitution.playerInId
+  }));
+}
+
 function validateSelection(selection: TeamSelectionState): {
   valid: boolean;
   message: string | null;
@@ -893,6 +1118,44 @@ function validateSelection(selection: TeamSelectionState): {
       message: `Select exactly one goalkeeper; currently selected ${goalkeeperCount}.`
     };
   }
+  return { valid: true, message: null };
+}
+
+function validateScheduledSubs(
+  substitutions: ScheduledSubState[],
+  selection: TeamSelectionState
+): { valid: boolean; message: string | null } {
+  if (substitutions.length > 5) {
+    return { valid: false, message: "A team cannot schedule more than 5 substitutions." };
+  }
+  const starterIds = new Set(selection.selectedIds);
+  const benchIds = new Set(
+    selection.squad.filter((player) => !starterIds.has(player.id)).map((player) => player.id)
+  );
+  const usedOut = new Set<string>();
+  const usedIn = new Set<string>();
+
+  for (const substitution of substitutions) {
+    const minute = Number(substitution.minute);
+    if (!Number.isInteger(minute) || minute < 1 || minute > 90) {
+      return { valid: false, message: "Scheduled substitution minute must be 1-90." };
+    }
+    if (!starterIds.has(substitution.playerOutId)) {
+      return { valid: false, message: "Each scheduled player off must be in the selected XI." };
+    }
+    if (!benchIds.has(substitution.playerInId)) {
+      return { valid: false, message: "Each scheduled player on must be on the bench." };
+    }
+    if (usedOut.has(substitution.playerOutId)) {
+      return { valid: false, message: "A starter cannot be scheduled off more than once." };
+    }
+    if (usedIn.has(substitution.playerInId)) {
+      return { valid: false, message: "A bench player cannot be scheduled on more than once." };
+    }
+    usedOut.add(substitution.playerOutId);
+    usedIn.add(substitution.playerInId);
+  }
+
   return { valid: true, message: null };
 }
 

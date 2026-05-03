@@ -1,4 +1,10 @@
-import type { MatchDuration, Position, TeamTactics } from "@the-ataturk/match-engine";
+import type {
+  MatchDuration,
+  Position,
+  ScoreStateEventSummary,
+  SubstitutionSummary,
+  TeamTactics
+} from "@the-ataturk/match-engine";
 
 export interface RunLineupPlayer {
   id: string;
@@ -41,6 +47,16 @@ export interface SimRunSummary {
     home: LineupSelectionSummary;
     away: LineupSelectionSummary;
   };
+  autoSubs?: boolean;
+  substitutions?: {
+    home: SubstitutionSummary[];
+    away: SubstitutionSummary[];
+  };
+  endStamina?: {
+    home: Array<{ playerId: string; stamina: number }>;
+    away: Array<{ playerId: string; stamina: number }>;
+  };
+  scoreStateEvents?: ScoreStateEventSummary[];
 }
 
 export interface PersistedMatchRun {

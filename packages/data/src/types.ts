@@ -1,7 +1,9 @@
 import type {
   MatchDuration,
   PlayerInputV2,
-  Position as EnginePosition
+  Position as EnginePosition,
+  ScoreStateEventSummary,
+  SubstitutionSummary
 } from "@the-ataturk/match-engine";
 
 export const POSITIONS = ["GK", "CB", "LB", "RB", "DM", "CM", "AM", "LW", "RW", "ST"] as const;
@@ -489,6 +491,16 @@ export interface MatchRunSummary {
     home: MatchRunLineupSelection;
     away: MatchRunLineupSelection;
   };
+  autoSubs?: boolean;
+  substitutions?: {
+    home: SubstitutionSummary[];
+    away: SubstitutionSummary[];
+  };
+  endStamina?: {
+    home: Array<{ playerId: string; stamina: number }>;
+    away: Array<{ playerId: string; stamina: number }>;
+  };
+  scoreStateEvents?: ScoreStateEventSummary[];
 }
 
 export interface MatchRun {

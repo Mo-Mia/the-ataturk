@@ -139,6 +139,7 @@ export function BatchDistributionPage() {
       <section className="batch-lineup" aria-label="Batch line-up">
         <h2>Batch XI</h2>
         <BatchLineup run={runs[0]} />
+        <BatchSubstitutions runs={runs} />
       </section>
 
       <section className="batch-summary" aria-label="Batch summary statistics">
@@ -181,6 +182,22 @@ export function BatchDistributionPage() {
         ))}
       </section>
     </main>
+  );
+}
+
+function BatchSubstitutions({ runs }: { runs: PersistedMatchRun[] }) {
+  const counts = runs.map(
+    (run) =>
+      (run.summary.substitutions?.home.length ?? 0) + (run.summary.substitutions?.away.length ?? 0)
+  );
+  if (counts.length === 0) {
+    return null;
+  }
+  const summary = summarise(counts);
+  return (
+    <p className="sim-runner-note">
+      Substitutions per run: mean {summary.mean}, median {summary.median}, range {summary.range}.
+    </p>
   );
 }
 

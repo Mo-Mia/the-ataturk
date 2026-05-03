@@ -167,6 +167,7 @@ export function ComparePage() {
         <>
           <SummaryDiff runA={runA} runB={runB} />
           <LineupComparison runA={runA.run} runB={runB.run} />
+          <SubstitutionComparison runA={runA.run} runB={runB.run} />
           <section className="compare-grid" aria-label="Run comparison columns">
             <RunColumn title="Run A" loaded={runA} heatmapMax={sharedHeatmapMax} />
             <RunColumn title="Run B" loaded={runB} heatmapMax={sharedHeatmapMax} />
@@ -174,6 +175,37 @@ export function ComparePage() {
         </>
       ) : null}
     </main>
+  );
+}
+
+function SubstitutionComparison({
+  runA,
+  runB
+}: {
+  runA: PersistedMatchRun;
+  runB: PersistedMatchRun;
+}) {
+  return (
+    <section className="compare-lineups" aria-label="Substitution comparison">
+      <SubstitutionBlock title="Run A substitutions" run={runA} />
+      <SubstitutionBlock title="Run B substitutions" run={runB} />
+    </section>
+  );
+}
+
+function SubstitutionBlock({ title, run }: { title: string; run: PersistedMatchRun }) {
+  const home = run.summary.substitutions?.home ?? [];
+  const away = run.summary.substitutions?.away ?? [];
+  const count = home.length + away.length;
+  return (
+    <div>
+      <strong>{title}</strong>
+      <p>
+        {count === 0
+          ? "No substitutions recorded"
+          : `${home.length} home, ${away.length} away (${run.summary.autoSubs === false ? "Auto Subs off" : "Auto Subs on"})`}
+      </p>
+    </div>
   );
 }
 

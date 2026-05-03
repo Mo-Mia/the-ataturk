@@ -75,7 +75,8 @@ describe("SimRunnerPage", () => {
               pressing: "medium",
               lineHeight: "normal",
               width: "normal"
-            }
+            },
+            scheduledSubstitutions: []
           },
           away: {
             clubId: "manchester-city",
@@ -86,11 +87,13 @@ describe("SimRunnerPage", () => {
               pressing: "medium",
               lineHeight: "normal",
               width: "normal"
-            }
+            },
+            scheduledSubstitutions: []
           },
           seed: 42,
           batch: 1,
-          duration: "full_90"
+          duration: "full_90",
+          autoSubs: true
         })
       })
     );
