@@ -4,6 +4,30 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-03 — FootSim Phase 10 outcome: chance creation is low-effect unless chasing
+
+Phase 10 investigated the isolated chance-creation toggle anomaly surfaced by
+Phase 8. Repo truth corrected the prompt framing: Phase 8's `-7.14%` result was
+Liverpool final-15 shots, not overall match shots.
+
+The investigation used the Phase 9 methodology: 1000 paired seeds, Liverpool vs
+Manchester City, Auto Subs off, fatigue/score-state/set-pieces/side-switch on,
+and `chanceCreation: false` vs `chanceCreation: true`. A 50-seed sanity check
+with chance creation off produced zero `chance_created` events, confirming the
+flag disables the mechanism cleanly.
+
+Results: exact isolated final-15 Liverpool shots moved `+2.98%` with a 95% CI
+of `-5.23%` to `+11.20%` (Outcome 1, low-effect/noise). Exact isolated overall
+shots moved `+2.37%` with a 95% CI of `+0.04%` to `+4.69%` (Outcome 1,
+statistically detectable but below materiality). Forced-deficit final-15
+Liverpool shots moved `+43.99%` with a 95% CI of `+33.02%` to `+54.95%`
+(Outcome 2, real stable signal).
+
+Decision: no tuning and no Phase 7 refactor-impact investigation. Chance
+creation is low-effect in normal isolated play but highly meaningful when
+score-state urgency creates a late chase context. The useful behaviour is
+contextual, not absent.
+
 ## 2026-05-03 — FootSim Phase 8 resumed: calibration consolidation
 
 Phase 8 resumed after Phase 9 classified the manual XI rotation trajectory as

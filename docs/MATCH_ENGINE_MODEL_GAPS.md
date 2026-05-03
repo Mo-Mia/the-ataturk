@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-03 17:55 SAST
+Last updated: 2026-05-03 19:05 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -64,6 +64,10 @@ real FC25 data path:
   increased final-15 shots by 29.74% (`0.98 -> 1.27`).
 - Phase 8 locked a machine-readable calibration baseline and documented the
   calibration surface in `docs/CALIBRATION_REFERENCE.md`.
+- Phase 10 closed the chance-creation isolated-toggle anomaly. Exact isolated
+  chance creation is low-effect (`+2.98%` final-15 home shots, CI crosses zero),
+  but forced-deficit final-15 home shots rise by `+43.99%` across 1000 paired
+  seeds.
 
 See `docs/FOOTSIM_REAL_SQUAD_RESPONSIVENESS.md` for the full table.
 
@@ -78,12 +82,11 @@ agency, public API shape, or obvious UAT realism.
   engine does not yet model morale, chemistry, familiarity, or
   out-of-position discomfort beyond the attributes and position assignments
   already present.
-- **Chance-creation standalone strength**: the isolated chance-creation
-  feature flag moved final-15 shots by `-7.14%` in the Phase 8 real-squad
-  baseline. The headline score-state composition passes, but future
-  investigation should decide whether the isolated toggle is the wrong
-  diagnostic or whether progression-to-shot behaviour needs to be more visible
-  outside chase states.
+- **Chance creation outside chase contexts**: Phase 10 confirmed exact isolated
+  chance creation has low ordinary-match effect. This is accepted for now
+  because the forced-deficit signal is strong, but UAT may still ask for
+  progressive carries and through-balls to change open-play shot texture more
+  visibly outside late chase states.
 - **Penalty frequency in real-squad matchups**: synthetic full-match
   characterisation now has enough penalty volume for conversion checks, but the
   Liverpool vs Aston Villa real-squad set-piece diagnostic produced only 0.04

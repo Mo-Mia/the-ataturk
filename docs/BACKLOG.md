@@ -73,20 +73,18 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
+### Chance-creation-under-chase baseline monitoring
+Phase 10 closed the isolated-toggle anomaly: exact isolated chance creation is
+low-effect, but forced-deficit final-15 Liverpool shots rose by `+43.99%` across
+1000 paired seeds. Future score-state/chance-creation work should preserve this
+contextual signal unless deliberately rebaselined.
+
 ### Move set-piece taker weights into a calibration module
 Free-kick, corner, and penalty taker weights currently live in
 `packages/match-engine/src/state/initState.ts`. They are documented in
 `docs/CALIBRATION_REFERENCE.md` and covered by tests, but the locality is wrong.
 Move them into a dedicated calibration module when calibration files are next
 refactored.
-
-### Investigate isolated chance-creation toggle anomaly
-Phase 8's 200-seed baseline shows the isolated chance-creation toggle moving
-final-15 Liverpool shots by `-7.14%`, while the intended score-state shot-impact
-composition remains green at `+29.74%`. Do not tune blindly; investigate whether
-the isolated flag test is the wrong diagnostic, whether chance creation mostly
-works through score-state composition, or whether a source-specific probability
-is being swallowed by turnovers.
 
 ### Add focused sensitivity coverage for wide pass-target weights
 `PASS_TARGET_WEIGHTS` is documented and implicitly covered by UAT artefacts and
@@ -137,12 +135,12 @@ Current direction changes happen only at half-time. Extra-time quirks, abandoned
 matches, or special tournament rules could require more general break-state
 side-switching later.
 
-### Chance-creation standalone strength
-Phase 6 fixed the score-state composition issue: trailing teams now produce more
-late shots. The isolated chance-creation feature flag is still a weak standalone
-signal in the real-squad harness. Revisit if UAT shows progressive carries and
-through-balls still do not visibly resolve into enough open-play chances outside
-late chase states.
+### Chance-creation exact-isolated standalone strength
+Phase 10 confirmed exact isolated chance creation is low-effect: `+2.98%`
+final-15 Liverpool shots with CI crossing zero, and `+2.37%` overall total shots
+below materiality. This is acceptable because forced-deficit final-15 effect is
+strong, but revisit if UAT expects progressive carries and through-balls to
+change ordinary match shot volume more visibly.
 
 ### Corner routine choreography
 Current corners have calibrated takers, deliveries, aerial targets, and shot

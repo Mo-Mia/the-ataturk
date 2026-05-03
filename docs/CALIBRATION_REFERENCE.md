@@ -36,6 +36,13 @@ Methodological rule:
 - Personnel-impact experiments, including manual XI and likely set-piece taker
   quality, need paired-seed analysis at 1000+ seeds before firm conclusions.
 
+Phase 10 added a second case study. Chance creation's exact isolated final-15
+measurement moved from Phase 6 `+2.05%` to Phase 8 `-7.14%` to Phase 10
+`+2.98%` with a 95% CI crossing zero. The correct conclusion is low
+ordinary-context effect, not tuning. Under a forced late deficit, however, the
+same toggle produced `+43.99%` final-15 shots across 1000 paired seeds. Future
+chance-creation tests must state the tactical context they are measuring.
+
 ## Calibration Targets
 
 | Constant | Value | Location | Controls | Origin | Coverage | Sensitivity |
@@ -120,10 +127,10 @@ Methodological rule:
 | `distanceBand` | close `1.15`, box `1`, edge `0.62`, far/speculative `0` | `probabilities.ts:152` | Shot opportunity by distance | intuitive Phase 6 | implicit via characterisation | high |
 | `urgencyInfluence` and clamp | `0.9`, min `0.8`, max `1.35` | `probabilities.ts:156` | Score-state composition with chance creation | empirical Phase 6 | implicit via score-state shot impact | high |
 
-Phase 8 anomaly: the isolated chance-creation toggle was negative at 200 seeds
-while the intended score-state shot-impact composition passed. This is
-documented in `docs/CALIBRATION_BASELINE_PHASE_8.md` and tracked for future
-investigation; it is not tuned in Phase 8.
+Phase 10 closed the Phase 8 anomaly. Exact isolated chance creation is
+low-effect in ordinary match state, but strongly positive under late forced
+deficit. This is a context-sensitive mechanic; tests should not collapse those
+contexts into one threshold.
 
 ## Set Pieces
 
