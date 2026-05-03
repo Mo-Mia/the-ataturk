@@ -97,6 +97,46 @@ describe("UAT scenario artefacts", () => {
     );
     expect(existsSync(`${outputPath}.gz`)).toBe(true);
   });
+
+  it("generates a forced chance-creation replay", () => {
+    const outputPath = runScenarioScript(
+      "forcedChanceCreation.ts",
+      "forced-chance-creation-v2.json"
+    );
+    const snapshot = readSnapshot(outputPath);
+    const events = snapshot.ticks.flatMap((tick) => tick.events);
+
+    expect(events.some((event) => event.type === "chance_created" && event.team === "home")).toBe(
+      true
+    );
+    expect(
+      events.some(
+        (event) =>
+          event.type === "shot" &&
+          event.team === "home" &&
+          typeof event.detail?.chanceSource === "string"
+      )
+    ).toBe(true);
+    expect(existsSync(`${outputPath}.gz`)).toBe(true);
+  });
+
+  it("generates a forced set-piece replay", () => {
+    const outputPath = runScenarioScript(
+      "forcedSetPieceConversion.ts",
+      "forced-set-piece-conversion-v2.json"
+    );
+    const snapshot = readSnapshot(outputPath);
+    const events = snapshot.ticks.flatMap((tick) => tick.events);
+
+    expect(events.some((event) => event.type === "corner_taken" && event.team === "home")).toBe(
+      true
+    );
+    expect(events.some((event) => event.type === "penalty_taken" && event.team === "home")).toBe(
+      true
+    );
+    expect(snapshot.finalSummary.setPieces?.home.setPieceShots).toBeGreaterThanOrEqual(2);
+    expect(existsSync(`${outputPath}.gz`)).toBe(true);
+  });
 });
 
 function runScenarioScript(scriptName: string, fileName: string): string {

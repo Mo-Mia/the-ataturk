@@ -95,6 +95,45 @@ describe("carrier action selection", () => {
     );
   });
 
+  it("can convert an attacking-third progression into a shot opportunity", () => {
+    const state = buildInitState(createTestConfig(26));
+    const carrier = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "CM"
+    )!;
+    const striker = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "ST"
+    )!;
+    const keeper = state.players.find(
+      (player) => player.teamId === "away" && player.baseInput.position === "GK"
+    )!;
+
+    state.players.forEach((player) => {
+      player.onPitch = [carrier.id, striker.id, keeper.id].includes(player.id);
+      player.hasBall = player.id === carrier.id;
+    });
+    carrier.position = [340, 650];
+    striker.position = [340, 835];
+    carrier.baseInput.attributes.passing = 100;
+    striker.baseInput.attributes.shooting = 100;
+    striker.baseInput.attributes.perception = 100;
+    keeper.baseInput.attributes.saving = 0;
+    state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+    state.rng.int = () => 0;
+    state.rng.next = () => 0;
+
+    performPass(state, carrier);
+
+    expect(state.eventsThisTick.find((event) => event.type === "chance_created")?.detail).toEqual(
+      expect.objectContaining({
+        creatorPlayerId: carrier.id,
+        source: "through_ball",
+        convertedToShot: true,
+        pressure: "low"
+      })
+    );
+    expect(state.eventsThisTick.some((event) => event.type === "shot")).toBe(true);
+  });
+
   it("discourages repetitive passes between the two central strikers", () => {
     const state = buildInitState(createTestConfig(17));
     const strikers = state.players.filter(
@@ -115,6 +154,7 @@ describe("carrier action selection", () => {
     midfielder.position = [230, 760];
     carrier.baseInput.attributes.passing = 100;
     state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+    state.dynamics.chanceCreation = false;
     state.rng.int = () => 0;
     state.rng.next = () => 0;
 
@@ -224,6 +264,7 @@ describe("carrier action selection", () => {
     midfielder.position = [330, 620];
     carrier.baseInput.attributes.passing = 100;
     state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+    state.dynamics.chanceCreation = false;
     state.rng.int = () => 0;
     state.rng.next = () => 0;
 
@@ -267,6 +308,7 @@ describe("carrier action selection", () => {
     midfielder.position = [340, 650];
     carrier.baseInput.attributes.passing = 100;
     state.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
+    state.dynamics.chanceCreation = false;
     state.rng.int = () => 0;
     state.rng.next = () => 0;
 
