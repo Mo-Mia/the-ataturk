@@ -613,22 +613,16 @@ function parseFootballDataTeamResponse(value: unknown): FootballDataTeamResponse
 }
 
 function parseFootballDataSquadMember(value: unknown): FootballDataSquadMember {
-  if (
-    !isRecord(value) ||
-    typeof value.id !== "number" ||
-    typeof value.name !== "string" ||
-    typeof value.position !== "string" ||
-    typeof value.nationality !== "string"
-  ) {
+  if (!isRecord(value) || typeof value.id !== "number" || typeof value.name !== "string") {
     throw new Error("football-data.org squad member is malformed");
   }
 
   return {
     id: value.id,
     name: value.name,
-    position: value.position,
+    position: typeof value.position === "string" ? value.position : "Unknown",
     dateOfBirth: typeof value.dateOfBirth === "string" ? value.dateOfBirth : null,
-    nationality: value.nationality,
+    nationality: typeof value.nationality === "string" ? value.nationality : "Unknown",
     shirtNumber: typeof value.shirtNumber === "number" ? value.shirtNumber : null
   };
 }

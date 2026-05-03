@@ -120,8 +120,10 @@ describe("AI squad manager routes", () => {
 
       expect(verify.statusCode).toBe(200);
       const body = verify.json<VerifySquadTestResponse>();
+      const missingPlayer = body.verification.missingPlayers[0];
+      expect(missingPlayer).toBeDefined();
       expect(body.cacheStatus).toBe("miss");
-      expect(body.verification.missingPlayers[0].suggestionId).toMatch(/^sug-/);
+      expect(missingPlayer!.suggestionId).toMatch(/^sug-/);
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock.mock.calls[0]?.[0]).toBe("http://api.football-data.org/v4/teams/64");
       expect(genAiMocks.generateContent.mock.calls[0]?.[0].config.systemInstruction).toBe(
@@ -142,7 +144,7 @@ describe("AI squad manager routes", () => {
         payload: {
           clubId: "liverpool",
           baseDatasetVersionId: "fc25-base",
-          suggestions: [body.verification.missingPlayers[0]],
+          suggestions: [missingPlayer!],
           rationale: "Accepted from test"
         }
       });
@@ -188,6 +190,52 @@ describe("AI squad manager routes", () => {
 
       expect(response.statusCode).toBe(502);
       expect(response.json<ErrorResponse>().error).toContain("invalid JSON");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("accepts nullable optional football-data.org squad fields", async () => {
+    testDatabase = createFc25ServerDatabase("ai-squad-manager-null-live-fields");
+    process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
+    process.env.GEMINI_API_KEY = "gemini-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        jsonResponse({
+          id: 64,
+          name: "Liverpool FC",
+          squad: [
+            {
+              id: 999002,
+              name: "Nullable Midfielder",
+              position: null,
+              dateOfBirth: null,
+              nationality: null,
+              shirtNumber: null
+            }
+          ]
+        })
+      )
+    );
+    genAiMocks.generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        missingPlayers: [],
+        suggestions: [],
+        attributeWarnings: []
+      })
+    });
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/ai/verify-squad",
+        payload: { clubId: "liverpool", datasetVersionId: "fc25-base" }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json<VerifySquadTestResponse>().cacheStatus).toBe("miss");
     } finally {
       await app.close();
     }
