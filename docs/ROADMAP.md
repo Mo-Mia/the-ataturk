@@ -2,10 +2,15 @@
 
 This document outlines the strategic directions and major technical milestones for the project.
 
-## M1: Engine Expansion and Player Capabilities
-- Consolidate all the v2 engine refactors.
-- Refine player trait parsing in the newly expanded attribute scope.
-- Investigate and calibrate engine tuning parameters for tactical setups.
+## M1: FootSim Engine Maturity
+- **Complete:** v2 attribute bridge, FC25 ingestion, full-90 support,
+  formation-aware and manual XIs, persisted research workbench, comparison and
+  batch analysis.
+- **Complete:** Phase 5 in-match dynamics: fatigue, scheduled/manual
+  substitutions, AI Auto Subs, and score-state urgency.
+- **Next candidates:** score-state chance creation, true half-time side-switch,
+  live in-replay substitutions, injuries, commentary integration, and Atatürk
+  game-specific integration.
 
 ## M2: Squad and Data Management UI
 - **Phase 1: Basic Admin Pages** 
@@ -20,3 +25,5 @@ This document outlines the strategic directions and major technical milestones f
 ## M3: Live Gameplay Experiences
 - Expand the 2D Visualizer into a fully independent reactive replay ecosystem.
 - Implement mid-game Player adjustments ("Diving", etc.) as flagged in the Backlog.
+- Integrate the standalone match engine into The Atatürk's player-manager
+  half-time flow once the next FootSim maturity gate is selected.

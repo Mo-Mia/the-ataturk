@@ -2,9 +2,9 @@
 
 > **Repo name:** `the-ataturk`
 > **Display name:** The Atatürk
-> **Status:** Phase B Step 2B complete; local-first prototype in progress
+> **Status:** Local-first prototype in progress; FootSim engine workbench mature through Phase 5
 > **Owner:** Mo Mia
-> **Last updated:** 2026-04-30
+> **Last updated:** 2026-05-03
 
 ---
 
@@ -92,8 +92,28 @@ The project leans into Istanbul. The repo is `the-ataturk` (after the Atatürk O
 
 The framing fiction: *Rafa Benítez has reached half-time 3-0 down and, in a moment of crisis, hands control to the user: an unknown Liverpool reserve who somehow ended up in the matchday squad. The user has one dressing-room window to talk, change the plan, and decide whether to step onto the pitch.*
 
+## Current technical status
+
+The production `/match` vertical slice still uses the legacy
+`footballsimulationengine` wrapper while The Atatürk-specific game integration
+is parked. The custom TypeScript match engine has matured independently through
+FootSim: full-90 FC25 workbench runs, formation-aware/manual XIs, persisted run
+history, comparison and batch analysis, fatigue, scheduled/manual
+substitutions, AI Auto Subs, score-state urgency, and calibration/
+responsiveness harnesses.
+
+The next strategic decision is no longer "can the standalone engine support
+real football texture?" It can. The open question is whether to continue
+maturing FootSim as a reusable simulator or resume The Atatürk integration
+layer: half-time initialisation, player-manager UX, commentary/TTS, and the
+game-specific decision loop.
+
 ## Tech stack (one-line summary)
 
-Vite + React + TypeScript frontend, Node backend wrapping `footballsimulationengine` (npm), SQLite for state, Gemini 3 family for commentary, Gemini TTS or ElevenLabs for voice. Eventual deployment to Vercel.
+Vite + React + TypeScript frontend, Node backend, legacy
+`footballsimulationengine` wrapper for the current `/match` route, standalone
+TypeScript `@the-ataturk/match-engine` for FootSim and future integration,
+SQLite for state, Gemini 3 family for commentary, Gemini TTS or ElevenLabs for
+voice. Eventual deployment to Vercel.
 
 See `ARCHITECTURE.md` for detail.

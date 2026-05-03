@@ -195,12 +195,12 @@ second half. During Player Manager integration, tune whether the protagonist
 needs a more targeted shooting/composure boost or bespoke involvement logic so
 the player feels meaningfully influential without becoming a ball hog.
 
-### Define the real substitution API
-The responsiveness harness includes `__testApplyMidMatchAttributeSwap` for a
-scripted 60-minute swap. This intentionally proves engine sensitivity without
-creating a public substitution contract. Atatürk integration still needs a real
-substitution API covering bench state, player removal/addition, formation
-rebalancing, and event emission.
+### Adapt substitution API for Atatürk integration
+Phase 5 created the FootSim substitution contract: scheduled substitutions,
+bench state, player removal/addition, replacement events, and AI Auto Subs.
+Atatürk integration still needs game-specific rules around user-player
+self-substitution, historical 2004/05 substitution limits, and whether
+formation rebalancing is allowed during the Istanbul half.
 
 ### Revisit weak-foot compounding only if v2 finishing drifts
 The current v2 weak-foot model applies rated weak-foot penalties to both

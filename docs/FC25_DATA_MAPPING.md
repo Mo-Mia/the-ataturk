@@ -1,10 +1,12 @@
-# FC25 Data Mapping — FootSim Phase 1
+# FC25 Data Mapping — FootSim FC25 Ingestion
 
-Last updated: 2026-05-02
+Last updated: 2026-05-03
 
 This document fixes the sprint-1 mapping from `data/fc-25/male_players.csv`
 to the existing match-engine `PlayerInputV2` boundary. It is intentionally
-limited to five hardcoded Premier League clubs and second-half-only simulation.
+limited to five hardcoded Premier League clubs. Later FootSim phases now run
+full-90 matches by default and select XIs at simulate time, but the CSV mapping
+and import schema described here remain the source of truth for FC25 data.
 
 ## Source Files
 
@@ -157,10 +159,12 @@ Sprint-1 UI formation options:
 - `4-3-3`
 - `4-2-3-1`
 
-## Starter XI Compromise
+## Historical Starter XI Compromise
 
-The imported starting XI is formation-neutral and locked at ingest time. It is
-reused across all tactical formations in this sprint.
+Phase 1 imported a formation-neutral starting XI locked at ingest time and
+reused it across all tactical formations. This is retained here for historical
+context because `fc25_squads.squad_role` still exists for backward
+compatibility.
 
 Selection order:
 
@@ -174,8 +178,12 @@ Selection order:
 8. fallback missing slots with highest-OVR remaining outfield players
 
 Rows after the XI are assigned `sub` until seven substitutes are filled, then
-`reserve`. Formation-aware XI selection is deferred until the workbench grows
-squad/role selection.
+`reserve`.
+
+Current state: formation-aware XI selection is performed at simulate time by
+`packages/data/src/fc25/selectStartingXI.ts`, with manual XI override support
+through the `/visualise/run` workbench. The ingest-time `squad_role` value is no
+longer the source of truth for the XI used in a run.
 
 ## Implementation Commit Sequence
 

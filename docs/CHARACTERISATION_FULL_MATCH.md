@@ -1,6 +1,6 @@
 # Full-Match Characterisation
 
-Last updated: 2026-05-03 12:52 SAST
+Last updated: 2026-05-03 13:01 SAST
 
 ## Scope
 

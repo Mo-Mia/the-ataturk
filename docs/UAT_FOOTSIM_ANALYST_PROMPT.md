@@ -38,28 +38,29 @@ These are the engine's own per-match calibration targets, validated across 200 s
 
 | Metric | Target band | Current full-90 baseline |
 |---|---|---|
-| Total shots per match | 16–24 | 16.59 |
-| Total goals per match | 2–6 | 2.23 |
-| Total fouls per match | 8–16 | 9.73 |
-| Total cards per match | 2–6 | 2.75 |
-| Max single score share | ≤ 40% | 20% (0-0 most common) |
+| Total shots per match | 16–24 | 16.54 |
+| Total goals per match | 2–6 | 2.10 |
+| Total fouls per match | 8–16 | 9.86 |
+| Total cards per match | 2–6 | 2.70 |
+| Max single score share | ≤ 40% | comfortably below ceiling in latest full-match checks |
 
 A run that lands at 8 total shots is anomalous; a run at 28 total shots is also anomalous. Both are worth flagging. Variance across seeds is expected and **not** a calibration concern.
 
 ## Known limitations — do NOT flag these as concerns
 
-The following are deliberate Phase 3 deferrals tracked in BACKLOG. Reporting them as issues wastes triage time:
+The following are deliberate deferrals tracked in BACKLOG. Reporting them as
+issues wastes triage time:
 
-- **No player fatigue modelling.** Players don't tire over 90 minutes. Second halves play with the same energy as first halves.
 - **No true half-time side-switch.** Both halves play with the same attacking direction. The half-time event is emitted but teams don't physically swap ends.
-- **No substitutions.** Starting XI plays the full match.
 - **No extra time or penalties.** Matches end at 90:00 regardless of score.
 - **No in-match tactical changes.** Tactics are locked at kickoff.
 - **Only four formations supported.** 4-4-2, 4-3-1-2, 4-3-3, 4-2-3-1.
 - **Only five Premier League clubs available.** Arsenal, Manchester City, Manchester United, Liverpool, Aston Villa.
 - **No commentary.** Match output is stats and replay only.
-- **Score-state-aware behaviour not modelled.** A team trailing 0-3 plays the same as a team leading 3-0.
-- **XI is auto-selected, not user-editable.** No drag-and-drop XI builder.
+- **No live substitutions during replay.** Scheduled substitutions and AI Auto Subs exist, but live in-replay substitution control is deferred.
+- **No manual bench editor.** Manual starting XIs exist; bench selection is automatic.
+- **No drag-and-drop XI builder.** Manual XI selection is a squad list with starter toggles.
+- **Score-state chance creation is limited.** Urgency changes risk appetite and action distribution, but trailing teams do not yet reliably turn that risk into extra shots.
 
 If something seemingly broken turns out to be one of the above, note it but rank it P3.
 

@@ -6,11 +6,12 @@ The hook: AI-driven match commentary (text + voice) that makes a single match fe
 
 ## Status
 
-v0.1 scaffolding in progress. The legacy text-only match playback vertical
-slice is functional at `/match`. In parallel, the standalone TypeScript match
-engine now has a diagnostic snapshot visualiser at `/visualise` and an FC25
-sim-runner workbench at `/visualise/run`, with persisted run history,
-side-by-side comparison, and batch distribution analysis.
+Local prototype in active development. The legacy text-only match playback
+vertical slice remains functional at `/match`. In parallel, the standalone
+TypeScript match engine now drives the FootSim diagnostic workbench: replay at
+`/visualise`, FC25 sim runner at `/visualise/run`, persisted run history,
+side-by-side comparison, batch distribution analysis, manual XIs, fatigue,
+scheduled/manual substitutions, AI Auto Subs, and score-state urgency.
 
 ## Prerequisites
 
@@ -98,6 +99,8 @@ direct file paths rather than `/tree/` directory URLs.
 - [`packages/match-engine/src/state/matchState.ts`](packages/match-engine/src/state/matchState.ts)
 - [`packages/match-engine/src/state/initState.ts`](packages/match-engine/src/state/initState.ts)
 - [`packages/match-engine/src/state/momentum.ts`](packages/match-engine/src/state/momentum.ts)
+- [`packages/match-engine/src/state/stamina.ts`](packages/match-engine/src/state/stamina.ts)
+- [`packages/match-engine/src/state/scoreState.ts`](packages/match-engine/src/state/scoreState.ts)
 - [`packages/match-engine/src/ticks/runTick.ts`](packages/match-engine/src/ticks/runTick.ts)
 - [`packages/match-engine/src/ticks/movement.ts`](packages/match-engine/src/ticks/movement.ts)
 - [`packages/match-engine/src/ticks/ballPhysics.ts`](packages/match-engine/src/ticks/ballPhysics.ts)
@@ -113,6 +116,7 @@ direct file paths rather than `/tree/` directory URLs.
 - [`packages/match-engine/src/resolution/actions/tackle.ts`](packages/match-engine/src/resolution/actions/tackle.ts)
 - [`packages/match-engine/src/resolution/actions/dribble.ts`](packages/match-engine/src/resolution/actions/dribble.ts)
 - [`packages/match-engine/src/resolution/actions/clearance.ts`](packages/match-engine/src/resolution/actions/clearance.ts)
+- [`packages/match-engine/src/resolution/substitutions.ts`](packages/match-engine/src/resolution/substitutions.ts)
 
 ### V2 attribute bridge
 
@@ -144,6 +148,10 @@ direct file paths rather than `/tree/` directory URLs.
 - [`packages/match-engine/scripts/forcedSecondYellow.ts`](packages/match-engine/scripts/forcedSecondYellow.ts)
 - [`packages/match-engine/scripts/forcedEarlyGoal.ts`](packages/match-engine/scripts/forcedEarlyGoal.ts)
 - [`packages/match-engine/scripts/forcedHighMomentumAttack.ts`](packages/match-engine/scripts/forcedHighMomentumAttack.ts)
+- [`packages/match-engine/scripts/forcedSubstitution.ts`](packages/match-engine/scripts/forcedSubstitution.ts)
+- [`packages/match-engine/scripts/forcedFatigueImpact.ts`](packages/match-engine/scripts/forcedFatigueImpact.ts)
+- [`packages/match-engine/scripts/forcedLateComeback.ts`](packages/match-engine/scripts/forcedLateComeback.ts)
+- [`packages/data/src/fc25/realSquadResponsiveness.ts`](packages/data/src/fc25/realSquadResponsiveness.ts)
 - [`packages/match-engine/artifacts/representative-seed-1-v2.json.gz`](packages/match-engine/artifacts/representative-seed-1-v2.json.gz)
 - [`packages/match-engine/artifacts/responsiveness-report.json`](packages/match-engine/artifacts/responsiveness-report.json)
 - [`packages/match-engine/artifacts/forced-early-goal-v2.json.gz`](packages/match-engine/artifacts/forced-early-goal-v2.json.gz)
@@ -172,20 +180,26 @@ direct file paths rather than `/tree/` directory URLs.
 
 - [`packages/match-engine/test/state/initState.test.ts`](packages/match-engine/test/state/initState.test.ts)
 - [`packages/match-engine/test/state/momentum.test.ts`](packages/match-engine/test/state/momentum.test.ts)
+- [`packages/match-engine/test/state/fatigue.test.ts`](packages/match-engine/test/state/fatigue.test.ts)
+- [`packages/match-engine/test/state/scoreState.test.ts`](packages/match-engine/test/state/scoreState.test.ts)
 - [`packages/match-engine/test/ticks/runTick.test.ts`](packages/match-engine/test/ticks/runTick.test.ts)
 - [`packages/match-engine/test/resolution/carrierAction.test.ts`](packages/match-engine/test/resolution/carrierAction.test.ts)
 - [`packages/match-engine/test/resolution/pressure.test.ts`](packages/match-engine/test/resolution/pressure.test.ts)
 - [`packages/match-engine/test/integration/full_match.test.ts`](packages/match-engine/test/integration/full_match.test.ts)
 - [`packages/match-engine/test/integration/streaming.test.ts`](packages/match-engine/test/integration/streaming.test.ts)
 - [`packages/match-engine/test/integration/scenario_artifacts.test.ts`](packages/match-engine/test/integration/scenario_artifacts.test.ts)
+- [`packages/match-engine/test/integration/substitutions.test.ts`](packages/match-engine/test/integration/substitutions.test.ts)
 
 ### Canonical docs
 
-- [`docs/SESSION_STATUS_2026-05-02_1945_SAST.md`](docs/SESSION_STATUS_2026-05-02_1945_SAST.md)
+- [`docs/SESSION_STATUS_2026-05-03_1301_SAST.md`](docs/SESSION_STATUS_2026-05-03_1301_SAST.md)
+- [`docs/SESSION_STATUS_2026-05-03_1103_SAST.md`](docs/SESSION_STATUS_2026-05-03_1103_SAST.md)
 - [`docs/SESSION_STATUS_2026-05-01_1506_SAST.md`](docs/SESSION_STATUS_2026-05-01_1506_SAST.md)
 - [`docs/UAT_HANDOFF_2026-05-01_PRE_INTEGRATION.md`](docs/UAT_HANDOFF_2026-05-01_PRE_INTEGRATION.md)
 - [`docs/MATCH_ENGINE_MODEL_GAPS.md`](docs/MATCH_ENGINE_MODEL_GAPS.md)
 - [`docs/FC25_DATA_MAPPING.md`](docs/FC25_DATA_MAPPING.md)
+- [`docs/FOOTSIM_REAL_SQUAD_RESPONSIVENESS.md`](docs/FOOTSIM_REAL_SQUAD_RESPONSIVENESS.md)
+- [`docs/CHARACTERISATION_FULL_MATCH.md`](docs/CHARACTERISATION_FULL_MATCH.md)
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - [`docs/DECISIONS.md`](docs/DECISIONS.md)
 - [`docs/BACKLOG.md`](docs/BACKLOG.md)

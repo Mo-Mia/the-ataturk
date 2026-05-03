@@ -69,6 +69,20 @@ Snapshot ticks also expose diagnostic state that downstream consumers should not
 
 Momentum is intentionally kinematic-only: it influences support runs and team shape, but it does not directly modify shot or goal probabilities. This keeps pressure visible and narratable without creating runaway scoring feedback loops.
 
+Phase 5 added the first in-match dynamics bundle:
+
+- **Fatigue/stamina**: continuous per-tick drain, action-cost weighting, v2
+  stamina support, v1 agility-surrogate warning, and stamina-scaled movement,
+  pressure, passing, tackling, dribbling, and shooting.
+- **Substitutions**: pre-match scheduled manual substitutions, AI Auto Subs,
+  five-sub cap, cooldowns, substitution events, active-player replacement, and
+  final summary persistence.
+- **Score-state urgency**: a qualitative multiplier for late/deficit contexts
+  that shifts pressing, passing risk, and carrier action weighting around the
+  user's baseline tactics. It deliberately does not yet guarantee more shots
+  when chasing; chance creation under score-state pressure is tracked as a
+  Phase 6 modelling gap.
+
 The package includes two development harnesses:
 
 - Characterisation scripts for 50/100-seed calibration and score-distribution checks.
@@ -76,16 +90,19 @@ The package includes two development harnesses:
 
 The diagnostic visualiser at `/visualise` is a snapshot-replay tool for the standalone engine. It can load a local `.json` snapshot or browse safe `.json` artefacts exposed by the server from `packages/match-engine/artifacts` through `/api/visualiser/artifacts`. It renders replay, event log, stats, shape diagnostics, momentum/streak diagnostics, ball/player heatmaps, and player-relative heatmaps split by in-possession versus out-of-possession samples. This remains diagnostic tooling, not the production `/match` route.
 
-The FC25 workbench at `/visualise/run` is a sibling page, not a decomposition of
-`VisualiserPage.tsx`. It loads five-club FC25 squads from the existing SQLite
-database, submits the engine's six `TeamTactics` levers for each side, runs
-second-half-only batch simulations through `POST /api/match-engine/simulate`,
-and links successful runs back into `/visualise?artifact=...`.
+The FC25 workbench at `/visualise/run` is a sibling page. It loads five-club
+FC25 squads from the existing SQLite database, submits the engine's six
+`TeamTactics` levers for each side, runs full-90 simulations by default through
+`POST /api/match-engine/simulate`, and links successful runs back into
+`/visualise?artifact=...`. It also supports second-half diagnostic runs, manual
+starting XIs, Auto Subs, scheduled substitutions, persisted run history,
+side-by-side comparison, and batch distribution analysis.
 
 FC25 data lives in additive `fc25_*` tables in the existing Atatürk SQLite
 database. Imports are dataset-versioned and preserve previous imports. The
-first workbench slice uses a formation-neutral starter XI locked at ingest;
-formation-aware XI selection is deferred.
+Phase 1 formation-neutral starter-XI compromise has been retired:
+formation-aware XI selection now happens at simulate time, with optional manual
+XI override and persisted bench metadata.
 
 ## Tactics layer (we build this)
 
@@ -213,7 +230,7 @@ the-ataturk/
 │   └── src/
 │       ├── match/              # Match orchestration
 │       │   ├── half-time-state.ts   # Build MatchDetails from DB + engine
-│       │   ├── orchestrator.ts      # Async generator: 450 iterations
+│       │   ├── orchestrator.ts      # Legacy `/match` async generator
 │       │   ├── events.ts            # Semantic event extraction (deltas)
 │       │   └── run-smoke-match.ts   # Original smoke test runner
 │       ├── routes/
