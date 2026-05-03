@@ -1,6 +1,12 @@
 import type { Position } from "@the-ataturk/match-engine";
 
-import type { Fc25Position, Fc25SquadPlayer } from "../types";
+import type {
+  Fc25Position,
+  Fc25SquadPlayer,
+  LineupRoleFit,
+  LineupSelectionMode,
+  MatchRunLineupWarning
+} from "../types";
 
 export type SupportedFormation = "4-4-2" | "4-3-1-2" | "4-3-3" | "4-2-3-1";
 
@@ -28,31 +34,61 @@ const ADJACENT_POSITIONS: Record<Position, readonly Fc25Position[]> = {
 
 export class Fc25LineupSelectionError extends Error {
   readonly formation: string;
-  readonly role: Position;
+  readonly role?: Position;
 
-  constructor(formation: string, role: Position) {
-    super(`Could not select a ${role} for formation ${formation}`);
+  constructor(formation: string, role: Position, message?: string) {
+    super(message ?? `Could not select a ${role} for formation ${formation}`);
     this.name = "Fc25LineupSelectionError";
     this.formation = formation;
     this.role = role;
   }
 }
 
+export interface LineupAssignment {
+  role: Position;
+  playerId: string;
+  fit: LineupRoleFit;
+}
+
+export interface LineupSelectionResult {
+  mode: LineupSelectionMode;
+  xi: Fc25SquadPlayer[];
+  bench: Fc25SquadPlayer[];
+  assignments: LineupAssignment[];
+  warnings: MatchRunLineupWarning[];
+}
+
 export function selectStartingXI(
   squad: readonly Fc25SquadPlayer[],
   formation: SupportedFormation
 ): Fc25SquadPlayer[] {
-  const roles = FORMATION_TEMPLATES[formation];
-  const selected = new Set<string>();
+  return selectLineup(squad, formation).xi;
+}
 
-  return roles.map((role) => {
-    const player = selectPlayerForRole(squad, selected, formation, role);
-    selected.add(player.id);
-    return {
-      ...player,
-      position: role
-    };
-  });
+export function selectLineup(
+  squad: readonly Fc25SquadPlayer[],
+  formation: SupportedFormation,
+  manualPlayerIds?: readonly string[]
+): LineupSelectionResult {
+  if (!manualPlayerIds) {
+    const xi = selectAutoXi(squad, formation);
+    return resultFor("auto", squad, formation, xi);
+  }
+
+  const manualXi = selectedManualPlayers(squad, formation, manualPlayerIds);
+  return resultFor("manual", squad, formation, manualXi);
+}
+
+export function selectBench(
+  squad: readonly Fc25SquadPlayer[],
+  xi: readonly Fc25SquadPlayer[],
+  size = 7
+): Fc25SquadPlayer[] {
+  const starterIds = new Set(xi.map((player) => player.id));
+  return [...squad]
+    .filter((player) => !starterIds.has(player.id))
+    .sort(comparePlayers)
+    .slice(0, size);
 }
 
 export function supportedFormation(value: string): value is SupportedFormation {
@@ -104,8 +140,167 @@ function selectPlayerForRole(
   throw new Fc25LineupSelectionError(formation, role);
 }
 
+function selectAutoXi(
+  squad: readonly Fc25SquadPlayer[],
+  formation: SupportedFormation
+): Fc25SquadPlayer[] {
+  const roles = FORMATION_TEMPLATES[formation];
+  const selected = new Set<string>();
+
+  return roles.map((role) => {
+    const player = selectPlayerForRole(squad, selected, formation, role);
+    selected.add(player.id);
+    return {
+      ...player,
+      position: role
+    };
+  });
+}
+
+function selectedManualPlayers(
+  squad: readonly Fc25SquadPlayer[],
+  formation: SupportedFormation,
+  playerIds: readonly string[]
+): Fc25SquadPlayer[] {
+  if (playerIds.length !== 11) {
+    throw new Fc25LineupSelectionError(
+      formation,
+      "GK",
+      `Manual XI must contain exactly 11 players; received ${playerIds.length}`
+    );
+  }
+
+  const uniqueIds = new Set(playerIds);
+  if (uniqueIds.size !== playerIds.length) {
+    throw new Fc25LineupSelectionError(formation, "GK", "Manual XI contains duplicate players");
+  }
+
+  const playersById = new Map(squad.map((player) => [player.id, player]));
+  const selected = playerIds.map((playerId) => {
+    const player = playersById.get(playerId);
+    if (!player) {
+      throw new Fc25LineupSelectionError(
+        formation,
+        "GK",
+        `Manual XI contains unknown player '${playerId}'`
+      );
+    }
+    return player;
+  });
+
+  const goalkeeperCount = selected.filter((player) => player.sourcePosition === "GK").length;
+  if (goalkeeperCount !== 1) {
+    throw new Fc25LineupSelectionError(
+      formation,
+      "GK",
+      `Manual XI must contain exactly one goalkeeper; received ${goalkeeperCount}`
+    );
+  }
+
+  return selected;
+}
+
+function resultFor(
+  mode: LineupSelectionMode,
+  squad: readonly Fc25SquadPlayer[],
+  formation: SupportedFormation,
+  selectedPlayers: readonly Fc25SquadPlayer[]
+): LineupSelectionResult {
+  const assigned = assignRoles(selectedPlayers, formation);
+  const xi = assigned.map(({ player, role }) => ({ ...player, position: role }));
+  const assignments = assigned.map(({ role, player, fit }) => ({
+    role,
+    playerId: player.id,
+    fit
+  }));
+  const warnings = assigned
+    .filter(({ fit }) => fit === "adjacent" || fit === "out_of_position")
+    .map(({ role, player, fit }) => ({
+      code: fit === "adjacent" ? ("adjacent_fit" as const) : ("out_of_position" as const),
+      playerId: player.id,
+      playerName: player.name,
+      role,
+      sourcePosition: player.sourcePosition,
+      message:
+        fit === "adjacent"
+          ? `${player.shortName} is covering ${role} from ${player.sourcePosition}`
+          : `${player.shortName} is out of position at ${role} from ${player.sourcePosition}`
+    }));
+
+  return {
+    mode,
+    xi,
+    bench: selectBench(squad, xi),
+    assignments,
+    warnings
+  };
+}
+
+function assignRoles(
+  players: readonly Fc25SquadPlayer[],
+  formation: SupportedFormation
+): Array<{ role: Position; player: Fc25SquadPlayer; fit: LineupRoleFit }> {
+  const available = [...players];
+
+  return FORMATION_TEMPLATES[formation].map((role) => {
+    const candidate = bestRoleCandidate(available, role);
+    if (!candidate) {
+      throw new Fc25LineupSelectionError(formation, role);
+    }
+    available.splice(available.findIndex((player) => player.id === candidate.player.id), 1);
+    return candidate;
+  });
+}
+
+function bestRoleCandidate(
+  players: readonly Fc25SquadPlayer[],
+  role: Position
+): { role: Position; player: Fc25SquadPlayer; fit: LineupRoleFit } | null {
+  const candidates = players
+    .map((player) => ({ role, player, fit: roleFit(player, role), fitRank: roleFitRank(player, role) }))
+    .filter((candidate) => candidate.fitRank < Number.POSITIVE_INFINITY)
+    .sort(
+      (a, b) =>
+        a.fitRank - b.fitRank ||
+        b.player.overall - a.player.overall ||
+        a.player.id.localeCompare(b.player.id)
+    );
+
+  return candidates[0] ?? null;
+}
+
+function roleFit(player: Fc25SquadPlayer, role: Position): LineupRoleFit {
+  if (player.sourcePosition === role) {
+    return "exact";
+  }
+  if (player.alternativePositions.includes(role)) {
+    return "alternative";
+  }
+  if (
+    role !== "GK" &&
+    player.sourcePosition !== "GK" &&
+    ADJACENT_POSITIONS[role].some(
+      (position) =>
+        player.sourcePosition === position || player.alternativePositions.includes(position)
+    )
+  ) {
+    return "adjacent";
+  }
+  return "out_of_position";
+}
+
+function roleFitRank(player: Fc25SquadPlayer, role: Position): number {
+  const fit = roleFit(player, role);
+  if (role === "GK" && fit !== "exact") {
+    return Number.POSITIVE_INFINITY;
+  }
+  return { exact: 0, alternative: 1, adjacent: 2, out_of_position: 3 }[fit];
+}
+
 function bestPlayer(players: Fc25SquadPlayer[]): Fc25SquadPlayer | null {
-  return (
-    players.sort((a, b) => b.overall - a.overall || a.id.localeCompare(b.id))[0] ?? null
-  );
+  return players.sort(comparePlayers)[0] ?? null;
+}
+
+function comparePlayers(a: Fc25SquadPlayer, b: Fc25SquadPlayer): number {
+  return b.overall - a.overall || a.id.localeCompare(b.id);
 }

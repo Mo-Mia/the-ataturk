@@ -452,6 +452,24 @@ export interface MatchRunLineupPlayer {
   squadNumber?: number;
 }
 
+export type LineupSelectionMode = "auto" | "manual";
+export type LineupRoleFit = "exact" | "alternative" | "adjacent" | "out_of_position";
+export type LineupWarningCode = "adjacent_fit" | "out_of_position";
+
+export interface MatchRunLineupWarning {
+  code: LineupWarningCode;
+  playerId: string;
+  playerName: string;
+  role: EnginePosition;
+  sourcePosition: Fc25Position;
+  message: string;
+}
+
+export interface MatchRunLineupSelection {
+  mode: LineupSelectionMode;
+  warnings: MatchRunLineupWarning[];
+}
+
 export interface MatchRunSummary {
   score: { home: number; away: number };
   shots: { home: number; away: number };
@@ -462,6 +480,14 @@ export interface MatchRunSummary {
   xi?: {
     home: MatchRunLineupPlayer[];
     away: MatchRunLineupPlayer[];
+  };
+  bench?: {
+    home: MatchRunLineupPlayer[];
+    away: MatchRunLineupPlayer[];
+  };
+  xiSelection?: {
+    home: MatchRunLineupSelection;
+    away: MatchRunLineupSelection;
   };
 }
 

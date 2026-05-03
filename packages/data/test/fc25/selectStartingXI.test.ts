@@ -6,6 +6,7 @@ import {
   getDb,
   importFc25Dataset,
   loadFc25Squad,
+  selectLineup,
   selectStartingXI,
   type SupportedFormation
 } from "../../src";
@@ -118,6 +119,64 @@ describe("selectStartingXI", () => {
     const squad = loadLiverpoolSquad();
 
     expect(selectStartingXI(squad, "4-2-3-1")).toEqual(selectStartingXI(squad, "4-2-3-1"));
+  });
+
+  it("accepts a manual XI and creates deterministic bench metadata", () => {
+    const squad = loadLiverpoolSquad();
+    const autoXi = selectStartingXI(squad, "4-3-3");
+    const manualIds = autoXi.map((player) => player.id);
+
+    const lineup = selectLineup(squad, "4-3-3", manualIds);
+
+    expect(lineup.mode).toBe("manual");
+    expect(lineup.xi).toHaveLength(11);
+    expect(lineup.bench).toHaveLength(7);
+    expect(new Set([...lineup.xi, ...lineup.bench].map((player) => player.id)).size).toBe(18);
+    expect(lineup.assignments.map((assignment) => assignment.role)).toEqual([
+      "GK",
+      "LB",
+      "CB",
+      "CB",
+      "RB",
+      "DM",
+      "CM",
+      "CM",
+      "LW",
+      "ST",
+      "RW"
+    ]);
+  });
+
+  it("warns but permits manual out-of-position outfield selections", () => {
+    const baseSquad = loadLiverpoolSquad();
+    const manualIds = selectStartingXI(baseSquad, "4-3-3").map((player) => player.id);
+    const squad = baseSquad.map((player) =>
+      player.sourcePosition === "GK"
+        ? player
+        : { ...player, sourcePosition: "ST" as const, alternativePositions: [] }
+    );
+
+    const lineup = selectLineup(squad, "4-3-3", manualIds);
+
+    expect(lineup.warnings.some((warning) => warning.code === "out_of_position")).toBe(true);
+  });
+
+  it("rejects invalid manual XIs", () => {
+    const squad = loadLiverpoolSquad();
+    const autoIds = selectStartingXI(squad, "4-4-2").map((player) => player.id);
+    const noGoalkeeper = autoIds.filter(
+      (playerId) => squad.find((player) => player.id === playerId)?.sourcePosition !== "GK"
+    );
+
+    expect(() => selectLineup(squad, "4-4-2", autoIds.slice(0, 10))).toThrow(
+      Fc25LineupSelectionError
+    );
+    expect(() => selectLineup(squad, "4-4-2", [...autoIds.slice(0, 10), autoIds[0]!])).toThrow(
+      Fc25LineupSelectionError
+    );
+    expect(() => selectLineup(squad, "4-4-2", [...noGoalkeeper, "missing-player"])).toThrow(
+      Fc25LineupSelectionError
+    );
   });
 });
 
