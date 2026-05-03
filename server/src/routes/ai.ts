@@ -1,4 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { spawn } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { GoogleGenAI } from "@google/genai";
 import {
@@ -43,22 +47,16 @@ Rules:
 - missingPlayers are live players absent from local FC25 data.
 - suggestions are name spelling, FC25 position notation, nationality, or no-longer-in-club corrections.
 - attributeWarnings are local name/position/nationality/age values that conflict with live evidence.
-- Every item must include suggestionId, type, confidence, rationale, and enough player identifiers for deterministic apply.
+- Do not invent suggestionId values. The server will assign suggestionId values after validation.
+- Use only these type values: "player_addition", "player_update", "player_removal".
+- player_addition items must include livePlayerId.
+- player_update items must include playerId and changes.
+- player_removal items must include playerId.
+- Every item must include type, confidence, rationale, and enough player identifiers for deterministic apply.
 - Use FC25 positions only: GK, CB, LB, RB, DM, CM, AM, LM, RM, LW, RW, ST.
 - Do not suggest overall rating or individual stat changes.
 - Prefer "confidence": "low" when the evidence is broad or ambiguous.
 - Use en-GB spelling.`;
-
-const RECONCILIATION_RESPONSE_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    missingPlayers: { type: "array", items: { type: "object" } },
-    suggestions: { type: "array", items: { type: "object" } },
-    attributeWarnings: { type: "array", items: { type: "object" } }
-  },
-  required: ["missingPlayers", "suggestions", "attributeWarnings"]
-} as const;
 
 const FC25_POSITION_MAP: Record<string, Fc25Position> = {
   goalkeeper: "GK",
@@ -147,6 +145,10 @@ interface GeminiVerification {
   attributeWarnings: SquadManagerSuggestion[];
 }
 
+interface GeminiTextResponse {
+  text: string | undefined;
+}
+
 interface ErrorReply {
   error: string;
 }
@@ -160,6 +162,8 @@ const rateLimitGate = createSlidingWindowRateLimitGate({
   dayWindowMs: envInteger("FOOTBALL_DATA_RATE_LIMIT_DAY_WINDOW_MS", 86_400_000)
 });
 const cacheTtlMs = envInteger("FOOTBALL_DATA_CACHE_TTL_MS", 86_400_000);
+let footballDataCurlFallbackRunner = runFootballDataCurlFallback;
+let geminiCurlFallbackRunner = runGeminiCurlFallback;
 
 export function registerAiRoutes(app: FastifyInstance): void {
   app.get("/api/ai/squad-manager/context", () => {
@@ -260,9 +264,23 @@ export function registerAiRoutes(app: FastifyInstance): void {
   });
 }
 
+export function setGeminiCurlFallbackRunnerForTests(
+  runner: typeof runGeminiCurlFallback | undefined
+): void {
+  geminiCurlFallbackRunner = runner ?? runGeminiCurlFallback;
+}
+
+export function setFootballDataCurlFallbackRunnerForTests(
+  runner: typeof runFootballDataCurlFallback | undefined
+): void {
+  footballDataCurlFallbackRunner = runner ?? runFootballDataCurlFallback;
+}
+
 export function resetAiRouteStateForTests(): void {
   footballDataCache.clear();
   issuedSuggestions.clear();
+  footballDataCurlFallbackRunner = runFootballDataCurlFallback;
+  geminiCurlFallbackRunner = runGeminiCurlFallback;
   rateLimitGate.reset();
 }
 
@@ -365,11 +383,20 @@ async function fetchFootballDataTeam(clubId: Fc25ClubId): Promise<FootballDataTe
   }
 
   const teamId = FOOTBALL_DATA_TEAMS[clubId].footballDataTeamId;
-  const response = await fetch(`http://api.football-data.org/v4/teams/${teamId}`, {
-    headers: {
-      "X-Auth-Token": apiKey
+  let response: Response;
+  try {
+    response = await fetch(`http://api.football-data.org/v4/teams/${teamId}`, {
+      headers: {
+        "X-Auth-Token": apiKey
+      }
+    });
+  } catch (error) {
+    if (!isFetchTransportError(error)) {
+      throw error;
     }
-  });
+
+    return footballDataCurlFallbackRunner(apiKey, teamId);
+  }
 
   if (!response.ok) {
     if (response.status === 429) {
@@ -393,7 +420,13 @@ async function reconcileSquads(input: {
     throw new ReconciliationError("GEMINI_API_KEY is required for squad reconciliation");
   }
 
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      timeout: envInteger("GEMINI_SDK_TIMEOUT_MS", 5_000),
+      retryOptions: { attempts: 1 }
+    }
+  });
   const prompt = JSON.stringify(
     {
       localSquad: input.localSquad.map((player) => ({
@@ -410,19 +443,17 @@ async function reconcileSquads(input: {
   );
 
   try {
-    const response = await ai.models.generateContent({
-      model: SQUAD_RECONCILIATION_MODEL,
-      contents: prompt,
-      config: {
-        systemInstruction: DATA_VERACITY_RECONCILER_PROMPT,
-        temperature: 0.2,
-        thinkingConfig: {
-          thinkingBudget: 1024
-        },
-        responseMimeType: "application/json",
-        responseJsonSchema: RECONCILIATION_RESPONSE_SCHEMA
+    const request = buildGeminiSquadReconciliationRequest(prompt);
+    let response: GeminiTextResponse;
+    try {
+      response = await ai.models.generateContent(request);
+    } catch (error) {
+      if (!isGeminiSdkFallbackWorthyError(error)) {
+        throw error;
       }
-    });
+
+      response = await geminiCurlFallbackRunner(apiKey, request);
+    }
 
     return normaliseGeminiVerification(response.text, input.liveSquad);
   } catch (error) {
@@ -432,6 +463,184 @@ async function reconcileSquads(input: {
 
     throw new ReconciliationError(`Gemini squad reconciliation failed: ${errorMessage(error)}`);
   }
+}
+
+function buildGeminiSquadReconciliationRequest(prompt: string) {
+  return {
+    model: SQUAD_RECONCILIATION_MODEL,
+    contents: prompt,
+    config: {
+      systemInstruction: DATA_VERACITY_RECONCILER_PROMPT,
+      temperature: 0.2,
+      thinkingConfig: {
+        thinkingBudget: 1024
+      },
+      responseMimeType: "application/json"
+    }
+  };
+}
+
+async function runGeminiCurlFallback(
+  apiKey: string,
+  request: ReturnType<typeof buildGeminiSquadReconciliationRequest>
+): Promise<GeminiTextResponse> {
+  const body = JSON.stringify({
+    contents: [{ role: "user", parts: [{ text: request.contents }] }],
+    systemInstruction: { parts: [{ text: request.config.systemInstruction }] },
+    generationConfig: {
+      temperature: request.config.temperature,
+      thinkingConfig: request.config.thinkingConfig,
+      responseMimeType: request.config.responseMimeType
+    }
+  });
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${request.model}:generateContent`;
+  const tempDirectory = await mkdtemp(join(tmpdir(), "footsim-gemini-"));
+  const bodyPath = join(tempDirectory, "request.json");
+
+  try {
+    await writeFile(bodyPath, body, "utf8");
+    const config = [
+      `url = "${url}"`,
+      'request = "POST"',
+      'header = "Content-Type: application/json"',
+      `header = "x-goog-api-key: ${apiKey}"`,
+      `max-time = ${envInteger("GEMINI_CURL_TIMEOUT_SECONDS", 60)}`,
+      "silent",
+      "show-error",
+      `data-binary = "@${bodyPath}"`
+    ].join("\n");
+    const result = await runCurlWithConfig(`${config}\n`);
+    if (result.statusCode >= 400) {
+      throw new Error(`Gemini curl fallback failed with HTTP ${result.statusCode}: ${result.body}`);
+    }
+    return parseGeminiRestResponse(result.body);
+  } finally {
+    await rm(tempDirectory, { recursive: true, force: true });
+  }
+}
+
+async function runFootballDataCurlFallback(
+  apiKey: string,
+  teamId: number
+): Promise<FootballDataTeamResponse> {
+  const config = [
+    `url = "http://api.football-data.org/v4/teams/${teamId}"`,
+    'header = "Accept: application/json"',
+    `header = "X-Auth-Token: ${apiKey}"`,
+    `max-time = ${envInteger("FOOTBALL_DATA_CURL_TIMEOUT_SECONDS", 20)}`,
+    "silent",
+    "show-error"
+  ].join("\n");
+  const result = await runCurlWithConfig(`${config}\n`);
+
+  if (result.statusCode === 429) {
+    throw new RateLimitError("football-data.org returned 429", 60);
+  }
+  if (result.statusCode >= 400) {
+    throw new Error(`football-data.org curl fallback failed with ${result.statusCode}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(result.body);
+  } catch {
+    throw new Error("football-data.org curl fallback returned invalid JSON");
+  }
+
+  return parseFootballDataTeamResponse(parsed);
+}
+
+function runCurlWithConfig(config: string): Promise<{ body: string; statusCode: number }> {
+  return new Promise((resolve, reject) => {
+    const curl = spawn("curl", ["--config", "-", "--write-out", "\n%{http_code}"], {
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+
+    curl.stdout.setEncoding("utf8");
+    curl.stderr.setEncoding("utf8");
+    curl.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+    curl.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+    curl.on("error", (error) => {
+      reject(error);
+    });
+    curl.on("close", (code) => {
+      const statusMatch = stdout.match(/\n(\d{3})$/);
+      const statusCode = statusMatch ? Number.parseInt(statusMatch[1]!, 10) : undefined;
+      const responseBody = statusMatch ? stdout.slice(0, -4) : stdout;
+
+      if (code !== 0) {
+        reject(
+          new Error(
+            `curl fallback failed${statusCode ? ` with HTTP ${statusCode}` : ""}: ${
+              responseBody.trim() || stderr.trim() || `curl exited with code ${code ?? "unknown"}`
+            }`
+          )
+        );
+        return;
+      }
+
+      resolve({ body: responseBody, statusCode: statusCode ?? 0 });
+    });
+
+    curl.stdin.end(config);
+  });
+}
+
+function parseGeminiRestResponse(raw: string): GeminiTextResponse {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new ReconciliationError("Gemini curl fallback returned invalid JSON");
+  }
+
+  if (!isRecord(parsed) || !Array.isArray(parsed.candidates)) {
+    throw new ReconciliationError("Gemini curl fallback response is malformed");
+  }
+
+  const candidates = parsed.candidates as unknown[];
+  const firstCandidate = candidates[0];
+  const parts =
+    isRecord(firstCandidate) &&
+    isRecord(firstCandidate.content) &&
+    Array.isArray(firstCandidate.content.parts)
+      ? (firstCandidate.content.parts as unknown[])
+      : undefined;
+  const textPart = parts?.find((part) => isRecord(part) && typeof part.text === "string");
+
+  if (!isRecord(textPart) || typeof textPart.text !== "string") {
+    throw new ReconciliationError("Gemini curl fallback response did not include text");
+  }
+
+  return { text: textPart.text };
+}
+
+function isFetchTransportError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const cause = "cause" in error ? error.cause : undefined;
+  const causeCode = isRecord(cause) && typeof cause.code === "string" ? cause.code : undefined;
+  return (
+    error.message === "fetch failed" &&
+    (causeCode === undefined ||
+      ["ENOTFOUND", "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT", "EAI_AGAIN"].includes(causeCode))
+  );
+}
+
+function isGeminiSdkFallbackWorthyError(error: unknown): boolean {
+  if (isFetchTransportError(error)) {
+    return true;
+  }
+
+  return error instanceof Error && error.message.includes("Bad Request sending request");
 }
 
 function normaliseGeminiVerification(
@@ -487,12 +696,13 @@ function normaliseSuggestion(
 
   const suggestionId = `sug-${randomUUID()}`;
   const rationale = typeof item.rationale === "string" ? item.rationale : undefined;
-  const type =
+  const type = normaliseSuggestionType(
     typeof item.type === "string"
       ? item.type
       : fieldName === "missingPlayers"
         ? "player_addition"
-        : undefined;
+        : undefined
+  );
 
   if (type === "player_update") {
     const playerId = stringField(item.playerId ?? item.localPlayerId, "playerId");
@@ -550,6 +760,39 @@ function normaliseSuggestion(
   }
 
   throw new ReconciliationError(`Unsupported Gemini suggestion type in '${fieldName}'`);
+}
+
+function normaliseSuggestionType(
+  value: string | undefined
+): SquadManagerSuggestion["type"] | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalised = value.toLowerCase().replaceAll("-", "_").replaceAll(" ", "_");
+  if (["player_addition", "missing_player", "transfer_in", "new_player"].includes(normalised)) {
+    return "player_addition";
+  }
+  if (
+    [
+      "player_update",
+      "attribute_update",
+      "attribute_warning",
+      "name_update",
+      "position_update",
+      "nationality_update",
+      "age_update"
+    ].includes(normalised)
+  ) {
+    return "player_update";
+  }
+  if (
+    ["player_removal", "no_longer_in_club", "transfer_out", "removed_player"].includes(normalised)
+  ) {
+    return "player_removal";
+  }
+
+  return undefined;
 }
 
 function rememberIssuedSuggestions(
@@ -772,7 +1015,52 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Request failed";
+  if (!(error instanceof Error)) {
+    return "Request failed";
+  }
+
+  const details: string[] = [error.message];
+  if (isRecord(error)) {
+    const status = typeof error.status === "number" ? error.status : undefined;
+    const code =
+      typeof error.code === "string" || typeof error.code === "number" ? error.code : undefined;
+    const errorDetails =
+      error.details ??
+      error.errorDetails ??
+      error.response ??
+      error.body ??
+      error.data ??
+      undefined;
+
+    if (status !== undefined) {
+      details.push(`status ${status}`);
+    }
+    if (code !== undefined) {
+      details.push(`code ${code}`);
+    }
+    if (errorDetails !== undefined) {
+      details.push(`details ${safeErrorDetails(errorDetails)}`);
+    }
+  }
+
+  const cause = "cause" in error ? error.cause : undefined;
+  if (cause instanceof Error && cause.message !== error.message) {
+    details.push(`cause ${cause.message}`);
+  }
+
+  return details.join("; ");
+}
+
+function safeErrorDetails(value: unknown): string {
+  if (typeof value === "string") {
+    return value.slice(0, 500);
+  }
+
+  try {
+    return JSON.stringify(value).slice(0, 500);
+  } catch {
+    return "unserialisable";
+  }
 }
 
 class RateLimitError extends Error {

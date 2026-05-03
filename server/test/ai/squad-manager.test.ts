@@ -25,7 +25,9 @@ import {
   DATA_VERACITY_RECONCILER_PROMPT,
   FOOTBALL_DATA_TEAMS,
   createSlidingWindowRateLimitGate,
-  resetAiRouteStateForTests
+  resetAiRouteStateForTests,
+  setFootballDataCurlFallbackRunnerForTests,
+  setGeminiCurlFallbackRunnerForTests
 } from "../../src/routes/ai";
 import { createServerTestDatabase, type TestDatabase } from "../admin/test-db";
 
@@ -236,6 +238,137 @@ describe("AI squad manager routes", () => {
       });
 
       expect(response.statusCode).toBe(200);
+      expect(response.json<VerifySquadTestResponse>().cacheStatus).toBe("miss");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("falls back to Gemini REST via curl when the SDK transport cannot resolve DNS", async () => {
+    testDatabase = createFc25ServerDatabase("ai-squad-manager-gemini-curl-fallback");
+    process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
+    process.env.GEMINI_API_KEY = "gemini-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        jsonResponse({
+          id: 64,
+          name: "Liverpool FC",
+          squad: []
+        })
+      )
+    );
+    const transportError = new TypeError("fetch failed", {
+      cause: Object.assign(new Error("getaddrinfo ENOTFOUND generativelanguage.googleapis.com"), {
+        code: "ENOTFOUND"
+      })
+    });
+    genAiMocks.generateContent.mockRejectedValue(transportError);
+    const fallback = vi.fn().mockResolvedValue({
+      text: JSON.stringify({
+        missingPlayers: [],
+        suggestions: [],
+        attributeWarnings: []
+      })
+    });
+    setGeminiCurlFallbackRunnerForTests(fallback);
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/ai/verify-squad",
+        payload: { clubId: "liverpool", datasetVersionId: "fc25-base" }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(fallback).toHaveBeenCalledTimes(1);
+      expect(response.json<VerifySquadTestResponse>().cacheStatus).toBe("miss");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("falls back to Gemini REST via curl when the SDK rejects an otherwise valid request", async () => {
+    testDatabase = createFc25ServerDatabase("ai-squad-manager-gemini-sdk-bad-request-fallback");
+    process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
+    process.env.GEMINI_API_KEY = "gemini-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        jsonResponse({
+          id: 64,
+          name: "Liverpool FC",
+          squad: []
+        })
+      )
+    );
+    genAiMocks.generateContent.mockRejectedValue(
+      new Error("Non-retryable exception Bad Request sending request")
+    );
+    const fallback = vi.fn().mockResolvedValue({
+      text: JSON.stringify({
+        missingPlayers: [],
+        suggestions: [],
+        attributeWarnings: []
+      })
+    });
+    setGeminiCurlFallbackRunnerForTests(fallback);
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/ai/verify-squad",
+        payload: { clubId: "liverpool", datasetVersionId: "fc25-base" }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(fallback).toHaveBeenCalledTimes(1);
+      expect(response.json<VerifySquadTestResponse>().cacheStatus).toBe("miss");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("falls back to football-data.org via curl when Node fetch cannot resolve DNS", async () => {
+    testDatabase = createFc25ServerDatabase("ai-squad-manager-football-data-curl-fallback");
+    process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
+    process.env.GEMINI_API_KEY = "gemini-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockRejectedValue(
+        new TypeError("fetch failed", {
+          cause: Object.assign(new Error("getaddrinfo ENOTFOUND api.football-data.org"), {
+            code: "ENOTFOUND"
+          })
+        })
+      )
+    );
+    const fallback = vi.fn().mockResolvedValue({
+      id: 64,
+      name: "Liverpool FC",
+      squad: []
+    });
+    setFootballDataCurlFallbackRunnerForTests(fallback);
+    genAiMocks.generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        missingPlayers: [],
+        suggestions: [],
+        attributeWarnings: []
+      })
+    });
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/ai/verify-squad",
+        payload: { clubId: "liverpool", datasetVersionId: "fc25-base" }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(fallback).toHaveBeenCalledWith("football-data-key", 64);
       expect(response.json<VerifySquadTestResponse>().cacheStatus).toBe("miss");
     } finally {
       await app.close();
