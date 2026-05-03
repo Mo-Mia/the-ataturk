@@ -9,6 +9,33 @@ for (const comparison of report.comparisons) {
       `(${comparison.baselineAverage.toFixed(2)} -> ${comparison.variantAverage.toFixed(2)})`
   );
 }
+console.log(
+  `Fatigue impact: ${report.phase5.fatigueImpact.deltaPct.toFixed(2)}% ${report.phase5.fatigueImpact.status} ` +
+    `(${report.phase5.fatigueImpact.baselineAverage.toFixed(2)} -> ${report.phase5.fatigueImpact.variantAverage.toFixed(2)})`
+);
+console.log(
+  `Score-state impact: ${report.phase5.scoreStateImpact.deltaPct.toFixed(2)}% ${report.phase5.scoreStateImpact.status} ` +
+    `(${report.phase5.scoreStateImpact.baselineAverage.toFixed(2)} -> ${report.phase5.scoreStateImpact.variantAverage.toFixed(2)})`
+);
+console.log(
+  `Score-state diagnostics: urgency ${report.phase5.scoreStateDiagnostics.baseline.final15AverageUrgency.toFixed(2)} -> ` +
+    `${report.phase5.scoreStateDiagnostics.variant.final15AverageUrgency.toFixed(2)}, ` +
+    `shots ${report.phase5.scoreStateDiagnostics.baseline.final15Shots.toFixed(2)} -> ` +
+    `${report.phase5.scoreStateDiagnostics.variant.final15Shots.toFixed(2)}, ` +
+    `possession ticks ${report.phase5.scoreStateDiagnostics.baseline.final15PossessionTicks.toFixed(2)} -> ` +
+    `${report.phase5.scoreStateDiagnostics.variant.final15PossessionTicks.toFixed(2)}`
+);
+console.log(
+  `Auto Subs impact: ${report.phase5.subImpact.status}; shifted metrics ${report.phase5.subImpact.shiftedMetrics.length}`
+);
+if (report.phase5.subImpact.substitutionDiagnostics) {
+  const diagnostics = report.phase5.subImpact.substitutionDiagnostics;
+  console.log(
+    `Auto Subs diagnostics: avg ${diagnostics.averageTotalSubs.toFixed(2)} total, ` +
+      `${diagnostics.averageHomeSubs.toFixed(2)} home, ${diagnostics.averageAwaySubs.toFixed(2)} away; ` +
+      `${diagnostics.zeroSubMatches} zero-sub matches; max ${diagnostics.maxSubsInMatch}`
+  );
+}
 console.log(`Pass: ${report.pass ? "yes" : "no"}`);
 
 if (!report.pass) {

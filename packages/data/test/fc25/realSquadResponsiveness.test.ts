@@ -60,6 +60,9 @@ describe("real-squad responsiveness helpers", () => {
     expect(report.seeds).toBe(2);
     expect(report.comparisons).toHaveLength(4);
     expect(report.diagnostics).toHaveLength(1);
+    expect(report.phase5.fatigueImpact.name).toBe("Fatigue impact");
+    expect(report.phase5.subImpact.name).toBe("Auto Subs impact");
+    expect(report.phase5.scoreStateImpact.name).toBe("Score-state impact");
     expect(report.rotation.description).toContain("top three highest-overall outfield starters");
-  });
+  }, 15_000);
 });
