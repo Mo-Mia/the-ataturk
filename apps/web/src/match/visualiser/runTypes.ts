@@ -8,6 +8,20 @@ export interface RunLineupPlayer {
   squadNumber?: number;
 }
 
+export interface LineupWarning {
+  code: "adjacent_fit" | "out_of_position";
+  playerId: string;
+  playerName: string;
+  role: Position;
+  sourcePosition: Position;
+  message: string;
+}
+
+export interface LineupSelectionSummary {
+  mode: "auto" | "manual";
+  warnings: LineupWarning[];
+}
+
 export interface SimRunSummary {
   score: { home: number; away: number };
   shots: { home: number; away: number };
@@ -18,6 +32,14 @@ export interface SimRunSummary {
   xi?: {
     home: RunLineupPlayer[];
     away: RunLineupPlayer[];
+  };
+  bench?: {
+    home: RunLineupPlayer[];
+    away: RunLineupPlayer[];
+  };
+  xiSelection?: {
+    home: LineupSelectionSummary;
+    away: LineupSelectionSummary;
   };
 }
 

@@ -233,6 +233,54 @@ pre {
   margin-top: 14px;
 }
 
+.squad-picker {
+  border-top: 1px solid #d4d0c4;
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+.squad-picker-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.squad-picker-header h3,
+.squad-picker-header p {
+  margin: 0 0 6px;
+}
+
+.squad-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.squad-picker-actions button {
+  min-height: 32px;
+}
+
+.squad-picker-list {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  margin-top: 10px;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.squad-picker-row {
+  align-items: center;
+  border: 1px solid #e4dfd3;
+  display: grid;
+  font-weight: 400;
+  gap: 8px;
+  grid-template-columns: auto minmax(0, 1fr) 36px 32px;
+  padding: 6px 8px;
+}
+
 .sim-runner-controls {
   display: flex;
   align-items: end;
@@ -270,6 +318,13 @@ pre {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   text-align: left;
+}
+
+.lineup-mode-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
 }
 
 .lineup-summary h3,

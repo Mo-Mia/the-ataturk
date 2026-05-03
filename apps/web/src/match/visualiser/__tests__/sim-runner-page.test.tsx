@@ -21,6 +21,8 @@ describe("SimRunnerPage", () => {
       .fn()
       .mockResolvedValueOnce(jsonResponse(clubs))
       .mockResolvedValueOnce(jsonResponse(runList([])))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("liverpool", "home")))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("manchester-city", "away")))
       .mockResolvedValueOnce(
         jsonResponse({
           runs: [
@@ -51,11 +53,11 @@ describe("SimRunnerPage", () => {
 
     render(<SimRunnerPage />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
     fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "42" } });
     fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
     expect(fetchMock).toHaveBeenLastCalledWith(
       "/api/match-engine/simulate",
       expect.objectContaining({
@@ -109,6 +111,8 @@ describe("SimRunnerPage", () => {
       .fn()
       .mockResolvedValueOnce(jsonResponse(clubs))
       .mockResolvedValueOnce(jsonResponse(runList([])))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("liverpool", "home")))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("manchester-city", "away")))
       .mockResolvedValueOnce(
         jsonResponse({
           runs: [
@@ -143,11 +147,11 @@ describe("SimRunnerPage", () => {
 
     render(<SimRunnerPage />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
     fireEvent.change(screen.getByLabelText("Match duration"), { target: { value: "second_half" } });
     fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
     expect(fetchMock.mock.calls.at(-1)?.[0]).toBe("/api/match-engine/simulate");
     const requestInit = fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
     if (typeof requestInit.body !== "string") {
@@ -182,6 +186,8 @@ describe("SimRunnerPage", () => {
       .fn()
       .mockResolvedValueOnce(jsonResponse(clubs))
       .mockResolvedValueOnce(jsonResponse(runList([])))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("liverpool", "home")))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("manchester-city", "away")))
       .mockResolvedValueOnce(
         jsonResponse({
           runs: [
@@ -211,14 +217,43 @@ describe("SimRunnerPage", () => {
 
     render(<SimRunnerPage />);
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
     fireEvent.change(screen.getByLabelText("Seed"), { target: { value: "50" } });
     fireEvent.change(screen.getByLabelText("Batch"), { target: { value: "50" } });
     fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
     expect(screen.getByText("2-1")).toBeTruthy();
     expect(screen.getByText("Seed 51: Synthetic run failure")).toBeTruthy();
+  });
+
+  it("submits manual starting ids after auto-filling the remainder", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(clubs))
+      .mockResolvedValueOnce(jsonResponse(runList([])))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("liverpool", "home")))
+      .mockResolvedValueOnce(jsonResponse(squadResponse("manchester-city", "away")))
+      .mockResolvedValueOnce(jsonResponse({ runs: [], errors: [] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<SimRunnerPage />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
+    const homeSquad = screen.getByLabelText("Home squad");
+    fireEvent.click(within(homeSquad).getByLabelText(/Home 2/));
+    expect(screen.getByText("10 / 11 selected · Manual XI")).toBeTruthy();
+    fireEvent.click(within(homeSquad).getByRole("button", { name: "Auto-fill remainder" }));
+    expect(screen.getByText("11 / 11 selected · Manual XI")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Run simulation" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(5));
+    const requestInit = fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
+    if (typeof requestInit.body !== "string") {
+      throw new Error("Expected JSON request body");
+    }
+    expect(requestInit.body).toContain('"startingPlayerIds"');
+    expect(requestInit.body).toContain('"home-2"');
   });
 });
 
@@ -244,6 +279,43 @@ function lineupPlayer(id: string, position: string, shortName: string) {
     shortName,
     position
   };
+}
+
+function squadResponse(clubId: string, prefix: "home" | "away") {
+  const roles = ["GK", "RB", "CB", "CB", "LB", "RM", "CM", "CM", "LM", "ST", "ST"];
+  const squad = Array.from({ length: 18 }, (_, index) => {
+    const number = index + 1;
+    const role = roles[index] ?? (index % 2 === 0 ? "CM" : "ST");
+    return {
+      id: `${prefix}-${number}`,
+      name: `${title(prefix)} ${number}`,
+      shortName: `${title(prefix)} ${number}`,
+      squadNumber: number,
+      overall: 90 - index,
+      position: role,
+      sourcePosition: role,
+      alternativePositions: [],
+      preferredFoot: "right",
+      weakFootRating: 3
+    };
+  });
+  const autoXi = squad.slice(0, 11).map((player) => lineupPlayer(player.id, player.position, player.shortName));
+  const bench = squad.slice(11, 18).map((player) => lineupPlayer(player.id, player.position, player.shortName));
+
+  return {
+    clubId,
+    formation: "4-4-2",
+    roles,
+    squad,
+    autoXi,
+    bench,
+    assignments: [],
+    warnings: []
+  };
+}
+
+function title(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function jsonResponse(body: unknown): Response {

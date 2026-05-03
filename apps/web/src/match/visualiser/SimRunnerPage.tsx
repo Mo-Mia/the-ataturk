@@ -1,6 +1,14 @@
 import type { MatchDuration, TeamTactics } from "@the-ataturk/match-engine";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import type { MatchRunListResponse, PersistedMatchRun, SimError, SimResponse } from "./runTypes";
+import type {
+  LineupSelectionSummary,
+  LineupWarning,
+  MatchRunListResponse,
+  PersistedMatchRun,
+  RunLineupPlayer,
+  SimError,
+  SimResponse
+} from "./runTypes";
 
 interface Fc25Club {
   id: string;
@@ -9,6 +17,38 @@ interface Fc25Club {
 }
 
 type TeamSide = "home" | "away";
+
+interface SquadPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  squadNumber?: number;
+  overall: number;
+  position: string;
+  sourcePosition: string;
+  alternativePositions: string[];
+  preferredFoot: "left" | "right" | "either";
+  weakFootRating: 1 | 2 | 3 | 4 | 5;
+}
+
+interface SquadResponse {
+  clubId: string;
+  formation: TeamTactics["formation"];
+  roles: string[];
+  squad: SquadPlayer[];
+  autoXi: RunLineupPlayer[];
+  bench: RunLineupPlayer[];
+  warnings: LineupWarning[];
+}
+
+interface TeamSelectionState {
+  squad: SquadPlayer[];
+  autoXi: RunLineupPlayer[];
+  selectedIds: string[];
+  mode: "auto" | "manual";
+  status: "idle" | "loading" | "error";
+  error: string | null;
+}
 
 const DEFAULT_TACTICS: TeamTactics = {
   formation: "4-4-2",
@@ -25,6 +65,14 @@ const TEMPOS: TeamTactics["tempo"][] = ["normal", "fast", "slow"];
 const PRESSING_LEVELS: TeamTactics["pressing"][] = ["medium", "high", "low"];
 const LINE_HEIGHTS: TeamTactics["lineHeight"][] = ["normal", "high", "deep"];
 const WIDTHS: TeamTactics["width"][] = ["normal", "wide", "narrow"];
+const EMPTY_TEAM_SELECTION: TeamSelectionState = {
+  squad: [],
+  autoXi: [],
+  selectedIds: [],
+  mode: "auto",
+  status: "idle",
+  error: null
+};
 
 export function SimRunnerPage() {
   const [clubs, setClubs] = useState<Fc25Club[]>([]);
@@ -35,6 +83,8 @@ export function SimRunnerPage() {
   const [seed, setSeed] = useState(() => String(randomSeed()));
   const [batch, setBatch] = useState<1 | 50>(1);
   const [duration, setDuration] = useState<MatchDuration>("full_90");
+  const [homeSelection, setHomeSelection] = useState<TeamSelectionState>(EMPTY_TEAM_SELECTION);
+  const [awaySelection, setAwaySelection] = useState<TeamSelectionState>(EMPTY_TEAM_SELECTION);
   const [history, setHistory] = useState<PersistedMatchRun[]>([]);
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
   const [runErrors, setRunErrors] = useState<SimError[]>([]);
@@ -88,10 +138,64 @@ export function SimRunnerPage() {
     };
   }, []);
 
+  useEffect(() => {
+    void loadSquad("home", homeClubId, homeTactics.formation);
+  }, [homeClubId, homeTactics.formation]);
+
+  useEffect(() => {
+    void loadSquad("away", awayClubId, awayTactics.formation);
+  }, [awayClubId, awayTactics.formation]);
+
   const canRun = useMemo(
-    () => status !== "running" && homeClubId.length > 0 && awayClubId.length > 0 && seed.length > 0,
-    [awayClubId, homeClubId, seed, status]
+    () =>
+      status !== "running" &&
+      homeClubId.length > 0 &&
+      awayClubId.length > 0 &&
+      seed.length > 0 &&
+      validateSelection(homeSelection).valid &&
+      validateSelection(awaySelection).valid,
+    [awayClubId, awaySelection, homeClubId, homeSelection, seed, status]
   );
+
+  async function loadSquad(
+    side: TeamSide,
+    clubId: string,
+    formation: TeamTactics["formation"]
+  ): Promise<void> {
+    const setSelection = side === "home" ? setHomeSelection : setAwaySelection;
+    if (!clubId) {
+      setSelection(EMPTY_TEAM_SELECTION);
+      return;
+    }
+
+    setSelection((current) => ({ ...current, status: "loading", error: null }));
+    try {
+      const response = await fetch(
+        `/api/match-engine/clubs/${encodeURIComponent(clubId)}/squad?formation=${encodeURIComponent(
+          formation
+        )}`
+      );
+      if (!response.ok) {
+        throw new Error(`Squad request failed with ${response.status}`);
+      }
+      const squad = (await response.json()) as SquadResponse;
+      const autoIds = squad.autoXi.map((player) => player.id);
+      setSelection({
+        squad: squad.squad,
+        autoXi: squad.autoXi,
+        selectedIds: autoIds,
+        mode: "auto",
+        status: "idle",
+        error: null
+      });
+    } catch (requestError) {
+      setSelection((current) => ({
+        ...current,
+        status: "error",
+        error: requestError instanceof Error ? requestError.message : "Could not load squad"
+      }));
+    }
+  }
 
   async function runSimulation(): Promise<void> {
     setStatus("running");
@@ -108,8 +212,20 @@ export function SimRunnerPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          home: { clubId: homeClubId, tactics: homeTactics },
-          away: { clubId: awayClubId, tactics: awayTactics },
+          home: {
+            clubId: homeClubId,
+            tactics: homeTactics,
+            ...(homeSelection.mode === "manual"
+              ? { startingPlayerIds: homeSelection.selectedIds }
+              : {})
+          },
+          away: {
+            clubId: awayClubId,
+            tactics: awayTactics,
+            ...(awaySelection.mode === "manual"
+              ? { startingPlayerIds: awaySelection.selectedIds }
+              : {})
+          },
           seed: parsedSeed,
           batch,
           duration
@@ -164,16 +280,20 @@ export function SimRunnerPage() {
           clubs={clubs}
           clubId={homeClubId}
           tactics={homeTactics}
+          selection={homeSelection}
           onClubChange={setHomeClubId}
           onTacticsChange={(nextTactics) => updateTactics("home", nextTactics)}
+          onSelectionChange={setHomeSelection}
         />
         <TeamPanel
           title="Away"
           clubs={clubs}
           clubId={awayClubId}
           tactics={awayTactics}
+          selection={awaySelection}
           onClubChange={setAwayClubId}
           onTacticsChange={(nextTactics) => updateTactics("away", nextTactics)}
+          onSelectionChange={setAwaySelection}
         />
       </section>
 
@@ -319,10 +439,22 @@ function LineupSummary({ run }: { run: PersistedMatchRun }) {
   }
 
   return (
-    <div className="lineup-summary">
-      <LineupColumn title="Home XI" players={xi.home} />
-      <LineupColumn title="Away XI" players={xi.away} />
-    </div>
+    <>
+      <div className="lineup-mode-summary">
+        <span>Home: {selectionLabel(run.summary.xiSelection?.home)}</span>
+        <span>Away: {selectionLabel(run.summary.xiSelection?.away)}</span>
+      </div>
+      <div className="lineup-summary">
+        <LineupColumn title="Home XI" players={xi.home} />
+        <LineupColumn title="Away XI" players={xi.away} />
+        {run.summary.bench ? (
+          <>
+            <LineupColumn title="Home bench" players={run.summary.bench.home} />
+            <LineupColumn title="Away bench" players={run.summary.bench.away} />
+          </>
+        ) : null}
+      </div>
+    </>
   );
 }
 
@@ -352,15 +484,19 @@ function TeamPanel({
   clubs,
   clubId,
   tactics,
+  selection,
   onClubChange,
-  onTacticsChange
+  onTacticsChange,
+  onSelectionChange
 }: {
   title: string;
   clubs: Fc25Club[];
   clubId: string;
   tactics: TeamTactics;
+  selection: TeamSelectionState;
   onClubChange: (clubId: string) => void;
   onTacticsChange: (tactics: TeamTactics) => void;
+  onSelectionChange: (selection: TeamSelectionState) => void;
 }) {
   return (
     <section className="sim-runner-panel" aria-label={`${title} team setup`}>
@@ -376,6 +512,106 @@ function TeamPanel({
         </select>
       </label>
       <TacticsControls tactics={tactics} onChange={onTacticsChange} />
+      <SquadPicker
+        title={`${title} squad`}
+        selection={selection}
+        onChange={onSelectionChange}
+      />
+    </section>
+  );
+}
+
+function SquadPicker({
+  title,
+  selection,
+  onChange
+}: {
+  title: string;
+  selection: TeamSelectionState;
+  onChange: (selection: TeamSelectionState) => void;
+}) {
+  const validation = validateSelection(selection);
+  const selected = new Set(selection.selectedIds);
+
+  function setSelectedIds(selectedIds: string[], mode: TeamSelectionState["mode"] = "manual"): void {
+    onChange({ ...selection, selectedIds, mode });
+  }
+
+  function togglePlayer(playerId: string): void {
+    const next = selected.has(playerId)
+      ? selection.selectedIds.filter((id) => id !== playerId)
+      : [...selection.selectedIds, playerId];
+    setSelectedIds(next);
+  }
+
+  function resetToAuto(): void {
+    setSelectedIds(
+      selection.autoXi.map((player) => player.id),
+      "auto"
+    );
+  }
+
+  function autoFillRemainder(): void {
+    // Manual picks stay locked; the current auto selector fills remaining starter slots.
+    const manualIds = selection.selectedIds.filter((id) =>
+      selection.squad.some((player) => player.id === id)
+    );
+    const nextIds = [...manualIds];
+    for (const player of selection.autoXi) {
+      if (nextIds.length >= 11) {
+        break;
+      }
+      if (!nextIds.includes(player.id)) {
+        nextIds.push(player.id);
+      }
+    }
+    for (const player of [...selection.squad].sort((a, b) => b.overall - a.overall || a.id.localeCompare(b.id))) {
+      if (nextIds.length >= 11) {
+        break;
+      }
+      if (!nextIds.includes(player.id)) {
+        nextIds.push(player.id);
+      }
+    }
+    setSelectedIds(nextIds.slice(0, 11));
+  }
+
+  return (
+    <section className="squad-picker" aria-label={title}>
+      <div className="squad-picker-header">
+        <div>
+          <h3>{title}</h3>
+          <p>
+            {selection.selectedIds.length} / 11 selected ·{" "}
+            {selection.mode === "auto" ? "Auto XI" : "Manual XI"}
+          </p>
+        </div>
+        <div className="squad-picker-actions">
+          <button type="button" onClick={autoFillRemainder}>
+            Auto-fill remainder
+          </button>
+          <button type="button" onClick={resetToAuto}>
+            Reset to auto XI
+          </button>
+        </div>
+      </div>
+      {selection.status === "loading" ? <p>Loading squad...</p> : null}
+      {selection.error ? <p className="error">{selection.error}</p> : null}
+      {!validation.valid ? <p className="error">{validation.message}</p> : null}
+      <div className="squad-picker-list">
+        {selection.squad.map((player) => (
+          <label key={player.id} className="squad-picker-row">
+            <input
+              type="checkbox"
+              checked={selected.has(player.id)}
+              onChange={() => togglePlayer(player.id)}
+            />
+            <span>{player.shortName}</span>
+            <span>{player.sourcePosition}</span>
+            <span>{player.overall}</span>
+          </label>
+        ))}
+      </div>
     </section>
   );
 }
@@ -471,4 +707,46 @@ function formatOption(value: string): string {
 
 function durationLabel(value: MatchDuration | undefined): string {
   return value === "full_90" ? "Full match" : "Second half";
+}
+
+function selectionLabel(selection: LineupSelectionSummary | undefined): string {
+  if (!selection) {
+    return "XI mode not recorded";
+  }
+  const warningText =
+    selection.warnings.length === 0 ? "no warnings" : `${selection.warnings.length} warning(s)`;
+  return `${selection.mode === "manual" ? "Manual XI" : "Auto XI"} (${warningText})`;
+}
+
+function validateSelection(selection: TeamSelectionState): { valid: boolean; message: string | null } {
+  if (selection.status === "loading") {
+    return { valid: false, message: null };
+  }
+  if (selection.squad.length === 0) {
+    return { valid: false, message: null };
+  }
+  if (selection.selectedIds.length !== 11) {
+    return {
+      valid: false,
+      message: `Select exactly 11 starters; currently selected ${selection.selectedIds.length}.`
+    };
+  }
+  const uniqueIds = new Set(selection.selectedIds);
+  if (uniqueIds.size !== selection.selectedIds.length) {
+    return { valid: false, message: "Starting XI contains duplicate players." };
+  }
+  const players = selection.selectedIds
+    .map((playerId) => selection.squad.find((player) => player.id === playerId))
+    .filter((player): player is SquadPlayer => Boolean(player));
+  if (players.length !== selection.selectedIds.length) {
+    return { valid: false, message: "Starting XI contains a player outside the loaded squad." };
+  }
+  const goalkeeperCount = players.filter((player) => player.sourcePosition === "GK").length;
+  if (goalkeeperCount !== 1) {
+    return {
+      valid: false,
+      message: `Select exactly one goalkeeper; currently selected ${goalkeeperCount}.`
+    };
+  }
+  return { valid: true, message: null };
 }
