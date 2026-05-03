@@ -38,6 +38,51 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
+### Persistent cache for football-data.org responses
+Move Squad Manager's 24h in-memory football-data.org cache to Redis or a
+SQLite-backed cache if the server runs multiple processes or needs restart
+survival.
+
+### Manual cache invalidation endpoint for squad verification
+Add an admin-only endpoint to clear football-data.org cache entries per club
+when Mo wants a fresh live-squad pull before the 24h TTL expires.
+
+### Diff visualisation between FC25 dataset versions
+Show player additions, removals, and attribute/profile changes between two FC25
+dataset versions before activating or after applying Squad Manager suggestions.
+
+### Suggestion rollback / version revert flow
+Add a safe admin action to reactivate a previous FC25 dataset version after an
+accepted Squad Manager apply created an unwanted active version.
+
+### Calibration revalidation harness for new dataset versions
+Run characterisation against a newly active FC25 dataset version and compare the
+distribution with the locked calibration baseline before treating it as
+production-ready.
+
+### Drag-and-drop XI editing in admin tool
+Add ordering and XI/bench movement controls to Squad Manager once squad
+verification is stable.
+
+### Per-player arbitrary attribute editing
+Extend the Squad Manager player editor beyond verification-surfaced fields so
+Mo can edit FC25 player attributes deliberately.
+
+### Mobile responsiveness for admin tool
+Make Squad Manager usable below desktop widths. Current sprint targets desktop
+admin use only.
+
+### Other football-data.org endpoints
+Evaluate matches, standings, and fixtures endpoints for future verification or
+context displays.
+
+### Multi-club bulk-verify
+Allow running verification across all five FC25 clubs while respecting the
+football-data.org daily quota.
+
+### Suggestion history per player
+Record which sprint or verification run suggested each player-level correction.
+
 ### Squad data management UI with AI-assisted verification
 Squad data management UI with AI-assisted verification. Specific design questions to resolve before scoping: source-of-truth for verification (FC25 ingest vs live), write semantics (new dataset version vs mutation), Gemini API cost shape. Aesthetic direction TBD — possible Atatürk-revival hook.
 

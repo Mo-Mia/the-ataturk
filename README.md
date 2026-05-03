@@ -28,6 +28,7 @@ pnpm dev
 The server runs on port 8005 and the web app runs on port 5175.
 
 Admin tooling is available locally at `http://127.0.0.1:5175/admin`.
+Squad Manager is available locally at `http://127.0.0.1:5175/admin/squad-manager`.
 Match playback is available at `http://127.0.0.1:5175/match`.
 Match-engine replay diagnostics are available at `http://127.0.0.1:5175/visualise`.
 The FC25 sim-runner workbench is available at `http://127.0.0.1:5175/visualise/run`.
@@ -38,6 +39,14 @@ To import the tracked five-club FC25 fixture for workbench smoke testing:
 
 ```sh
 pnpm --filter @the-ataturk/data fc25:import -- --csv data/fc-25/fixtures/male_players_top5pl.csv
+```
+
+Squad Manager verification needs these environment variables when calling live
+services:
+
+```sh
+FOOTBALL_DATA_API_KEY=...
+GEMINI_API_KEY=...
 ```
 
 ## Checks
@@ -68,6 +77,10 @@ pnpm typecheck
 - `PATCH /api/players/:playerId/profile`
 - `GET /api/players/:playerId/profile-history`
 - `POST /api/profile-extraction/run`
+- `GET /api/ai/squad-manager/context`
+- `GET /api/ai/squad-manager/squad`
+- `POST /api/ai/verify-squad`
+- `POST /api/ai/apply-suggestions`
 - `POST /api/match/run` — SSE stream of second-half match ticks (`?speed=fast` for dev)
 - `GET /api/visualiser/artifacts`
 - `GET /api/visualiser/artifacts/:filename`

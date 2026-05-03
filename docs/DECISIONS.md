@@ -4,6 +4,36 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-03 — FootSim Squad Manager: admin tool with football-data.org verification
+
+Squad Manager ships as the first FootSim admin tool: an `/admin/squad-manager`
+page that verifies FC25 player data against current real-world squads via
+football-data.org API, with Gemini-assisted reconciliation between the datasets.
+Apply-suggestion flows create new FC25 dataset versions rather than mutating
+existing data — the dataset-versions immutability pattern from Phase 1 is
+load-bearing for the entire sprint.
+
+Football-data.org free tier (10 req/min, 100 req/day) requires a rate-limit
+gate, not just caching. Gate enforces both windows; caching is 24h TTL
+in-memory; rate-limited requests fall back to stale cache or return 429 with
+retry-after.
+
+Aesthetic is deliberately retro Champions League — cream background, crimson
+accent, forest green, Trebuchet MS small caps and Georgia serifs. This serves
+both as visual identity for the FootSim admin surface and as preparation for
+future Atatürk integration; the styling is intentional, not stretch goal. The
+Atatürk itself remains parked.
+
+Sprint executed by a fresh Codex session (separate from the engine sprint
+session running through Phases 1-10). Brief is self-contained: project context,
+conventions, architectural patterns stated explicitly rather than assumed.
+
+Out of scope and tracked in BACKLOG: persistent cache, manual cache
+invalidation, diff visualisation between dataset versions, suggestion rollback,
+calibration revalidation against new versions, drag-and-drop XI editing in admin
+tool, per-player arbitrary attribute editing, mobile responsiveness, other
+football-data.org endpoints.
+
 ## 2026-05-03 — FootSim Phase 10 outcome: chance creation is low-effect unless chasing
 
 Phase 10 investigated the isolated chance-creation toggle anomaly surfaced by
