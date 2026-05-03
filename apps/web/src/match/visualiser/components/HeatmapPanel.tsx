@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { MatchSnapshot, MatchTick, TeamId } from "@the-ataturk/match-engine";
+import type { AttackDirection, MatchSnapshot, MatchTick, TeamId } from "@the-ataturk/match-engine";
 
 import { PITCH_LENGTH, PITCH_WIDTH, PitchLineOverlay, PitchMarkings } from "./PitchMarkings";
 
@@ -325,12 +325,12 @@ export function buildHeatmap(
 
       if (point.teamId === "home") {
         homeY.push(y);
-        if (y >= (PITCH_LENGTH * 2) / 3) {
+        if (inAttackingThird(y, directionForTick(snapshot, tick, "home"))) {
           attackingThirdTicks += 1;
         }
       } else if (point.teamId === "away") {
         awayY.push(y);
-        if (y <= PITCH_LENGTH / 3) {
+        if (inAttackingThird(y, directionForTick(snapshot, tick, "away"))) {
           attackingThirdTicks += 1;
         }
       }
@@ -373,7 +373,8 @@ export function buildRelativePlayerHeatmap(
 
     const relativeX = player.position[0] - tick.ball.position[0];
     const rawRelativeY = player.position[1] - tick.ball.position[1];
-    const relativeY = playerTeam === "home" ? rawRelativeY : -rawRelativeY;
+    const direction = directionForTick(snapshot, tick, playerTeam);
+    const relativeY = direction === 1 ? rawRelativeY : -rawRelativeY;
     const target = tick.possession.teamId === playerTeam ? inPossession : outOfPossession;
     addRelativeSample(target, relativeX, relativeY);
   }
@@ -508,6 +509,20 @@ function playerTeamById(snapshot: MatchSnapshot, playerId: string): TeamId | nul
 
 function teamName(snapshot: MatchSnapshot, team: TeamId): string {
   return team === "home" ? snapshot.meta.homeTeam.shortName : snapshot.meta.awayTeam.shortName;
+}
+
+function directionForTick(snapshot: MatchSnapshot, tick: MatchTick, team: TeamId): AttackDirection {
+  if (tick.attackDirection?.[team]) {
+    return tick.attackDirection[team];
+  }
+  if (snapshot.meta.sideSwitchVersion === 1) {
+    return tick.matchClock.half === 2 ? (team === "home" ? -1 : 1) : team === "home" ? 1 : -1;
+  }
+  return team === "home" ? 1 : -1;
+}
+
+function inAttackingThird(y: number, direction: AttackDirection): boolean {
+  return direction === 1 ? y >= (PITCH_LENGTH * 2) / 3 : y <= PITCH_LENGTH / 3;
 }
 
 const styles = {

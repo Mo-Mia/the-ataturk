@@ -72,6 +72,25 @@ describe("HeatmapPanel", () => {
       screen.getByRole("img", { name: "Team out of possession relative player heatmap" })
     ).toBeTruthy();
   });
+
+  it("keeps ball heatmap coordinates raw while making attacking-territory diagnostics direction-aware", () => {
+    const snapshot = createSnapshot();
+    snapshot.meta.sideSwitchVersion = 1;
+    snapshot.ticks = [
+      {
+        ...tick(900, [340, 100, 0], "home", [
+          { id: "h1", teamId: "home", position: [340, 90], hasBall: true, onPitch: true },
+          { id: "a1", teamId: "away", position: [340, 900], hasBall: false, onPitch: true }
+        ]),
+        attackDirection: { home: -1, away: 1 }
+      }
+    ];
+
+    const heatmap = buildHeatmap(snapshot, "all", "ball");
+
+    expect(heatmap.buckets.find((bucket) => bucket.row === 1 && bucket.col === 6)?.count).toBe(1);
+    expect(heatmap.diagnostics.attackingThirdPct).toBe(100);
+  });
 });
 
 function createSnapshot(): MatchSnapshot {

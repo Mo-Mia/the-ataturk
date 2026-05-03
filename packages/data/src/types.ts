@@ -505,6 +505,7 @@ export interface MatchRunSummary {
   scoreStateEvents?: ScoreStateEventSummary[];
   setPieceTakers?: { home: SetPieceTakers; away: SetPieceTakers };
   setPieces?: { home: SetPieceSummary; away: SetPieceSummary };
+  sideSwitchVersion?: 0 | 1;
 }
 
 export interface MatchRun {

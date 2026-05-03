@@ -23,6 +23,24 @@ describe("StatsPanel", () => {
     expect(screen.getByText("1 / 0 / 0")).toBeTruthy();
     expect(screen.getByText("1/1 (0 inc)")).toBeTruthy();
   });
+
+  it("uses tick direction for attacking-third territory", () => {
+    const ticks = createTicks();
+    ticks[0] = {
+      ...ticks[0]!,
+      ball: { position: [340, 100, 0], inFlight: false, carrierPlayerId: "home-9" },
+      attackDirection: { home: -1, away: 1 }
+    };
+    ticks[1] = {
+      ...ticks[1]!,
+      ball: { position: [340, 120, 0], inFlight: false, carrierPlayerId: "home-9" },
+      attackDirection: { home: -1, away: 1 }
+    };
+
+    const stats = statsForReplay(ticks);
+
+    expect(stats.territory.homeAttackingThird).toBe(100);
+  });
 });
 
 function createSnapshot(ticks: MatchTick[]): MatchSnapshot {

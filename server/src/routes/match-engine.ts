@@ -93,6 +93,7 @@ interface SimulateRunSuccess {
     scoreStateEvents: NonNullable<MatchSnapshot["finalSummary"]["scoreStateEvents"]>;
     setPieceTakers: NonNullable<MatchSnapshot["finalSummary"]["setPieceTakers"]>;
     setPieces: NonNullable<MatchSnapshot["finalSummary"]["setPieces"]>;
+    sideSwitchVersion: NonNullable<MatchSnapshot["meta"]["sideSwitchVersion"]>;
   };
 }
 
@@ -586,7 +587,8 @@ function summaryFor(
         setPieceShots: 0,
         setPieceGoals: 0
       }
-    }
+    },
+    sideSwitchVersion: snapshot.meta.sideSwitchVersion ?? 0
   };
 }
 

@@ -26,7 +26,8 @@ describe("data migrations", () => {
       "001_initial.sql",
       "002_player_profiles.sql",
       "003_fc25.sql",
-      "004_match_runs.sql"
+      "004_match_runs.sql",
+      "005_match_runs_side_switch_version.sql"
     ]);
     expect(firstRun.skipped).toEqual([]);
     expect(secondRun.applied).toEqual([]);
@@ -34,7 +35,8 @@ describe("data migrations", () => {
       "001_initial.sql",
       "002_player_profiles.sql",
       "003_fc25.sql",
-      "004_match_runs.sql"
+      "004_match_runs.sql",
+      "005_match_runs_side_switch_version.sql"
     ]);
 
     const db = new Database(testDatabase.path);
@@ -43,7 +45,7 @@ describe("data migrations", () => {
         .prepare<[], CountRow>("SELECT COUNT(*) AS count FROM _migrations")
         .get();
 
-      expect(row?.count).toBe(4);
+      expect(row?.count).toBe(5);
 
       const tableRows = db
         .prepare<[], { name: string }>(

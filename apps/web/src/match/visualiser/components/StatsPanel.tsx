@@ -1,5 +1,11 @@
 import { Fragment, type CSSProperties } from "react";
-import type { MatchSnapshot, MatchTick, SemanticEvent, TeamId } from "@the-ataturk/match-engine";
+import type {
+  AttackDirection,
+  MatchSnapshot,
+  MatchTick,
+  SemanticEvent,
+  TeamId
+} from "@the-ataturk/match-engine";
 
 const PITCH_WIDTH = 680;
 const PITCH_LENGTH = 1050;
@@ -252,9 +258,15 @@ export function statsForReplay(ticks: MatchTick[]): ReplayStats {
       rightFlankSamples += 1;
     }
 
-    if (tick.possession.teamId === "home" && ballY >= (PITCH_LENGTH * 2) / 3) {
+    if (
+      tick.possession.teamId === "home" &&
+      inAttackingThird(ballY, directionForTick(tick, "home"))
+    ) {
       homeAttackingThirdSamples += 1;
-    } else if (tick.possession.teamId === "away" && ballY <= PITCH_LENGTH / 3) {
+    } else if (
+      tick.possession.teamId === "away" &&
+      inAttackingThird(ballY, directionForTick(tick, "away"))
+    ) {
       awayAttackingThirdSamples += 1;
     }
 
@@ -424,6 +436,14 @@ function momentumValue(tick: MatchTick, team: TeamId): string {
 
 function teamName(snapshot: MatchSnapshot, team: TeamId): string {
   return team === "home" ? snapshot.meta.homeTeam.shortName : snapshot.meta.awayTeam.shortName;
+}
+
+function directionForTick(tick: MatchTick, team: TeamId): AttackDirection {
+  return tick.attackDirection?.[team] ?? (team === "home" ? 1 : -1);
+}
+
+function inAttackingThird(y: number, direction: AttackDirection): boolean {
+  return direction === 1 ? y >= (PITCH_LENGTH * 2) / 3 : y <= PITCH_LENGTH / 3;
 }
 
 function percentage(value: number, total: number): number {

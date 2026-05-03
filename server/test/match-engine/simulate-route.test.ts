@@ -73,6 +73,7 @@ describe("match-engine simulation routes", () => {
             shots: { home: number; away: number };
             possession: { home: number; away: number };
             duration: string;
+            sideSwitchVersion: number;
             xi: { home: Array<{ id: string; position: string }>; away: Array<{ id: string }> };
             bench: { home: Array<{ id: string }>; away: Array<{ id: string }> };
             xiSelection: {
@@ -96,6 +97,7 @@ describe("match-engine simulation routes", () => {
       );
       expect(body.runs[0]?.summary.shots.home).toEqual(expect.any(Number));
       expect(body.runs[0]?.summary.duration).toBe("full_90");
+      expect(body.runs[0]?.summary.sideSwitchVersion).toBe(1);
       expect(body.runs[0]?.summary.xi.home).toHaveLength(11);
       expect(body.runs[0]?.summary.bench.home).toHaveLength(7);
       expect(body.runs[0]?.summary.xiSelection.home.mode).toBe("auto");
@@ -120,6 +122,7 @@ describe("match-engine simulation routes", () => {
       const snapshot = artifact.json<{
         meta: {
           duration: string;
+          sideSwitchVersion: number;
           preMatchScore: { home: number; away: number };
         };
         ticks: unknown[];
@@ -127,6 +130,7 @@ describe("match-engine simulation routes", () => {
 
       expect(artifact.statusCode).toBe(200);
       expect(snapshot.meta.duration).toBe("full_90");
+      expect(snapshot.meta.sideSwitchVersion).toBe(1);
       expect(snapshot.meta.preMatchScore).toEqual({ home: 0, away: 0 });
       expect(snapshot.ticks).toHaveLength(1800);
 
