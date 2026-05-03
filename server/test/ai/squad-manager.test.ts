@@ -47,6 +47,14 @@ interface VerifySquadTestResponse {
         id: number;
       };
     }>;
+    attributeWarnings: Array<{
+      suggestionId: string;
+      type: string;
+      playerId: string;
+      changes: {
+        age?: number;
+      };
+    }>;
   };
 }
 
@@ -239,6 +247,56 @@ describe("AI squad manager routes", () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.json<VerifySquadTestResponse>().cacheStatus).toBe("miss");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("normalises Gemini warning-style attribute types instead of rejecting verification", async () => {
+    testDatabase = createFc25ServerDatabase("ai-squad-manager-warning-type-aliases");
+    process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
+    process.env.GEMINI_API_KEY = "gemini-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        jsonResponse({
+          id: 64,
+          name: "Liverpool FC",
+          squad: []
+        })
+      )
+    );
+    genAiMocks.generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        missingPlayers: [],
+        suggestions: [],
+        attributeWarnings: [
+          {
+            type: "stale_profile_flag",
+            playerId: "mohamed-salah",
+            changes: { age: 33 },
+            rationale: "Live data indicates a different age."
+          }
+        ]
+      })
+    });
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/ai/verify-squad",
+        payload: { clubId: "liverpool", datasetVersionId: "fc25-base" }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(
+        response.json<VerifySquadTestResponse>().verification.attributeWarnings[0]
+      ).toMatchObject({
+        type: "player_update",
+        playerId: "mohamed-salah",
+        changes: { age: 33 }
+      });
     } finally {
       await app.close();
     }

@@ -701,7 +701,10 @@ function normaliseSuggestion(
       ? item.type
       : fieldName === "missingPlayers"
         ? "player_addition"
-        : undefined
+        : fieldName === "attributeWarnings"
+          ? "player_update"
+          : undefined,
+    fieldName
   );
 
   if (type === "player_update") {
@@ -763,7 +766,8 @@ function normaliseSuggestion(
 }
 
 function normaliseSuggestionType(
-  value: string | undefined
+  value: string | undefined,
+  fieldName?: string
 ): SquadManagerSuggestion["type"] | undefined {
   if (!value) {
     return undefined;
@@ -778,11 +782,33 @@ function normaliseSuggestionType(
       "player_update",
       "attribute_update",
       "attribute_warning",
+      "attribute_warnings",
       "name_update",
       "position_update",
       "nationality_update",
-      "age_update"
+      "age_update",
+      "name_mismatch",
+      "position_mismatch",
+      "nationality_mismatch",
+      "age_mismatch",
+      "name_conflict",
+      "position_conflict",
+      "nationality_conflict",
+      "age_conflict",
+      "name_difference",
+      "position_difference",
+      "nationality_difference",
+      "age_difference"
     ].includes(normalised)
+  ) {
+    return "player_update";
+  }
+  if (
+    normalised.includes("warning") ||
+    normalised.includes("mismatch") ||
+    normalised.includes("conflict") ||
+    normalised.includes("difference") ||
+    normalised.includes("drift")
   ) {
     return "player_update";
   }
@@ -790,6 +816,10 @@ function normaliseSuggestionType(
     ["player_removal", "no_longer_in_club", "transfer_out", "removed_player"].includes(normalised)
   ) {
     return "player_removal";
+  }
+
+  if (fieldName === "attributeWarnings") {
+    return "player_update";
   }
 
   return undefined;
