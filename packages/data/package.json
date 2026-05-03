@@ -20,6 +20,7 @@
   "scripts": {
     "fc25:import": "tsx src/fc25/importer.ts",
     "fc25:manual-xi-investigation": "tsx src/fc25/manualXiImpactInvestigationCli.ts",
+    "fc25:phase8-baseline": "tsx src/fc25/phase8BaselineVerifier.ts",
     "fc25:responsiveness": "tsx src/fc25/realSquadResponsivenessCli.ts",
     "migrate": "tsx src/migrate.ts",
     "reset": "tsx src/reset.ts",

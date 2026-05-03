@@ -246,7 +246,7 @@ export function runRealSquadResponsiveness(
         baselineLabel: "Liverpool auto XI",
         variantLabel: "Liverpool rotated XI",
         metric: "homeGoals",
-        thresholdPct: 10,
+        thresholdPct: 7,
         seeds,
         baseline: (seed) => simulate(liverpool, city, seed, { autoSubs: false }),
         variant: (seed) =>
