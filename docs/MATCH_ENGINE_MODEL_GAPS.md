@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-03 17:10 SAST
+Last updated: 2026-05-03 17:55 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -46,22 +46,24 @@ The 2026-05-03 real-squad harness used Liverpool vs Manchester City over 200
 full-match seeds per comparison. It confirmed that responsiveness survives the
 real FC25 data path:
 
-- Mentality moved Liverpool shots by +116.03%.
-- Pressing moved Liverpool fouls by +216.67%.
-- Tempo moved Liverpool possession streaks by -17.40%, which is the
+- Mentality moved Liverpool shots by +131.02%.
+- Pressing moved Liverpool fouls by +257.38%.
+- Tempo moved Liverpool possession streaks by -18.51%, which is the
   football-correct direction for faster, riskier play.
 - A deliberate manual XI rotation, replacing Van Dijk, Salah, and
   Alexander-Arnold with Chiesa, Gakpo, and Núñez, reduced Liverpool goals by
   15.93% over the Phase 9 1000-seed paired investigation. Phase 8's 200-seed
   `-8.09%` result was sampling/threshold noise, not a structural decay.
-- Fatigue reduced late action success by 4.26%. This is modest but real, and
+- Fatigue reduced late action success by 3.54%. This is modest but real, and
   does not include movement-speed and pressing-intensity effects captured
   elsewhere in the engine.
 - Auto Subs are active at realistic frequency after anchoring the fatigue
   threshold to the 25th percentile of real-squad minute-70+ stamina samples:
-  4.92 total subs/match, 0 zero-sub matches in the 200-seed run.
+  4.87 total subs/match, 0 zero-sub matches in the 200-seed run.
 - Phase 6 score-state shot impact passed: forcing Liverpool 0-2 down at 75:00
-  increased final-15 shots by 23.62% (`0.99 -> 1.23`).
+  increased final-15 shots by 29.74% (`0.98 -> 1.27`).
+- Phase 8 locked a machine-readable calibration baseline and documented the
+  calibration surface in `docs/CALIBRATION_REFERENCE.md`.
 
 See `docs/FOOTSIM_REAL_SQUAD_RESPONSIVENESS.md` for the full table.
 
@@ -77,9 +79,11 @@ agency, public API shape, or obvious UAT realism.
   out-of-position discomfort beyond the attributes and position assignments
   already present.
 - **Chance-creation standalone strength**: the isolated chance-creation
-  feature flag only moved final-15 shots by +2.05% in the Phase 6 real-squad
-  harness. The headline score-state composition passes, but future tuning may
-  need to make progression-to-shot behaviour more visible outside chase states.
+  feature flag moved final-15 shots by `-7.14%` in the Phase 8 real-squad
+  baseline. The headline score-state composition passes, but future
+  investigation should decide whether the isolated toggle is the wrong
+  diagnostic or whether progression-to-shot behaviour needs to be more visible
+  outside chase states.
 - **Penalty frequency in real-squad matchups**: synthetic full-match
   characterisation now has enough penalty volume for conversion checks, but the
   Liverpool vs Aston Villa real-squad set-piece diagnostic produced only 0.04

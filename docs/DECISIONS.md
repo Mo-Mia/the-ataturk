@@ -4,6 +4,32 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-03 — FootSim Phase 8 resumed: calibration consolidation
+
+Phase 8 resumed after Phase 9 classified the manual XI rotation trajectory as
+Outcome 1: sample noise and an under-specified threshold at prior sample sizes.
+The Phase 9 1000-seed paired result of `-15.93%` manual XI impact, with 95% CI
+`[-24.37%, -7.48%]`, is now the locked high-precision baseline for that
+experiment.
+
+Phase 8 shipped the original consolidation scope: a locked
+`CALIBRATION_BASELINE_PHASE_8.md`, comprehensive `CALIBRATION_REFERENCE.md`,
+and sensitivity-test backfill for representative calibrated constants. The
+manual XI responsiveness threshold in the 200-seed harness was widened from
+`10%` to `7%`, matching the Phase 9 confidence interval lower bound. This is a
+test-gate change only, not an engine-behaviour change.
+
+The baseline document includes an explicit machine-readable JSON schema. The
+`fc25:phase8-baseline` verifier reads strictly from that schema so future
+calibration-changing sprints can update the JSON block and have the verifier
+pick up the new numbers automatically.
+
+The calibration consolidation principle held: legibility and
+mutation-resistance, not "good calibration." Anomalies surfaced during
+documentation are tracked in BACKLOG rather than tuned in this sprint. The
+isolated chance-creation toggle remains a documented anomaly, while the intended
+score-state shot-impact composition remains green.
+
 ## 2026-05-03 — FootSim Phase 9 outcome: manual XI impact decay was sample noise
 
 Phase 9 investigated why manual XI rotation impact appeared to decay from

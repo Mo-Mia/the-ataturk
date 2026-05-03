@@ -73,6 +73,37 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
+### Move set-piece taker weights into a calibration module
+Free-kick, corner, and penalty taker weights currently live in
+`packages/match-engine/src/state/initState.ts`. They are documented in
+`docs/CALIBRATION_REFERENCE.md` and covered by tests, but the locality is wrong.
+Move them into a dedicated calibration module when calibration files are next
+refactored.
+
+### Investigate isolated chance-creation toggle anomaly
+Phase 8's 200-seed baseline shows the isolated chance-creation toggle moving
+final-15 Liverpool shots by `-7.14%`, while the intended score-state shot-impact
+composition remains green at `+29.74%`. Do not tune blindly; investigate whether
+the isolated flag test is the wrong diagnostic, whether chance creation mostly
+works through score-state composition, or whether a source-specific probability
+is being swallowed by turnovers.
+
+### Add focused sensitivity coverage for wide pass-target weights
+`PASS_TARGET_WEIGHTS` is documented and implicitly covered by UAT artefacts and
+characterisation, but it still lacks a focused sensitivity test. Add one before
+or during any future wide-play sprint.
+
+### Derive empirical provenance for inherited Phase 1 action constants
+The foundational `ACTION_WEIGHTS` and several `SUCCESS_PROBABILITIES` values are
+inherited from early calibration. Phase 8 added representative sensitivity
+coverage, but future calibration work should derive and record empirical
+provenance for the most headline-sensitive rows.
+
+### Automate calibration-reference sync checks
+Low priority. A future tool could check that exported calibration groups in
+`probabilities.ts` are represented in `docs/CALIBRATION_REFERENCE.md`. This is a
+documentation hygiene check, not an engine requirement.
+
 ### Phase 8 manual XI baseline should use Phase 9's 1000-seed result
 Phase 9 showed the Phase 8 `-8.09%` manual-XI result was a 200-seed outlier.
 Use the 1000-seed paired result (`-15.93%`, 4.31pp SE) when Phase 8 resumes and
