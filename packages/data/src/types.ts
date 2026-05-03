@@ -361,6 +361,7 @@ export interface Fc25DatasetVersion {
   name: string;
   source_file: string;
   source_file_sha256: string;
+  description: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

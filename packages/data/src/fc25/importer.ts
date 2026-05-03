@@ -303,9 +303,9 @@ function insertDatasetVersion(
   db.prepare(
     `
       INSERT INTO fc25_dataset_versions (
-        id, name, source_file, source_file_sha256, is_active, created_at, updated_at
+        id, name, source_file, source_file_sha256, description, is_active, created_at, updated_at
       )
-      VALUES (@id, @name, @sourceFile, @sourceFileSha256, 0, @nowIso, @nowIso)
+      VALUES (@id, @name, @sourceFile, @sourceFileSha256, NULL, 0, @nowIso, @nowIso)
     `
   ).run(input);
 }

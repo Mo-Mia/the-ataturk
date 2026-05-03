@@ -6,3 +6,4 @@ export * from "./manualXiImpactInvestigation";
 export * from "./parser";
 export * from "./realSquadResponsiveness";
 export * from "./selectStartingXI";
+export * from "./squadManager";
