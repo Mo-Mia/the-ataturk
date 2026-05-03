@@ -155,7 +155,9 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
       const formation =
         request.query.formation === undefined ? DEFAULT_TACTICS.formation : request.query.formation;
       if (typeof formation !== "string" || !supportedFormation(formation)) {
-        return reply.code(400).send({ error: `formation must be one of: ${FORMATIONS.join(", ")}` });
+        return reply
+          .code(400)
+          .send({ error: `formation must be one of: ${FORMATIONS.join(", ")}` });
       }
 
       const squad = loadFc25Squad(request.params.clubId, undefined, { include: "all" });
@@ -364,7 +366,10 @@ function parseTeamSelection(
     return { error: `${label}.${tactics.error}` };
   }
 
-  const startingPlayerIds = parseOptionalPlayerIds(value.startingPlayerIds, `${label}.startingPlayerIds`);
+  const startingPlayerIds = parseOptionalPlayerIds(
+    value.startingPlayerIds,
+    `${label}.startingPlayerIds`
+  );
   if (isErrorReply(startingPlayerIds)) {
     return startingPlayerIds;
   }
@@ -619,7 +624,11 @@ function parseOptionalPositiveInteger(value: unknown, fallback: number): number 
 
 function filterRuns(runs: MatchRun[], query: Record<string, unknown>): MatchRun[] {
   return runs.filter((run) => {
-    if (typeof query.clubId === "string" && run.home_club_id !== query.clubId && run.away_club_id !== query.clubId) {
+    if (
+      typeof query.clubId === "string" &&
+      run.home_club_id !== query.clubId &&
+      run.away_club_id !== query.clubId
+    ) {
       return false;
     }
     if (typeof query.duration === "string" && run.summary.duration !== query.duration) {
@@ -645,7 +654,10 @@ function filterRuns(runs: MatchRun[], query: Record<string, unknown>): MatchRun[
 }
 
 function runUsesFormation(run: MatchRun, formation: string): boolean {
-  return tacticFormation(run.home_tactics) === formation || tacticFormation(run.away_tactics) === formation;
+  return (
+    tacticFormation(run.home_tactics) === formation ||
+    tacticFormation(run.away_tactics) === formation
+  );
 }
 
 function tacticFormation(tactics: unknown): string | null {

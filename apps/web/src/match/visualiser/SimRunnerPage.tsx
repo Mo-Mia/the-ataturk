@@ -653,11 +653,7 @@ function TeamPanel({
         </select>
       </label>
       <TacticsControls tactics={tactics} onChange={onTacticsChange} />
-      <SquadPicker
-        title={`${title} squad`}
-        selection={selection}
-        onChange={onSelectionChange}
-      />
+      <SquadPicker title={`${title} squad`} selection={selection} onChange={onSelectionChange} />
     </section>
   );
 }
@@ -674,7 +670,10 @@ function SquadPicker({
   const validation = validateSelection(selection);
   const selected = new Set(selection.selectedIds);
 
-  function setSelectedIds(selectedIds: string[], mode: TeamSelectionState["mode"] = "manual"): void {
+  function setSelectedIds(
+    selectedIds: string[],
+    mode: TeamSelectionState["mode"] = "manual"
+  ): void {
     onChange({ ...selection, selectedIds, mode });
   }
 
@@ -706,7 +705,9 @@ function SquadPicker({
         nextIds.push(player.id);
       }
     }
-    for (const player of [...selection.squad].sort((a, b) => b.overall - a.overall || a.id.localeCompare(b.id))) {
+    for (const player of [...selection.squad].sort(
+      (a, b) => b.overall - a.overall || a.id.localeCompare(b.id)
+    )) {
       if (nextIds.length >= 11) {
         break;
       }
@@ -859,7 +860,10 @@ function selectionLabel(selection: LineupSelectionSummary | undefined): string {
   return `${selection.mode === "manual" ? "Manual XI" : "Auto XI"} (${warningText})`;
 }
 
-function validateSelection(selection: TeamSelectionState): { valid: boolean; message: string | null } {
+function validateSelection(selection: TeamSelectionState): {
+  valid: boolean;
+  message: string | null;
+} {
   if (selection.status === "loading") {
     return { valid: false, message: null };
   }
@@ -894,7 +898,7 @@ function validateSelection(selection: TeamSelectionState): { valid: boolean; mes
 
 function runHistoryUrl(filters: RunFilters): string {
   const params = new URLSearchParams({ page: "1", limit: "50" });
-  for (const [key, value] of Object.entries(filters)) {
+  for (const [key, value] of Object.entries(filters) as Array<[keyof RunFilters, string]>) {
     if (value.length === 0) {
       continue;
     }

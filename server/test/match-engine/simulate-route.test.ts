@@ -265,7 +265,19 @@ describe("match-engine simulation routes", () => {
       expect(response.statusCode).toBe(200);
       expect(body.clubId).toBe("liverpool");
       expect(body.formation).toBe("4-3-3");
-      expect(body.roles).toEqual(["GK", "LB", "CB", "CB", "RB", "DM", "CM", "CM", "LW", "ST", "RW"]);
+      expect(body.roles).toEqual([
+        "GK",
+        "LB",
+        "CB",
+        "CB",
+        "RB",
+        "DM",
+        "CM",
+        "CM",
+        "LW",
+        "ST",
+        "RW"
+      ]);
       expect(body.squad.length).toBeGreaterThanOrEqual(22);
       expect(body.autoXi).toHaveLength(11);
       expect(body.bench).toHaveLength(7);
@@ -289,7 +301,9 @@ describe("match-engine simulation routes", () => {
         method: "GET",
         url: "/api/match-engine/clubs/liverpool/squad?formation=4-3-3"
       });
-      const manualIds = squad.json<{ autoXi: Array<{ id: string }> }>().autoXi.map((player) => player.id);
+      const manualIds = squad
+        .json<{ autoXi: Array<{ id: string }> }>()
+        .autoXi.map((player) => player.id);
       const response = await app.inject({
         method: "POST",
         url: "/api/match-engine/simulate",
@@ -357,7 +371,10 @@ describe("match-engine simulation routes", () => {
           duration: "second_half"
         }
       });
-      const body = response.json<{ runs: unknown[]; errors: Array<{ seed: number; error: string }> }>();
+      const body = response.json<{
+        runs: unknown[];
+        errors: Array<{ seed: number; error: string }>;
+      }>();
 
       expect(response.statusCode).toBe(200);
       expect(body.runs).toEqual([]);
@@ -493,7 +510,6 @@ describe("match-engine simulation routes", () => {
       await app.close();
     }
   });
-
 
   it("returns run detail, batch 404s, and run 404s", async () => {
     testDatabase = createServerTestDatabase("match-engine-run-detail");

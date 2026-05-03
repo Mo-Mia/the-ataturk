@@ -332,8 +332,12 @@ function squadResponse(clubId: string, prefix: "home" | "away") {
       weakFootRating: 3
     };
   });
-  const autoXi = squad.slice(0, 11).map((player) => lineupPlayer(player.id, player.position, player.shortName));
-  const bench = squad.slice(11, 18).map((player) => lineupPlayer(player.id, player.position, player.shortName));
+  const autoXi = squad
+    .slice(0, 11)
+    .map((player) => lineupPlayer(player.id, player.position, player.shortName));
+  const bench = squad
+    .slice(11, 18)
+    .map((player) => lineupPlayer(player.id, player.position, player.shortName));
 
   return {
     clubId,

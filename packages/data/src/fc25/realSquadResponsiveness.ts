@@ -345,14 +345,14 @@ function runSeeds(seeds: number, runner: (seed: number) => RunMetrics): RunMetri
   return Array.from({ length: seeds }, (_, index) => runner(index + 1));
 }
 
-function averagesFor<T extends string>(
+function averagesFor<T extends keyof RunMetrics>(
   metrics: RunMetrics[],
   keys: readonly T[]
 ): Record<T, number> {
   return Object.fromEntries(
     keys.map((key) => [
       key,
-      average(metrics.map((metric) => metric[key as keyof RunMetrics] as number))
+      average(metrics.map((metric) => metric[key]))
     ])
   ) as Record<T, number>;
 }
