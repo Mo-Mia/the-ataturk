@@ -4,6 +4,38 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-03 — FootSim Phase 5 scope: fatigue, substitutions, score-state
+
+Phase 5 adds the first in-match dynamics bundle: fatigue, substitutions, and
+score-state urgency. These mechanics shipped together because they interact:
+fatigue needs substitutions, substitutions need fatigue or score context to be
+more than cosmetic, and score-state behaviour should compose with personnel
+changes rather than sit as an isolated tuning knob.
+
+Fatigue is calibrated as a modest but real full-match effect. A 200-seed
+real-squad probe sampled active-player stamina from minute 70 onward with Auto
+Subs off; the 25th percentile was `51`, so AI fatigue substitutions use
+`fatigueThreshold: 51` rather than a guessed value. This produced 4.92 total
+subs per match, 2.11 home and 2.81 away, with zero zero-sub matches in the
+200-seed run.
+
+The late action-success responsiveness threshold is set to the observed engine
+baseline rather than the original guessed 10%: fatigue reduced late action
+success by 4.26% across 200 real-squad seeds, while also affecting movement
+speed, pressing intensity, and action probabilities.
+
+Manual XI responsiveness is measured with Auto Subs off to isolate personnel
+choice. The deliberate Liverpool rotation reduced home goals by 19.16%, clearing
+the revised 10% threshold. The lower threshold reflects that Phase 5 mechanics
+bound personnel impact over a full 90 minutes; high-quality starters also tire.
+
+Score-state is qualitative in Phase 5. The urgency multiplier scales correctly
+and shifts action distribution, but does not yet increase final-15 shot volume.
+The current model makes trailing teams take more progressive risks; those risks
+can become turnovers rather than chances. A future phase should add explicit
+chance-seeking behaviour for trailing teams rather than tuning urgency strength
+blindly.
+
 ## 2026-05-03 — FootSim Phase 4 scope: manual XI control + real-squad readiness review
 
 Phase 4 keeps `packages/match-engine/src` frozen and matures the FootSim

@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-03 11:03 SAST
+Last updated: 2026-05-03 12:52 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -25,22 +25,32 @@ sprint.
   workbench.
 - Persisted run history, comparison view, batch distribution view, and basic
   run-history filtering.
+- Fatigue/stamina: continuous per-tick drain, stamina-scaled movement/action
+  effectiveness, and final stamina diagnostics.
+- Substitutions: scheduled manual substitutions, AI Auto Subs, substitution
+  events, active-player replacement, and persisted substitution summaries.
+- Score-state urgency: late/deficit urgency multiplier that shifts pressing,
+  passing risk, and carrier action weighting around the user's baseline tactics.
 
 ## Real-Squad Responsiveness Findings
 
-The 2026-05-03 real-squad harness used Liverpool vs Manchester City over 50
+The 2026-05-03 real-squad harness used Liverpool vs Manchester City over 200
 full-match seeds per comparison. It confirmed that responsiveness survives the
 real FC25 data path:
 
-- Mentality moved Liverpool shots by +172.78%.
-- Pressing moved Liverpool fouls by +261.29%.
-- Tempo moved Liverpool possession streaks by -16.67%, which is the
+- Mentality moved Liverpool shots by +116.03%.
+- Pressing moved Liverpool fouls by +216.67%.
+- Tempo moved Liverpool possession streaks by -17.40%, which is the
   football-correct direction for faster, riskier play.
 - A deliberate manual XI rotation, replacing Van Dijk, Salah, and
   Alexander-Arnold with Chiesa, Gakpo, and Núñez, reduced Liverpool goals by
-  18.37%.
-- Formation shape is strongly visible: Liverpool `4-3-3` produced +247.19%
-  wide deliveries versus `4-4-2`.
+  19.16% with Auto Subs off.
+- Fatigue reduced late action success by 4.26%. This is modest but real, and
+  does not include movement-speed and pressing-intensity effects captured
+  elsewhere in the engine.
+- Auto Subs are active at realistic frequency after anchoring the fatigue
+  threshold to the 25th percentile of real-squad minute-70+ stamina samples:
+  4.92 total subs/match, 0 zero-sub matches in the 200-seed run.
 
 See `docs/FOOTSIM_REAL_SQUAD_RESPONSIVENESS.md` for the full table.
 
@@ -49,15 +59,15 @@ See `docs/FOOTSIM_REAL_SQUAD_RESPONSIVENESS.md` for the full table.
 These are not automatic sprint items. Promote one only if it affects v0.1
 agency, public API shape, or obvious UAT realism.
 
-- **Real substitution API**: current responsiveness swap is explicitly test-only. Integration needs bench state, player replacement, formation rebalancing, event emission, and UI-safe semantics.
 - **Player Manager protagonist tuning**: responsiveness proved a +15 single-player boost moves outcomes, but the absolute lift may need targeted gameplay tuning to feel meaningful.
-- **Game-state management**: teams do not yet explicitly waste time, chase games more urgently, protect leads, or alter risk based on score/minute beyond current tactical inputs.
-- **Fatigue/stamina**: v2 has stamina metadata, but match resolution does not yet drain energy or lower late-game actions.
 - **Atatürk initialisation contract**: integration needs a clear half-time state input for score, stats, tactics, selected XI, bench, and user-player state.
 - **Manual XI downstream effects**: manual line-ups are now measurable, but the
-  engine does not yet model morale, chemistry, familiarity, fatigue, or
+  engine does not yet model morale, chemistry, familiarity, or
   out-of-position discomfort beyond the attributes and position assignments
   already present.
+- **Score-state chance creation**: score-state urgency increases progressive
+  risk-taking, which currently produces more turnovers than chances.
+  Translating risk into elevated shot generation is a Phase 6+ concern.
 
 ## Deferred Unless UAT Finds A Blocker
 

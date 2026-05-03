@@ -1,6 +1,6 @@
 # Full-Match Characterisation
 
-Last updated: 2026-05-02 22:17 SAST
+Last updated: 2026-05-03 12:52 SAST
 
 ## Scope
 
@@ -121,3 +121,42 @@ Calibration pass: yes
 ```
 
 Second-half calibration remains unchanged and in range.
+
+## Phase 5 Baseline After Fatigue/Substitution Tuning
+
+Phase 5 added fatigue, substitutions, and score-state behaviour. Characterisation
+now runs with the same defaults as the workbench: fatigue on, score-state on,
+and Auto Subs on.
+
+The Auto Subs fatigue threshold is data-backed: active-player stamina was
+sampled from minute 70 onward across 200 Liverpool vs Manchester City real-squad
+seeds with Auto Subs off. The 25th percentile was `51`, so
+`SUBSTITUTIONS.fatigueThreshold` is set to `51`.
+
+Second-half check:
+
+```text
+=== Match Engine Characterisation (50 seeds, second half, v2, preferred-foot rated) ===
+Shots: 8.04 target [8, 12]
+Goals: 1.24 target [1, 3]
+Fouls: 5.38 target [4, 8]
+Cards: 1.44 target [1, 3]
+Calibration pass: yes
+```
+
+Full-match check:
+
+```text
+=== Match Engine Characterisation (50 seeds, full 90, v2, preferred-foot rated) ===
+Shots: 16.54 target [16, 24]
+Goals: 2.10 target [2, 6]
+Fouls: 9.86 target [8, 16]
+Cards: 2.70 target [2, 6]
+Calibration pass: yes
+```
+
+Interpretation: Phase 5 mechanics preserve both second-half and full-match
+calibration bands. Fatigue drain was increased modestly, fatigue effect
+penalties were softened to avoid suppressing full-match goals, and `saveBase`
+was reduced from `0.42` to `0.405` to keep full-match goal conversion above the
+floor.

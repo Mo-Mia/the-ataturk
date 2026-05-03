@@ -73,6 +73,33 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
+### Score-state chance creation
+Phase 5 urgency correctly increases progressive risk-taking for trailing teams,
+but the 200-seed real-squad diagnostics showed that this can reduce possession
+without increasing final-15 shot volume. Future work should add a mechanism for
+trailing teams to attempt earlier/wider shots or more direct chance creation,
+not just riskier passes.
+
+### Live in-replay substitution UI
+Phase 5 supports scheduled substitutions before simulation and AI Auto Subs.
+Live substitutions during replay/control remain deferred.
+
+### Injuries and injury substitutions
+Auto Subs currently use fatigue/tactical rules only. Add injuries once fatigue
+extremes and player availability matter across broader game modes.
+
+### Fatigue recovery across matches
+Current fatigue is per-match only. Multi-match scheduling needs recovery,
+rotation pressure, and accumulated condition.
+
+### Formation changes via substitutions
+Substitutions currently replace players into the outgoing role. Tactical shape
+changes such as defender-for-striker formation shifts are deferred.
+
+### Post-match player ratings
+Useful once substitutions, fatigue, and user-player involvement need a readable
+summary, but not needed for the current diagnostic workbench.
+
 ### True half-time side-switch
 Phase 3 added full-90 tick support and a `half_time` marker but deliberately
 deferred flipping attacking direction at tick 900. This must audit and update
@@ -85,14 +112,14 @@ and full-match characterisation after the refactor. Specific risk: changing
 attacking-goal perspective may shift shot-distance and shot-quality
 distribution, even if raw shot volume stays in range.
 
-### Player fatigue modelling
-Full 90-minute runs currently treat player intensity as constant. Add fatigue
-only once substitutions and longer-match balancing need it.
+### ~~Player fatigue modelling~~ ✅ Done
+Phase 5 added stamina drain, stamina-scaled movement/action effectiveness, and
+final stamina diagnostics. Recovery across matches is tracked separately.
 
-### Substitutions API + UI
-The engine still has no production substitution contract. Build bench state,
-player removal/addition, formation rebalance, event emission, and workbench UI
-after the full-match/XI foundation settles.
+### ~~Substitutions API + UI~~ ✅ Baseline shipped
+Phase 5 added scheduled substitutions, AI Auto Subs, substitution events, active
+player replacement, persisted substitution summaries, and workbench controls.
+Live in-replay substitution control remains deferred.
 
 ### Extra time and penalty shootout
 Out of scope for FootSim Phase 3. Needed before modelling knockout matches that
@@ -130,10 +157,10 @@ The `half_time` marker now exists, but there is no game-state intervention at
 the break. Future commentary and Atatürk UX can hang team-talk logic off this
 event.
 
-### Score-state-aware behaviour adjustments
-The engine does not yet alter risk appetite because a side is protecting a lead
-or chasing a deficit. Add only after full-match calibration has enough headroom
-to absorb score-state effects.
+### ~~Score-state-aware behaviour adjustments~~ ✅ Baseline shipped
+Phase 5 added a score-state urgency multiplier that shifts pressing, passing
+risk, and carrier action weighting. Chance-creation-specific behaviour for
+trailing teams is tracked separately above.
 
 ### ~~Full 90-minute FootSim support~~ ✅ Baseline shipped
 Phase 3 added `full_90` workbench runs by default, 1800 ticks, `half_time` at
