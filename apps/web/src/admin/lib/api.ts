@@ -15,6 +15,19 @@ export type PlayerAttributeName = (typeof PLAYER_ATTRIBUTE_NAMES)[number];
 export type PlayerAttributeChanges = Partial<Record<PlayerAttributeName, number>>;
 export type PlayerOrigin = "real" | "user_created";
 export type Position = "GK" | "CB" | "LB" | "RB" | "DM" | "CM" | "AM" | "LW" | "RW" | "ST";
+export type Fc25Position =
+  | "GK"
+  | "CB"
+  | "LB"
+  | "RB"
+  | "DM"
+  | "CM"
+  | "AM"
+  | "LM"
+  | "RM"
+  | "LW"
+  | "RW"
+  | "ST";
 export type PlayerProfileTier = "S" | "A" | "B" | "C" | "D";
 export type PlayerProfileFieldName = "tier" | "role_2004_05" | "qualitative_descriptor";
 
@@ -241,6 +254,112 @@ export interface AttributeDerivationSummary {
   abort_reason?: string;
 }
 
+export interface Fc25DatasetVersion {
+  id: string;
+  name: string;
+  source_file: string;
+  source_file_sha256: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Fc25Club {
+  dataset_version_id: string;
+  id: string;
+  name: string;
+  short_name: string;
+  country: string;
+  league: string;
+  fc25_team_id: string;
+  created_at: string;
+  updated_at: string;
+  footballData?: {
+    footballDataTeamId: number;
+    footballDataName: string;
+  };
+}
+
+export interface Fc25SquadPlayer {
+  id: string;
+  name: string;
+  shortName: string;
+  squadNumber?: number;
+  position: Fc25Position;
+  age?: number;
+  overall: number;
+  sourcePosition: Fc25Position;
+  alternativePositions: Fc25Position[];
+}
+
+export type SquadManagerSuggestion =
+  | {
+      suggestionId: string;
+      type: "player_update";
+      playerId: string;
+      changes: {
+        name?: string;
+        position?: Fc25Position;
+        nationality?: string;
+        age?: number;
+      };
+      rationale?: string;
+    }
+  | {
+      suggestionId: string;
+      type: "player_addition";
+      livePlayer: {
+        id: number;
+        name: string;
+        position: string;
+        dateOfBirth?: string | null;
+        nationality: string;
+        shirtNumber?: number | null;
+      };
+      proposed: {
+        name: string;
+        position: Fc25Position;
+        nationality: string;
+        age: number;
+        shirtNumber?: number | null;
+      };
+      rationale?: string;
+    }
+  | {
+      suggestionId: string;
+      type: "player_removal";
+      playerId: string;
+      rationale?: string;
+    };
+
+export interface SquadManagerContext {
+  activeVersion: Fc25DatasetVersion | null;
+  datasetVersions: Fc25DatasetVersion[];
+  clubs: Fc25Club[];
+}
+
+export interface VerifySquadResponse {
+  verification: {
+    missingPlayers: SquadManagerSuggestion[];
+    suggestions: SquadManagerSuggestion[];
+    attributeWarnings: SquadManagerSuggestion[];
+  };
+  cacheStatus: "hit" | "miss" | "stale";
+  apiQuotaRemaining: { minute: number; day: number };
+}
+
+export interface ApplySquadSuggestionsResponse {
+  newDatasetVersionId: string;
+  activated: boolean;
+  summary: {
+    applied: number;
+    updated: number;
+    added: number;
+    removed: number;
+  };
+}
+
 export type AttributeDerivationEvent =
   | { event: "player"; data: AttributeDerivationProgressEvent }
   | { event: "summary"; data: AttributeDerivationSummary }
@@ -285,6 +404,45 @@ export function listClubSquad(clubId: string): Promise<SquadPlayerWithAttributes
 
 export function listDatasetVersions(): Promise<DatasetVersion[]> {
   return requestJson<DatasetVersion[]>("/api/dataset-versions");
+}
+
+export function getSquadManagerContext(): Promise<SquadManagerContext> {
+  return requestJson<SquadManagerContext>("/api/ai/squad-manager/context");
+}
+
+export function getSquadManagerSquad(
+  clubId: string,
+  datasetVersionId?: string
+): Promise<{ squad: Fc25SquadPlayer[] }> {
+  const params = new URLSearchParams({ clubId });
+  if (datasetVersionId) {
+    params.set("datasetVersionId", datasetVersionId);
+  }
+  return requestJson<{ squad: Fc25SquadPlayer[] }>(
+    `/api/ai/squad-manager/squad?${params.toString()}`
+  );
+}
+
+export function verifySquad(body: {
+  clubId: string;
+  datasetVersionId?: string;
+}): Promise<VerifySquadResponse> {
+  return requestJson<VerifySquadResponse>("/api/ai/verify-squad", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
+}
+
+export function applySquadSuggestions(body: {
+  clubId: string;
+  baseDatasetVersionId: string;
+  suggestions: SquadManagerSuggestion[];
+  rationale?: string;
+}): Promise<ApplySquadSuggestionsResponse> {
+  return requestJson<ApplySquadSuggestionsResponse>("/api/ai/apply-suggestions", {
+    method: "POST",
+    body: JSON.stringify(body)
+  });
 }
 
 export function listProfileVersions(): Promise<PlayerProfileVersionSummary[]> {

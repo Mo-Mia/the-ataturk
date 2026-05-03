@@ -18,6 +18,7 @@ export function AdminLayout() {
           <Link to="/admin/profile-versions">Profile versions</Link>
           <Link to="/admin/extract-profiles">Extract profiles</Link>
           <Link to="/admin/derive-attributes">Derive attributes</Link>
+          <Link to="/admin/squad-manager">Squad manager</Link>
         </nav>
       </header>
       <ActiveVersionBanner />

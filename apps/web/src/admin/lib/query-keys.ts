@@ -16,5 +16,10 @@ export const queryKeys = {
     ["playerProfile", playerId, version ?? "active"] as const,
   profileHistory: (playerId: string, version: string | undefined, limit: number) =>
     ["profileHistory", playerId, version ?? "active", limit] as const,
-  profileVersions: ["profileVersions"] as const
+  profileVersions: ["profileVersions"] as const,
+  squadManagerContext: ["squadManagerContext"] as const,
+  squadManagerSquad: (clubId: string | undefined, datasetVersionId: string | undefined) =>
+    ["squadManagerSquad", clubId ?? "none", datasetVersionId ?? "active"] as const,
+  squadVerification: (clubId: string | undefined, datasetVersionId: string | undefined) =>
+    ["squadVerification", clubId ?? "none", datasetVersionId ?? "active"] as const
 };

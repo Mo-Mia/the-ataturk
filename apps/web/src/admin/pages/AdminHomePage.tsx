@@ -37,6 +37,12 @@ export function AdminHomePage() {
               </td>
               <td>Generate engine attributes from curated player profiles.</td>
             </tr>
+            <tr>
+              <td>
+                <Link to="/admin/squad-manager">Squad manager</Link>
+              </td>
+              <td>Verify FC25 squads against live squad data and apply accepted corrections.</td>
+            </tr>
           </tbody>
         </table>
       </div>

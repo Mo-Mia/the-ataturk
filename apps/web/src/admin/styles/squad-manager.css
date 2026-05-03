@@ -1,0 +1,228 @@
+.squad-manager {
+  min-height: 100vh;
+  margin: -14px -12px -32px;
+  padding: 18px;
+  background: #f5f0e6;
+  color: #1a1a1a;
+  font-family: "Trebuchet MS", Verdana, sans-serif;
+}
+
+.squad-manager__masthead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 4px double #a3262a;
+  padding-bottom: 10px;
+}
+
+.squad-manager__masthead p,
+.squad-manager label,
+.squad-list__header span,
+.verification-panel__header p,
+.squad-manager-muted {
+  margin: 0;
+  font-size: 12px;
+  font-variant: small-caps;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.squad-manager h1,
+.squad-manager h2,
+.squad-list__name {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.squad-manager h1 {
+  margin: 0;
+  color: #a3262a;
+  font-size: 34px;
+}
+
+.squad-manager button {
+  border: 1px solid #6f171b;
+  border-radius: 0;
+  background: #a3262a;
+  color: #ffffff;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+}
+
+.squad-manager button:disabled {
+  opacity: 0.55;
+}
+
+.squad-manager__controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.squad-manager label {
+  display: grid;
+  gap: 4px;
+}
+
+.squad-manager select,
+.squad-manager input {
+  border: 3px double #5f5546;
+  border-radius: 0;
+  background: #efe4cf;
+  color: #1a1a1a;
+  padding: 7px;
+  font: inherit;
+}
+
+.squad-manager__board {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(340px, 1.2fr) minmax(240px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.squad-list,
+.verification-panel,
+.player-editor-widget {
+  border: 3px double #3a5f3a;
+  background: #fbf7ee;
+}
+
+.squad-list__header,
+.verification-panel__header,
+.player-editor-widget h2 {
+  margin: 0;
+  padding: 9px 10px;
+  background: #3a5f3a;
+  color: #ffffff;
+}
+
+.squad-list__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.squad-list__header h2,
+.verification-panel h2,
+.player-editor-widget h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.squad-list__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.squad-list__rows li:nth-child(odd) {
+  background: #f5f0e6;
+}
+
+.squad-list__rows li:nth-child(even) {
+  background: #eadfc9;
+}
+
+.squad-list__rows li.is-selected {
+  outline: 2px solid #a3262a;
+  outline-offset: -2px;
+}
+
+.squad-list__rows button {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: #1a1a1a;
+  text-align: left;
+}
+
+.squad-list__number {
+  color: #a3262a;
+  font-weight: 700;
+}
+
+.squad-list__meta,
+.verification-item p {
+  font-size: 12px;
+}
+
+.squad-manager__centre {
+  display: grid;
+  gap: 12px;
+}
+
+.verification-panel details {
+  border-top: 1px solid #c9bfae;
+}
+
+.verification-panel summary {
+  cursor: pointer;
+  padding: 9px 10px;
+  color: #a3262a;
+  font-weight: 700;
+  font-variant: small-caps;
+}
+
+.verification-items {
+  display: grid;
+  gap: 8px;
+  padding: 8px 10px 10px;
+}
+
+.verification-item {
+  border: 1px solid #c9bfae;
+  background: #f5f0e6;
+  padding: 8px;
+}
+
+.verification-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.verification-item button {
+  margin-top: 6px;
+  padding: 5px 8px;
+}
+
+.retro-form-grid {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.apply-dialog {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(26 26 26 / 0.35);
+}
+
+.apply-dialog__panel {
+  width: min(420px, calc(100% - 32px));
+  border: 4px double #a3262a;
+  background: #f5f0e6;
+  padding: 16px;
+}
+
+.apply-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.squad-manager-error {
+  border: 2px solid #a3262a;
+  background: #fff5f5;
+  color: #7f1d1d;
+  padding: 8px;
+}

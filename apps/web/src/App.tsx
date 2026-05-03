@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { AdminLayout } from "./admin/components/AdminLayout";
@@ -52,6 +52,11 @@ interface SmokeMatchResponse {
 }
 
 const queryClient = new QueryClient();
+const AdminSquadManagerPage = lazy(() =>
+  import("./admin/pages/AdminSquadManagerPage").then((module) => ({
+    default: module.AdminSquadManagerPage
+  }))
+);
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init);
@@ -205,6 +210,14 @@ export function App() {
             <Route path="profile-versions" element={<AdminProfileVersionsPage />} />
             <Route path="extract-profiles" element={<AdminExtractProfilesPage />} />
             <Route path="derive-attributes" element={<AdminDeriveAttributesPage />} />
+            <Route
+              path="squad-manager"
+              element={
+                <Suspense fallback={<p>Loading squad manager...</p>}>
+                  <AdminSquadManagerPage />
+                </Suspense>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>
