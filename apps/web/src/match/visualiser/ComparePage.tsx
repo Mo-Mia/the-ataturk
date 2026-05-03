@@ -189,7 +189,24 @@ function SubstitutionComparison({
     <section className="compare-lineups" aria-label="Substitution comparison">
       <SubstitutionBlock title="Run A substitutions" run={runA} />
       <SubstitutionBlock title="Run B substitutions" run={runB} />
+      <SetPieceBlock title="Run A set pieces" run={runA} />
+      <SetPieceBlock title="Run B set pieces" run={runB} />
     </section>
+  );
+}
+
+function SetPieceBlock({ title, run }: { title: string; run: PersistedMatchRun }) {
+  const home = run.summary.setPieces?.home;
+  const away = run.summary.setPieces?.away;
+  return (
+    <div>
+      <strong>{title}</strong>
+      <p>
+        {!home || !away
+          ? "Set-piece data not recorded"
+          : `Corners ${home.corners}/${away.corners}, penalties ${home.penalties}/${away.penalties}, set-piece goals ${home.setPieceGoals}/${away.setPieceGoals}`}
+      </p>
+    </div>
   );
 }
 

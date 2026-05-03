@@ -538,7 +538,25 @@ function LineupSummary({ run }: { run: PersistedMatchRun }) {
         ) : null}
       </div>
       <SubstitutionSummary run={run} />
+      <SetPieceSummary run={run} />
     </>
+  );
+}
+
+function SetPieceSummary({ run }: { run: PersistedMatchRun }) {
+  const home = run.summary.setPieces?.home;
+  const away = run.summary.setPieces?.away;
+  if (!home || !away) {
+    return <p className="sim-runner-note">Set-piece data not recorded.</p>;
+  }
+
+  return (
+    <p className="sim-runner-note">
+      Set pieces: corners {home.corners}/{away.corners}, free kicks{" "}
+      {home.directFreeKicks + home.indirectFreeKicks}/
+      {away.directFreeKicks + away.indirectFreeKicks}, penalties {home.penalties}/{away.penalties},
+      set-piece goals {home.setPieceGoals}/{away.setPieceGoals}.
+    </p>
   );
 }
 

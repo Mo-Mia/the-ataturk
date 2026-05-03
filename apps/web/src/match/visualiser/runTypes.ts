@@ -2,6 +2,8 @@ import type {
   MatchDuration,
   Position,
   ScoreStateEventSummary,
+  SetPieceSummary,
+  SetPieceTakers,
   SubstitutionSummary,
   TeamTactics
 } from "@the-ataturk/match-engine";
@@ -57,6 +59,8 @@ export interface SimRunSummary {
     away: Array<{ playerId: string; stamina: number }>;
   };
   scoreStateEvents?: ScoreStateEventSummary[];
+  setPieceTakers?: { home: SetPieceTakers; away: SetPieceTakers };
+  setPieces?: { home: SetPieceSummary; away: SetPieceSummary };
 }
 
 export interface PersistedMatchRun {

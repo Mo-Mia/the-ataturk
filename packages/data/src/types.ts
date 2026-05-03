@@ -3,6 +3,8 @@ import type {
   PlayerInputV2,
   Position as EnginePosition,
   ScoreStateEventSummary,
+  SetPieceSummary,
+  SetPieceTakers,
   SubstitutionSummary
 } from "@the-ataturk/match-engine";
 
@@ -501,6 +503,8 @@ export interface MatchRunSummary {
     away: Array<{ playerId: string; stamina: number }>;
   };
   scoreStateEvents?: ScoreStateEventSummary[];
+  setPieceTakers?: { home: SetPieceTakers; away: SetPieceTakers };
+  setPieces?: { home: SetPieceSummary; away: SetPieceSummary };
 }
 
 export interface MatchRun {

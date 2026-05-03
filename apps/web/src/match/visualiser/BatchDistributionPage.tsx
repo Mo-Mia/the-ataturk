@@ -140,6 +140,7 @@ export function BatchDistributionPage() {
         <h2>Batch XI</h2>
         <BatchLineup run={runs[0]} />
         <BatchSubstitutions runs={runs} />
+        <BatchSetPieces runs={runs} />
       </section>
 
       <section className="batch-summary" aria-label="Batch summary statistics">
@@ -197,6 +198,30 @@ function BatchSubstitutions({ runs }: { runs: PersistedMatchRun[] }) {
   return (
     <p className="sim-runner-note">
       Substitutions per run: mean {summary.mean}, median {summary.median}, range {summary.range}.
+    </p>
+  );
+}
+
+function BatchSetPieces({ runs }: { runs: PersistedMatchRun[] }) {
+  const corners = runs.map(
+    (run) => (run.summary.setPieces?.home.corners ?? 0) + (run.summary.setPieces?.away.corners ?? 0)
+  );
+  const penalties = runs.map(
+    (run) =>
+      (run.summary.setPieces?.home.penalties ?? 0) + (run.summary.setPieces?.away.penalties ?? 0)
+  );
+  const goals = runs.map(
+    (run) =>
+      (run.summary.setPieces?.home.setPieceGoals ?? 0) +
+      (run.summary.setPieces?.away.setPieceGoals ?? 0)
+  );
+  if (corners.length === 0) {
+    return null;
+  }
+  return (
+    <p className="sim-runner-note">
+      Set pieces per run: corners mean {summarise(corners).mean}, penalties mean{" "}
+      {summarise(penalties).mean}, set-piece goals mean {summarise(goals).mean}.
     </p>
   );
 }

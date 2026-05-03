@@ -130,6 +130,28 @@ export function formatEventDetail(snapshot: MatchSnapshot, event: SemanticEvent)
     return parts.length > 0 ? `(${parts.join(", ")})` : "";
   }
 
+  if (event.type === "chance_created") {
+    const parts = [
+      detailString(event.detail.source, ""),
+      event.detail.convertedToShot === true ? "shot taken" : "no shot",
+      pressureText(event.detail.pressure),
+      detailString(event.detail.distanceBand, "")
+    ].filter(Boolean);
+    return parts.length > 0 ? `(${parts.join(", ")})` : "";
+  }
+
+  if (event.type === "corner_taken") {
+    return `(${detailString(event.detail.deliveryType, "delivery")})`;
+  }
+
+  if (event.type === "free_kick_taken") {
+    return `(${detailString(event.detail.kickType, "taken")})`;
+  }
+
+  if (event.type === "penalty_taken") {
+    return "(taken)";
+  }
+
   if (event.type === "throw_in") {
     return `(${detailString(event.detail.reason, "out of play")})`;
   }

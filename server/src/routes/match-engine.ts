@@ -91,6 +91,8 @@ interface SimulateRunSuccess {
     };
     endStamina: NonNullable<MatchSnapshot["finalSummary"]["endStamina"]>;
     scoreStateEvents: NonNullable<MatchSnapshot["finalSummary"]["scoreStateEvents"]>;
+    setPieceTakers: NonNullable<MatchSnapshot["finalSummary"]["setPieceTakers"]>;
+    setPieces: NonNullable<MatchSnapshot["finalSummary"]["setPieces"]>;
   };
 }
 
@@ -562,7 +564,29 @@ function summaryFor(
     autoSubs,
     substitutions: snapshot.finalSummary.substitutions ?? { home: [], away: [] },
     endStamina: snapshot.finalSummary.endStamina ?? { home: [], away: [] },
-    scoreStateEvents: snapshot.finalSummary.scoreStateEvents ?? []
+    scoreStateEvents: snapshot.finalSummary.scoreStateEvents ?? [],
+    setPieceTakers: snapshot.finalSummary.setPieceTakers ?? {
+      home: { freeKick: null, corner: null, penalty: null },
+      away: { freeKick: null, corner: null, penalty: null }
+    },
+    setPieces: snapshot.finalSummary.setPieces ?? {
+      home: {
+        corners: 0,
+        directFreeKicks: 0,
+        indirectFreeKicks: 0,
+        penalties: 0,
+        setPieceShots: 0,
+        setPieceGoals: 0
+      },
+      away: {
+        corners: 0,
+        directFreeKicks: 0,
+        indirectFreeKicks: 0,
+        penalties: 0,
+        setPieceShots: 0,
+        setPieceGoals: 0
+      }
+    }
   };
 }
 
