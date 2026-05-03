@@ -4,6 +4,31 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-03 — FootSim Phase 9 outcome: manual XI impact decay was sample noise
+
+Phase 9 investigated why manual XI rotation impact appeared to decay from
+Phase 4's `-18.37%` to Phase 8's `-8.09%` 200-seed baseline. The sprint made
+no engine changes and did not tune calibration constants.
+
+The investigation used paired seeds over 1000 Liverpool vs Manchester City
+full-match runs, with Auto Subs off to isolate personnel choice. The same
+repeatable Liverpool rotation was used: Van Dijk, Salah, and Alexander-Arnold
+out; Chiesa, Gakpo, and Núñez in.
+
+Result: auto XI averaged `0.923` Liverpool goals, rotated XI averaged `0.776`,
+for a `-15.93%` impact. Paired standard error was `4.31pp`, with a 95%
+interval of `-24.37%` to `-7.48%`.
+
+Classification: Outcome 1, sample noise. Manual XI impact remains materially
+strong in the current engine; Phase 8's `-8.09%` result was a low-sample
+outlier around a low-scoring metric. Strand B decomposition was skipped because
+Strand A restored impact above the investigation threshold.
+
+Decision: Phase 8 can resume against the current engine state. The Phase 9
+1000-seed result is the baseline to reference for manual-XI impact rather than
+the Phase 8 200-seed outlier. Future thresholds should account for the wider
+variance of low absolute goal counts.
+
 ## 2026-05-03 — FootSim Phase 7 scope: true half-time side-switch
 
 Phase 7 ships true half-time side-switching as a fidelity refactor, not a new

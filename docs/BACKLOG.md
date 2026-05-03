@@ -73,6 +73,16 @@ The Step 2B LLM derivation produced `penalty_taking=92` for Andrea Pirlo. That m
 
 ## Engine
 
+### Phase 8 manual XI baseline should use Phase 9's 1000-seed result
+Phase 9 showed the Phase 8 `-8.09%` manual-XI result was a 200-seed outlier.
+Use the 1000-seed paired result (`-15.93%`, 4.31pp SE) when Phase 8 resumes and
+avoid treating the smaller Phase 8 sample as the canonical manual-XI baseline.
+
+### Widen manual XI responsiveness threshold for low-goal samples
+Manual XI impact is real, but low absolute goal rates create wide confidence
+intervals. Future responsiveness gates should avoid a brittle fixed 10% cutoff
+unless the seed count is high enough to control that variance.
+
 ### Visualiser pitch direction indicator
 New Phase 7 runs are side-switch-aware, but the replay UI does not yet show a
 clear "home attacking this way" indicator. Add only if UAT users misread the

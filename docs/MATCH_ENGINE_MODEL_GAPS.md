@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-03 15:35 SAST
+Last updated: 2026-05-03 17:10 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -52,7 +52,8 @@ real FC25 data path:
   football-correct direction for faster, riskier play.
 - A deliberate manual XI rotation, replacing Van Dijk, Salah, and
   Alexander-Arnold with Chiesa, Gakpo, and Núñez, reduced Liverpool goals by
-  19.16% with Auto Subs off.
+  15.93% over the Phase 9 1000-seed paired investigation. Phase 8's 200-seed
+  `-8.09%` result was sampling/threshold noise, not a structural decay.
 - Fatigue reduced late action success by 4.26%. This is modest but real, and
   does not include movement-speed and pressing-intensity effects captured
   elsewhere in the engine.
