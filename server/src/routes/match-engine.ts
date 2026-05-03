@@ -11,11 +11,14 @@ import {
   listAllMatchRuns,
   listMatchRunsByBatch,
   loadFc25Squad,
-  selectStartingXI,
+  selectLineup,
   supportedFormation,
+  formationRoles,
   type Fc25Club,
   type Fc25ClubId,
+  type Fc25SquadPlayer,
   type MatchRunLineupPlayer,
+  type MatchRunLineupSelection,
   type MatchRun
 } from "@the-ataturk/data";
 import {
@@ -37,10 +40,12 @@ interface SimulateBody {
   home?: {
     clubId?: unknown;
     tactics?: unknown;
+    startingPlayerIds?: unknown;
   };
   away?: {
     clubId?: unknown;
     tactics?: unknown;
+    startingPlayerIds?: unknown;
   };
   seed?: unknown;
   batch?: unknown;
@@ -65,6 +70,14 @@ interface SimulateRunSuccess {
     xi: {
       home: MatchRunLineupPlayer[];
       away: MatchRunLineupPlayer[];
+    };
+    bench: {
+      home: MatchRunLineupPlayer[];
+      away: MatchRunLineupPlayer[];
+    };
+    xiSelection: {
+      home: MatchRunLineupSelection;
+      away: MatchRunLineupSelection;
     };
   };
 }
@@ -91,6 +104,14 @@ interface BatchParams {
   batchId: string;
 }
 
+interface ClubParams {
+  clubId: string;
+}
+
+interface SquadQuery {
+  formation?: unknown;
+}
+
 const MAX_BATCH = 50;
 const DEFAULT_RUN_LIST_LIMIT = 50;
 const MAX_RUN_LIST_LIMIT = 100;
@@ -112,6 +133,37 @@ const WIDTHS = ["narrow", "normal", "wide"] as const;
 export function registerMatchEngineRoutes(app: FastifyInstance): void {
   app.get<{ Reply: Fc25Club[] }>("/api/match-engine/clubs", () => listFc25Clubs());
 
+  app.get<{ Params: ClubParams; Querystring: SquadQuery }>(
+    "/api/match-engine/clubs/:clubId/squad",
+    (request, reply) => {
+      if (!isFc25ClubId(request.params.clubId)) {
+        return reply.code(404).send({ error: "Club not found" });
+      }
+
+      const formation =
+        request.query.formation === undefined ? DEFAULT_TACTICS.formation : request.query.formation;
+      if (typeof formation !== "string" || !supportedFormation(formation)) {
+        return reply.code(400).send({ error: `formation must be one of: ${FORMATIONS.join(", ")}` });
+      }
+
+      const squad = loadFc25Squad(request.params.clubId, undefined, { include: "all" });
+      const lineup = selectLineup(squad.players, formation);
+
+      return {
+        clubId: request.params.clubId,
+        clubName: squad.clubName,
+        shortName: squad.shortName,
+        formation,
+        roles: formationRoles(formation),
+        squad: squad.players.map(squadPlayerResponse),
+        autoXi: lineup.xi.map(lineupPlayer),
+        bench: lineup.bench.map(lineupPlayer),
+        assignments: lineup.assignments,
+        warnings: lineup.warnings
+      };
+    }
+  );
+
   app.post<{ Body: SimulateBody; Reply: SimulateResponse | { error: string } }>(
     "/api/match-engine/simulate",
     async (request, reply) => {
@@ -129,8 +181,16 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
       for (let offset = 0; offset < parsed.batch; offset += 1) {
         const seed = parsed.seed + offset;
         try {
-          const home = buildTeam(parsed.home.clubId, parsed.home.tactics);
-          const away = buildTeam(parsed.away.clubId, parsed.away.tactics);
+          const home = buildTeam(
+            parsed.home.clubId,
+            parsed.home.tactics,
+            parsed.home.startingPlayerIds
+          );
+          const away = buildTeam(
+            parsed.away.clubId,
+            parsed.away.tactics,
+            parsed.away.startingPlayerIds
+          );
           const snapshot = simulateMatch({
             homeTeam: home.team,
             awayTeam: away.team,
@@ -147,7 +207,7 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
             homeClubId: parsed.home.clubId,
             awayClubId: parsed.away.clubId,
             artefactId,
-            summary: summaryFor(snapshot, parsed.duration, home.xi, away.xi)
+            summary: summaryFor(snapshot, parsed.duration, home, away)
           });
         } catch (error) {
           errors.push({
@@ -230,8 +290,8 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
 
 function parseSimulateBody(body: SimulateBody):
   | {
-      home: { clubId: Fc25ClubId; tactics: TeamTactics };
-      away: { clubId: Fc25ClubId; tactics: TeamTactics };
+      home: { clubId: Fc25ClubId; tactics: TeamTactics; startingPlayerIds?: string[] };
+      away: { clubId: Fc25ClubId; tactics: TeamTactics; startingPlayerIds?: string[] };
       seed: number;
       batch: number;
       duration: MatchDuration;
@@ -278,7 +338,7 @@ function parseSimulateBody(body: SimulateBody):
 function parseTeamSelection(
   value: unknown,
   label: "home" | "away"
-): { clubId: Fc25ClubId; tactics: TeamTactics } | ErrorReply {
+): { clubId: Fc25ClubId; tactics: TeamTactics; startingPlayerIds?: string[] } | ErrorReply {
   if (!isRecord(value)) {
     return { error: `${label} must be an object` };
   }
@@ -292,9 +352,15 @@ function parseTeamSelection(
     return { error: `${label}.${tactics.error}` };
   }
 
+  const startingPlayerIds = parseOptionalPlayerIds(value.startingPlayerIds, `${label}.startingPlayerIds`);
+  if (isErrorReply(startingPlayerIds)) {
+    return startingPlayerIds;
+  }
+
   return {
     clubId: value.clubId,
-    tactics
+    tactics,
+    ...(startingPlayerIds ? { startingPlayerIds } : {})
   };
 }
 
@@ -349,24 +415,32 @@ function parseTactics(value: unknown): TeamTactics | { error: string } {
 
 function buildTeam(
   clubId: Fc25ClubId,
-  tactics: TeamTactics
-): { team: TeamV2; xi: MatchRunLineupPlayer[] } {
+  tactics: TeamTactics,
+  startingPlayerIds?: readonly string[]
+): {
+  team: TeamV2;
+  xi: MatchRunLineupPlayer[];
+  bench: MatchRunLineupPlayer[];
+  selection: MatchRunLineupSelection;
+} {
   if (!supportedFormation(tactics.formation)) {
     throw new Error(`Unsupported formation '${tactics.formation}'`);
   }
 
   const squad = loadFc25Squad(clubId, undefined, { include: "all" });
-  const xi = selectStartingXI(squad.players, tactics.formation);
+  const lineup = selectLineup(squad.players, tactics.formation, startingPlayerIds);
 
   return {
     team: {
       id: clubId,
       name: squad.clubName,
       shortName: squad.shortName,
-      players: xi,
+      players: lineup.xi,
       tactics
     },
-    xi: xi.map(lineupPlayer)
+    xi: lineup.xi.map(lineupPlayer),
+    bench: lineup.bench.map(lineupPlayer),
+    selection: { mode: lineup.mode, warnings: lineup.warnings }
   };
 }
 
@@ -383,8 +457,16 @@ async function writeSnapshot(snapshot: MatchSnapshot, seed: number): Promise<str
 function summaryFor(
   snapshot: MatchSnapshot,
   duration: MatchDuration,
-  homeXi: MatchRunLineupPlayer[],
-  awayXi: MatchRunLineupPlayer[]
+  homeLineup: {
+    xi: MatchRunLineupPlayer[];
+    bench: MatchRunLineupPlayer[];
+    selection: MatchRunLineupSelection;
+  },
+  awayLineup: {
+    xi: MatchRunLineupPlayer[];
+    bench: MatchRunLineupPlayer[];
+    selection: MatchRunLineupSelection;
+  }
 ): SimulateRunSuccess["summary"] {
   const { home, away } = snapshot.finalSummary.statistics;
   return {
@@ -398,8 +480,16 @@ function summaryFor(
     possession: { home: home.possession, away: away.possession },
     duration,
     xi: {
-      home: homeXi,
-      away: awayXi
+      home: homeLineup.xi,
+      away: awayLineup.xi
+    },
+    bench: {
+      home: homeLineup.bench,
+      away: awayLineup.bench
+    },
+    xiSelection: {
+      home: homeLineup.selection,
+      away: awayLineup.selection
     }
   };
 }
@@ -412,6 +502,31 @@ function lineupPlayer(player: TeamV2["players"][number]): MatchRunLineupPlayer {
     position: player.position,
     ...(player.squadNumber === undefined ? {} : { squadNumber: player.squadNumber })
   };
+}
+
+function squadPlayerResponse(player: Fc25SquadPlayer) {
+  return {
+    id: player.id,
+    name: player.name,
+    shortName: player.shortName,
+    squadNumber: player.squadNumber,
+    overall: player.overall,
+    position: player.position,
+    sourcePosition: player.sourcePosition,
+    alternativePositions: player.alternativePositions,
+    preferredFoot: player.preferredFoot,
+    weakFootRating: player.weakFootRating
+  };
+}
+
+function parseOptionalPlayerIds(value: unknown, field: string): string[] | undefined | ErrorReply {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(value) || !value.every((item) => typeof item === "string")) {
+    return { error: `${field} must be an array of player ids` };
+  }
+  return value;
 }
 
 function parseEnum<const T extends readonly string[]>(

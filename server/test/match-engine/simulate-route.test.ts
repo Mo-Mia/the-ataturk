@@ -74,6 +74,11 @@ describe("match-engine simulation routes", () => {
             possession: { home: number; away: number };
             duration: string;
             xi: { home: Array<{ id: string; position: string }>; away: Array<{ id: string }> };
+            bench: { home: Array<{ id: string }>; away: Array<{ id: string }> };
+            xiSelection: {
+              home: { mode: string; warnings: unknown[] };
+              away: { mode: string; warnings: unknown[] };
+            };
           };
         }>;
         errors: Array<{ seed: number; error: string }>;
@@ -92,6 +97,8 @@ describe("match-engine simulation routes", () => {
       expect(body.runs[0]?.summary.shots.home).toEqual(expect.any(Number));
       expect(body.runs[0]?.summary.duration).toBe("full_90");
       expect(body.runs[0]?.summary.xi.home).toHaveLength(11);
+      expect(body.runs[0]?.summary.bench.home).toHaveLength(7);
+      expect(body.runs[0]?.summary.xiSelection.home.mode).toBe("auto");
       expect(body.runs[0]?.summary.xi.home.map((player) => player.position)).toEqual([
         "GK",
         "RB",
@@ -228,6 +235,135 @@ describe("match-engine simulation routes", () => {
       for (const runId of createdRunIds) {
         await app.inject({ method: "DELETE", url: `/api/match-engine/runs/${runId}` });
       }
+      await app.close();
+    }
+  });
+
+  it("returns squad data with an auto XI for a club and formation", async () => {
+    testDatabase = createServerTestDatabase("match-engine-squad");
+    importFc25Dataset({
+      databasePath: testDatabase.path,
+      csvPath: FIXTURE_PATH,
+      datasetVersionId: "fc25-route-test"
+    });
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/match-engine/clubs/liverpool/squad?formation=4-3-3"
+      });
+      const body = response.json<{
+        clubId: string;
+        formation: string;
+        roles: string[];
+        squad: Array<{ id: string; overall: number; sourcePosition: string }>;
+        autoXi: Array<{ id: string; position: string }>;
+        bench: Array<{ id: string }>;
+      }>();
+
+      expect(response.statusCode).toBe(200);
+      expect(body.clubId).toBe("liverpool");
+      expect(body.formation).toBe("4-3-3");
+      expect(body.roles).toEqual(["GK", "LB", "CB", "CB", "RB", "DM", "CM", "CM", "LW", "ST", "RW"]);
+      expect(body.squad.length).toBeGreaterThanOrEqual(22);
+      expect(body.autoXi).toHaveLength(11);
+      expect(body.bench).toHaveLength(7);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("runs with a manual XI and persists selection diagnostics", async () => {
+    testDatabase = createServerTestDatabase("match-engine-manual-xi");
+    importFc25Dataset({
+      databasePath: testDatabase.path,
+      csvPath: FIXTURE_PATH,
+      datasetVersionId: "fc25-route-test"
+    });
+    const app = buildApp();
+    const createdRunIds: string[] = [];
+
+    try {
+      const squad = await app.inject({
+        method: "GET",
+        url: "/api/match-engine/clubs/liverpool/squad?formation=4-3-3"
+      });
+      const manualIds = squad.json<{ autoXi: Array<{ id: string }> }>().autoXi.map((player) => player.id);
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/match-engine/simulate",
+        payload: {
+          home: {
+            clubId: "liverpool",
+            tactics: { ...DEFAULT_TACTICS, formation: "4-3-3" },
+            startingPlayerIds: manualIds
+          },
+          away: { clubId: "manchester-city", tactics: DEFAULT_TACTICS },
+          seed: 303,
+          batch: 1,
+          duration: "second_half"
+        }
+      });
+      const body = response.json<{
+        runs: Array<{
+          id: string;
+          summary: {
+            xi: { home: Array<{ id: string; position: string }> };
+            bench: { home: Array<{ id: string }> };
+            xiSelection: { home: { mode: string; warnings: unknown[] } };
+          };
+        }>;
+        errors: unknown[];
+      }>();
+
+      expect(response.statusCode).toBe(200);
+      expect(body.errors).toEqual([]);
+      expect(body.runs).toHaveLength(1);
+      createdRunIds.push(body.runs[0]!.id);
+      expect(body.runs[0]?.summary.xiSelection.home.mode).toBe("manual");
+      expect(body.runs[0]?.summary.xi.home.map((player) => player.id)).toEqual(manualIds);
+      expect(body.runs[0]?.summary.bench.home).toHaveLength(7);
+    } finally {
+      for (const runId of createdRunIds) {
+        await app.inject({ method: "DELETE", url: `/api/match-engine/runs/${runId}` });
+      }
+      await app.close();
+    }
+  });
+
+  it("rejects invalid manual XIs", async () => {
+    testDatabase = createServerTestDatabase("match-engine-invalid-manual-xi");
+    importFc25Dataset({
+      databasePath: testDatabase.path,
+      csvPath: FIXTURE_PATH,
+      datasetVersionId: "fc25-route-test"
+    });
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/match-engine/simulate",
+        payload: {
+          home: {
+            clubId: "liverpool",
+            tactics: DEFAULT_TACTICS,
+            startingPlayerIds: ["one", "two"]
+          },
+          away: { clubId: "manchester-city", tactics: DEFAULT_TACTICS },
+          seed: 404,
+          batch: 1,
+          duration: "second_half"
+        }
+      });
+      const body = response.json<{ runs: unknown[]; errors: Array<{ seed: number; error: string }> }>();
+
+      expect(response.statusCode).toBe(200);
+      expect(body.runs).toEqual([]);
+      expect(body.errors[0]?.seed).toBe(404);
+      expect(body.errors[0]?.error).toContain("Manual XI");
+    } finally {
       await app.close();
     }
   });
