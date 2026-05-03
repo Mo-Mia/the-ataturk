@@ -36,6 +36,21 @@ if (report.phase5.subImpact.substitutionDiagnostics) {
       `${diagnostics.zeroSubMatches} zero-sub matches; max ${diagnostics.maxSubsInMatch}`
   );
 }
+console.log(
+  `Chance creation impact: ${report.phase6.chanceCreationImpact.deltaPct.toFixed(2)}% ${report.phase6.chanceCreationImpact.status} ` +
+    `(${report.phase6.chanceCreationImpact.baselineAverage.toFixed(2)} -> ${report.phase6.chanceCreationImpact.variantAverage.toFixed(2)})`
+);
+console.log(
+  `Score-state shot impact: ${report.phase6.scoreStateShotImpact.deltaPct.toFixed(2)}% ${report.phase6.scoreStateShotImpact.status} ` +
+    `(${report.phase6.scoreStateShotImpact.baselineAverage.toFixed(2)} -> ${report.phase6.scoreStateShotImpact.variantAverage.toFixed(2)})`
+);
+console.log(
+  `Set-piece baseline: ${report.phase6.setPieceImpact.averageSetPieceEvents.toFixed(2)} events, ` +
+    `${report.phase6.setPieceImpact.averageSetPieceGoals.toFixed(2)} goals, ` +
+    `${report.phase6.setPieceImpact.averageCorners.toFixed(2)} corners, ` +
+    `${report.phase6.setPieceImpact.averagePenalties.toFixed(2)} penalties, ` +
+    `${report.phase6.setPieceImpact.penaltyConversionPct.toFixed(1)}% penalty conversion`
+);
 console.log(`Pass: ${report.pass ? "yes" : "no"}`);
 
 if (!report.pass) {

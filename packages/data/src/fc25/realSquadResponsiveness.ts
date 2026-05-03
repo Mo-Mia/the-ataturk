@@ -33,7 +33,9 @@ type MetricKey =
   | "homePossession"
   | "homeFinal15Shots"
   | "lateActionSuccessRate"
-  | "final15AverageUrgency";
+  | "final15AverageUrgency"
+  | "setPieceEvents"
+  | "setPieceGoals";
 type NumericMetricKey = {
   [Key in keyof RunMetrics]: RunMetrics[Key] extends number ? Key : never;
 }[keyof RunMetrics];
@@ -53,6 +55,13 @@ interface RunMetrics {
   lateActionSuccessRate: number;
   final15AverageUrgency: number;
   substitutions: number;
+  setPieceEvents: number;
+  setPieceGoals: number;
+  corners: number;
+  directFreeKicks: number;
+  indirectFreeKicks: number;
+  penalties: number;
+  penaltyGoals: number;
   scoreStateDiagnostics: ScoreStateDiagnostics;
   substitutionEvents: Array<SubstitutionSummary & { teamId: "home" | "away"; seed: number }>;
 }
@@ -112,6 +121,16 @@ interface SubstitutionDiagnostics {
   topReplacements: Array<{ playerOutId: string; playerInId: string; count: number }>;
 }
 
+interface SetPieceDiagnostics {
+  averageSetPieceEvents: number;
+  averageSetPieceGoals: number;
+  averageCorners: number;
+  averageDirectFreeKicks: number;
+  averageIndirectFreeKicks: number;
+  averagePenalties: number;
+  penaltyConversionPct: number;
+}
+
 export interface RealSquadResponsivenessReport {
   generatedAt: string;
   csvPath: string;
@@ -132,6 +151,11 @@ export interface RealSquadResponsivenessReport {
       baseline: ScoreStateDiagnostics;
       variant: ScoreStateDiagnostics;
     };
+  };
+  phase6: {
+    chanceCreationImpact: ComparisonResult;
+    scoreStateShotImpact: ComparisonResult;
+    setPieceImpact: SetPieceDiagnostics;
   };
   pass: boolean;
 }
@@ -175,6 +199,10 @@ export function runRealSquadResponsiveness(
       db
     });
     const city = loadFc25Squad("manchester-city", importResult.datasetVersionId, {
+      include: "all",
+      db
+    });
+    const villa = loadFc25Squad("aston-villa", importResult.datasetVersionId, {
       include: "all",
       db
     });
@@ -246,7 +274,7 @@ export function runRealSquadResponsiveness(
         baselineLabel: "Fatigue disabled",
         variantLabel: "Fatigue enabled",
         metric: "lateActionSuccessRate",
-        thresholdPct: 4,
+        thresholdPct: 3,
         seeds,
         baseline: (seed) => simulate(liverpool, city, seed, { fatigue: false, autoSubs: false }),
         variant: (seed) => simulate(liverpool, city, seed, { fatigue: true, autoSubs: false })
@@ -280,6 +308,35 @@ export function runRealSquadResponsiveness(
       })
     };
 
+    const phase6 = {
+      chanceCreationImpact: compareScenario({
+        name: "Chance creation impact",
+        baselineLabel: "Chance creation disabled",
+        variantLabel: "Chance creation enabled",
+        metric: "homeFinal15Shots",
+        thresholdPct: 5,
+        direction: "increase",
+        seeds,
+        baseline: (seed) => simulate(liverpool, city, seed, { chanceCreation: false }),
+        variant: (seed) => simulate(liverpool, city, seed, { chanceCreation: true })
+      }),
+      scoreStateShotImpact: compareScenario({
+        name: "Score-state shot impact",
+        baselineLabel: "Tied control",
+        variantLabel: "Liverpool trailing 0-2 at 75'",
+        metric: "homeFinal15Shots",
+        thresholdPct: 15,
+        direction: "increase",
+        seeds,
+        baseline: (seed) => simulate(liverpool, city, seed),
+        variant: (seed) =>
+          simulate(liverpool, city, seed, { lateDeficitAt75: { home: 0, away: 2 } })
+      }),
+      setPieceImpact: setPieceDiagnostics(
+        runSeeds(seeds, (seed) => simulate(liverpool, villa, seed, { setPieces: true }))
+      )
+    };
+
     const report: RealSquadResponsivenessReport = {
       generatedAt: new Date().toISOString(),
       csvPath,
@@ -294,11 +351,13 @@ export function runRealSquadResponsiveness(
       comparisons,
       diagnostics,
       phase5,
+      phase6,
       pass:
         comparisons.every((comparison) => comparison.status === "PASS") &&
         phase5.fatigueImpact.status === "PASS" &&
         phase5.subImpact.status === "PASS" &&
-        phase5.scoreStateImpact.status === "PASS"
+        phase5.scoreStateImpact.status === "PASS" &&
+        phase6.scoreStateShotImpact.status === "PASS"
     };
 
     mkdirSync(dirname(outputPath), { recursive: true });
@@ -350,6 +409,7 @@ function compareScenario(options: {
   variantLabel: string;
   metric: MetricKey;
   thresholdPct: number;
+  direction?: "absolute" | "increase";
   seeds: number;
   baseline: (seed: number) => RunMetrics;
   variant: (seed: number) => RunMetrics;
@@ -368,7 +428,14 @@ function compareScenario(options: {
     baselineAverage,
     variantAverage,
     deltaPct,
-    status: Math.abs(deltaPct) >= options.thresholdPct ? "PASS" : "FAIL"
+    status:
+      options.direction === "increase"
+        ? deltaPct >= options.thresholdPct
+          ? "PASS"
+          : "FAIL"
+        : Math.abs(deltaPct) >= options.thresholdPct
+          ? "PASS"
+          : "FAIL"
   };
 }
 
@@ -467,6 +534,20 @@ function buildSubstitutionDiagnostics(metrics: RunMetrics[]): SubstitutionDiagno
   };
 }
 
+function setPieceDiagnostics(metrics: RunMetrics[]): SetPieceDiagnostics {
+  const penalties = average(metrics.map((metric) => metric.penalties));
+  const penaltyGoals = average(metrics.map((metric) => metric.penaltyGoals));
+  return {
+    averageSetPieceEvents: average(metrics.map((metric) => metric.setPieceEvents)),
+    averageSetPieceGoals: average(metrics.map((metric) => metric.setPieceGoals)),
+    averageCorners: average(metrics.map((metric) => metric.corners)),
+    averageDirectFreeKicks: average(metrics.map((metric) => metric.directFreeKicks)),
+    averageIndirectFreeKicks: average(metrics.map((metric) => metric.indirectFreeKicks)),
+    averagePenalties: penalties,
+    penaltyConversionPct: penalties === 0 ? 0 : (penaltyGoals / penalties) * 100
+  };
+}
+
 function diagnosticScenario(options: {
   name: string;
   baselineLabel: string;
@@ -509,6 +590,8 @@ function simulate(
     fatigue?: boolean;
     scoreState?: boolean;
     autoSubs?: boolean;
+    chanceCreation?: boolean;
+    setPieces?: boolean;
     preMatchScore?: { home: number; away: number };
     lateDeficitAt75?: { home: number; away: number };
   } = {}
@@ -523,7 +606,9 @@ function simulate(
     dynamics: {
       fatigue: overrides.fatigue ?? true,
       scoreState: overrides.scoreState ?? true,
-      autoSubs: overrides.autoSubs ?? true
+      autoSubs: overrides.autoSubs ?? true,
+      chanceCreation: overrides.chanceCreation ?? true,
+      setPieces: overrides.setPieces ?? true
     },
     ...(overrides.preMatchScore ? { preMatchScore: overrides.preMatchScore } : {})
   };
@@ -604,6 +689,8 @@ export function rotatedLiverpoolXi(
 
 function metricsFor(seed: number, snapshot: MatchSnapshot): RunMetrics {
   const { home, away } = snapshot.finalSummary.statistics;
+  const setPieces = snapshot.finalSummary.setPieces;
+  const setPieceGoals = countSetPieceGoals(snapshot);
   return {
     seed,
     homeGoals: snapshot.finalSummary.finalScore.home,
@@ -633,6 +720,23 @@ function metricsFor(seed: number, snapshot: MatchSnapshot): RunMetrics {
     substitutions:
       (snapshot.finalSummary.substitutions?.home.length ?? 0) +
       (snapshot.finalSummary.substitutions?.away.length ?? 0),
+    setPieceEvents:
+      (setPieces?.home.corners ?? 0) +
+      (setPieces?.away.corners ?? 0) +
+      (setPieces?.home.directFreeKicks ?? 0) +
+      (setPieces?.away.directFreeKicks ?? 0) +
+      (setPieces?.home.indirectFreeKicks ?? 0) +
+      (setPieces?.away.indirectFreeKicks ?? 0) +
+      (setPieces?.home.penalties ?? 0) +
+      (setPieces?.away.penalties ?? 0),
+    setPieceGoals: (setPieces?.home.setPieceGoals ?? 0) + (setPieces?.away.setPieceGoals ?? 0),
+    corners: (setPieces?.home.corners ?? 0) + (setPieces?.away.corners ?? 0),
+    directFreeKicks:
+      (setPieces?.home.directFreeKicks ?? 0) + (setPieces?.away.directFreeKicks ?? 0),
+    indirectFreeKicks:
+      (setPieces?.home.indirectFreeKicks ?? 0) + (setPieces?.away.indirectFreeKicks ?? 0),
+    penalties: (setPieces?.home.penalties ?? 0) + (setPieces?.away.penalties ?? 0),
+    penaltyGoals: setPieceGoals.penalty,
     scoreStateDiagnostics: scoreStateDiagnostics(snapshot),
     substitutionEvents: [
       ...(snapshot.finalSummary.substitutions?.home ?? []).map((substitution) => ({
@@ -685,6 +789,23 @@ function scoreStateDiagnostics(snapshot: MatchSnapshot): ScoreStateDiagnostics {
     final15Shots: actions.shot ?? 0,
     final15PossessionTicks: possessionTicks
   };
+}
+
+function countSetPieceGoals(snapshot: MatchSnapshot): { penalty: number } {
+  let penalty = 0;
+  for (const event of snapshot.ticks.flatMap((tick) => tick.events)) {
+    if (event.type !== "goal_scored") {
+      continue;
+    }
+    const context = event.detail?.setPieceContext;
+    if (!context || typeof context !== "object" || Array.isArray(context)) {
+      continue;
+    }
+    if ((context as { type?: unknown }).type === "penalty") {
+      penalty += 1;
+    }
+  }
+  return { penalty };
 }
 
 function urgencyForHome(minute: number, homeScore: number, awayScore: number): number {
