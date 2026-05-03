@@ -1,14 +1,28 @@
 import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
-import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
-import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
-import { attackDirection } from "../../zones/pitchZones";
-import { awardThrowIn } from "../setPieces";
+import { SET_PIECES, SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
+import { otherTeam, type MutableMatchState, type MutablePlayer } from "../../state/matchState";
+import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
+import { awardCorner, awardThrowIn } from "../setPieces";
 
 export function performClearance(state: MutableMatchState, carrier: MutablePlayer): void {
   state.pendingLooseBallCause = null;
   state.pendingLooseBallPreviousPossessor = null;
 
   if (state.rng.next() <= SUCCESS_PROBABILITIES.clearanceOutOfPlay) {
+    if (
+      state.dynamics.setPieces &&
+      zoneForPosition(carrier.teamId, carrier.position) === "def" &&
+      state.rng.next() <= SET_PIECES.defensiveClearanceCorner
+    ) {
+      awardCorner(
+        state,
+        otherTeam(carrier.teamId),
+        carrier.position,
+        "defensive_clearance",
+        carrier.id
+      );
+      return;
+    }
     awardThrowIn(state, carrier.teamId, carrier.position, "clearance", carrier.id);
     return;
   }

@@ -14,6 +14,7 @@ import { distance, distanceSquared } from "../../utils/geometry";
 import { flankSide, isWideCarrier, isWideChannelX, isWidePosition } from "../../utils/playerRoles";
 import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
+import { maybeCreateChanceFromPass } from "../chanceCreation";
 import { awardThrowIn } from "../setPieces";
 import { shotDistanceContext } from "../shotDistance";
 
@@ -30,13 +31,15 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer): v
     staminaEffectMultiplier(carrier);
 
   if (state.rng.next() <= completionProbability) {
-    emitPassEvent(state, carrier, target, true);
+    const context = passContext(state, carrier, target, true);
+    emitPassEvent(state, carrier, target, context);
     completePass(state, carrier, target);
+    maybeCreateChanceFromPass(state, carrier, target, context);
     return;
   }
 
   if (state.rng.next() <= SUCCESS_PROBABILITIES.failedPassOutOfPlay) {
-    emitPassEvent(state, carrier, target, false);
+    emitPassEvent(state, carrier, target, passContext(state, carrier, target, false));
     carrier.lastWideCarryTick = null;
     awardThrowIn(state, carrier.teamId, carrier.position, "failed_pass", carrier.id);
     return;
@@ -44,7 +47,7 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer): v
 
   const interceptor = nearestOpponent(state, target);
   if (interceptor) {
-    emitPassEvent(state, carrier, target, false);
+    emitPassEvent(state, carrier, target, passContext(state, carrier, target, false));
     completeTurnover(state, carrier, interceptor);
   }
 }
@@ -240,9 +243,8 @@ function emitPassEvent(
   state: MutableMatchState,
   carrier: MutablePlayer,
   target: MutablePlayer,
-  complete: boolean
+  context: ReturnType<typeof passContext>
 ): void {
-  const context = passContext(state, carrier, target, complete);
   if (
     context.passType === "short" &&
     !context.progressive &&

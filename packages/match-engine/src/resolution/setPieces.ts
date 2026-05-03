@@ -1,11 +1,14 @@
 import { GOAL_CENTRE_X, PITCH_LENGTH, PITCH_WIDTH } from "../calibration/constants";
+import { SET_PIECES } from "../calibration/probabilities";
 import { emitEvent } from "../ticks/runTick";
 import type { MutableMatchState, MutablePlayer, PendingSetPiece } from "../state/matchState";
 import { otherTeam } from "../state/matchState";
 import type { Coordinate2D, TeamId } from "../types";
 import { distanceSquared } from "../utils/geometry";
 import { attackDirection, zoneForPosition } from "../zones/pitchZones";
+import { performPenaltyShot, performShot } from "./actions/shot";
 import { emitPossessionChange } from "./pressure";
+import { shotDistanceContext } from "./shotDistance";
 
 const SET_PIECE_DELAY_TICKS = 2;
 
@@ -70,6 +73,38 @@ export function awardGoalKick(
   });
 }
 
+export function awardCorner(
+  state: MutableMatchState,
+  teamId: TeamId,
+  position: Coordinate2D,
+  reason: "deflected_shot" | "defensive_clearance",
+  previousPossessor?: string
+): void {
+  const cornerX = position[0] < PITCH_WIDTH / 2 ? 0 : PITCH_WIDTH;
+  const cornerY = teamId === "home" ? PITCH_LENGTH : 0;
+  const restartPosition: Coordinate2D = [cornerX, cornerY];
+  const taker = selectedSetPieceTaker(state, teamId, "corner", restartPosition);
+  if (!taker) {
+    return;
+  }
+
+  state.stats[teamId].corners += 1;
+  state.setPieceStats[teamId].corners += 1;
+  awardSetPiece(state, {
+    type: "corner",
+    teamId,
+    takerPlayerId: taker.id,
+    position: restartPosition,
+    ticksUntilRestart: SET_PIECE_DELAY_TICKS,
+    detail: { reason, previousPossessor }
+  });
+  emitPossessionChange(state, otherTeam(teamId), teamId, taker.id, {
+    cause: "restart_corner",
+    ...(previousPossessor ? { previousPossessor } : {}),
+    zone: "att"
+  });
+}
+
 export function awardFreeKick(
   state: MutableMatchState,
   teamId: TeamId,
@@ -82,6 +117,7 @@ export function awardFreeKick(
     Math.max(35, Math.min(PITCH_LENGTH - 35, position[1]))
   ];
   const taker =
+    selectedSetPieceTaker(state, teamId, "freeKick", restartPosition) ??
     state.players.find((player) => player.id === takerPlayerId && player.onPitch) ??
     nearestPlayerTo(state, teamId, restartPosition);
   if (!taker) {
@@ -100,6 +136,34 @@ export function awardFreeKick(
     cause: "foul_against_carrier",
     previousPossessor: fouledBy,
     zone: zoneForPosition(teamId, taker.position)
+  });
+}
+
+export function awardPenalty(
+  state: MutableMatchState,
+  teamId: TeamId,
+  fouledBy: string,
+  previousPossessor?: string
+): void {
+  const position: Coordinate2D = [GOAL_CENTRE_X, teamId === "home" ? PITCH_LENGTH - 120 : 120];
+  const taker = selectedSetPieceTaker(state, teamId, "penalty", position);
+  if (!taker) {
+    return;
+  }
+
+  state.setPieceStats[teamId].penalties += 1;
+  awardSetPiece(state, {
+    type: "penalty",
+    teamId,
+    takerPlayerId: taker.id,
+    position,
+    ticksUntilRestart: SET_PIECE_DELAY_TICKS,
+    detail: { fouledBy, previousPossessor }
+  });
+  emitPossessionChange(state, otherTeam(teamId), teamId, taker.id, {
+    cause: "foul_against_carrier",
+    ...(previousPossessor ? { previousPossessor } : {}),
+    zone: "att"
   });
 }
 
@@ -155,7 +219,9 @@ function awardSetPiece(state: MutableMatchState, setPiece: PendingSetPiece): voi
   state.ball.targetCarrierPlayerId = null;
   state.possession.teamId = setPiece.teamId;
   state.pendingSetPiece = setPiece;
-  emitEvent(state, setPiece.type, setPiece.teamId, setPiece.takerPlayerId, setPiece.detail);
+  if (setPiece.type !== "penalty") {
+    emitEvent(state, setPiece.type, setPiece.teamId, setPiece.takerPlayerId, setPiece.detail);
+  }
 }
 
 function updateSetPieceBall(state: MutableMatchState, setPiece: PendingSetPiece): void {
@@ -175,6 +241,18 @@ function restartSetPiece(state: MutableMatchState, setPiece: PendingSetPiece): v
   }
 
   taker.targetPosition = takerPosition(setPiece);
+  if (setPiece.type === "corner") {
+    resolveCorner(state, setPiece, taker);
+    return;
+  }
+  if (setPiece.type === "free_kick" && state.dynamics.setPieces) {
+    resolveFreeKick(state, setPiece, taker);
+    return;
+  }
+  if (setPiece.type === "penalty" && state.dynamics.setPieces) {
+    resolvePenalty(state, setPiece, taker);
+    return;
+  }
   const target = restartTarget(state, setPiece, taker);
   taker.hasBall = false;
   state.ball.carrierPlayerId = null;
@@ -183,6 +261,116 @@ function restartSetPiece(state: MutableMatchState, setPiece: PendingSetPiece): v
     ? [target.position[0], target.position[1], 0]
     : looseTarget(setPiece);
   state.ball.inFlight = true;
+}
+
+function resolveCorner(
+  state: MutableMatchState,
+  setPiece: PendingSetPiece,
+  taker: MutablePlayer
+): void {
+  const deliveryType = cornerDeliveryType(state, taker);
+  emitEvent(state, "corner_taken", setPiece.teamId, taker.id, {
+    takerId: taker.id,
+    deliveryType
+  });
+  const receiver = bestAerialTarget(state, setPiece.teamId);
+  if (!receiver) {
+    resolveLooseSetPiece(state, setPiece);
+    return;
+  }
+
+  const deliveryQuality = setPieceDeliveryQuality(taker, "corner");
+  const receiverQuality = aerialQuality(receiver);
+  const shotProbability = Math.min(
+    0.78,
+    SET_PIECES.cornerShotBase * deliveryQuality * receiverQuality
+  );
+  if (state.rng.next() > shotProbability) {
+    resolveLooseSetPiece(state, setPiece);
+    return;
+  }
+
+  receiver.position = [
+    Math.max(170, Math.min(PITCH_WIDTH - 170, receiver.position[0])),
+    setPiece.teamId === "home" ? PITCH_LENGTH - 145 : 145
+  ];
+  receiver.hasBall = true;
+  state.ball.carrierPlayerId = receiver.id;
+  state.possession = { teamId: receiver.teamId, zone: "att", pressureLevel: "medium" };
+  performShot(state, receiver, {
+    source: "set_piece",
+    setPieceContext: { type: "corner", takerId: taker.id, deliveryType }
+  });
+}
+
+function resolveFreeKick(
+  state: MutableMatchState,
+  setPiece: PendingSetPiece,
+  taker: MutablePlayer
+): void {
+  const distance = shotDistanceContext(setPiece.teamId, setPiece.position).distanceToGoal;
+  const direct = distance <= SET_PIECES.directFreeKickMaxDistance;
+  if (direct) {
+    state.setPieceStats[setPiece.teamId].directFreeKicks += 1;
+  } else {
+    state.setPieceStats[setPiece.teamId].indirectFreeKicks += 1;
+  }
+
+  const kickType =
+    direct && state.rng.next() < SET_PIECES.freeKickDirectShotBase ? "direct" : "crossed";
+  emitEvent(state, "free_kick_taken", setPiece.teamId, taker.id, {
+    takerId: taker.id,
+    kickType
+  });
+
+  if (kickType === "direct") {
+    taker.position = setPiece.position;
+    taker.hasBall = true;
+    state.ball.carrierPlayerId = taker.id;
+    state.possession = { teamId: taker.teamId, zone: "att", pressureLevel: "low" };
+    performShot(state, taker, {
+      source: "set_piece",
+      setPieceContext: { type: "direct_free_kick", takerId: taker.id }
+    });
+    return;
+  }
+
+  const target = restartTarget(state, setPiece, taker);
+  if (target) {
+    target.hasBall = true;
+    state.ball.carrierPlayerId = target.id;
+    state.possession = {
+      teamId: target.teamId,
+      zone: zoneForPosition(target.teamId, target.position),
+      pressureLevel: "medium"
+    };
+  } else {
+    resolveLooseSetPiece(state, setPiece);
+  }
+}
+
+function resolvePenalty(
+  state: MutableMatchState,
+  setPiece: PendingSetPiece,
+  taker: MutablePlayer
+): void {
+  emitEvent(state, "penalty_taken", setPiece.teamId, taker.id, {
+    takerId: taker.id,
+    outcome: "taken"
+  });
+  taker.position = setPiece.position;
+  taker.hasBall = true;
+  state.possession = { teamId: taker.teamId, zone: "att", pressureLevel: "low" };
+  performPenaltyShot(state, taker, { takerId: taker.id });
+}
+
+function resolveLooseSetPiece(state: MutableMatchState, setPiece: PendingSetPiece): void {
+  state.ball.carrierPlayerId = null;
+  state.ball.targetCarrierPlayerId = null;
+  state.ball.targetPosition = looseTarget(setPiece);
+  state.ball.inFlight = true;
+  state.pendingLooseBallCause = "loose_ball_recovered";
+  state.pendingLooseBallPreviousPossessor = setPiece.takerPlayerId;
 }
 
 function restartTarget(
@@ -229,6 +417,67 @@ function goalKickPosition(teamId: TeamId): Coordinate2D {
   return [GOAL_CENTRE_X, teamId === "home" ? 64 : PITCH_LENGTH - 64];
 }
 
+function cornerDeliveryType(
+  state: MutableMatchState,
+  taker: MutablePlayer
+): "in_swinger" | "out_swinger" | "low" {
+  const control = taker.baseInput.attributes.control;
+  if (control >= taker.baseInput.attributes.passing + 8 && state.rng.next() < 0.24) {
+    return "low";
+  }
+  return state.rng.next() < 0.5 ? "in_swinger" : "out_swinger";
+}
+
+function setPieceDeliveryQuality(taker: MutablePlayer, type: "corner" | "freeKick"): number {
+  if (taker.v2Input) {
+    const attributes = taker.v2Input.attributes;
+    const score =
+      type === "corner"
+        ? attributes.crossing * 0.55 + attributes.vision * 0.25 + attributes.curve * 0.2
+        : attributes.freeKickAccuracy * 0.45 +
+          attributes.shotPower * 0.25 +
+          attributes.curve * 0.15 +
+          attributes.composure * 0.15;
+    return Math.max(0.55, Math.min(1.28, score / 75));
+  }
+  const attributes = taker.baseInput.attributes;
+  return Math.max(
+    0.55,
+    Math.min(1.28, (attributes.passing * 0.65 + attributes.perception * 0.35) / 75)
+  );
+}
+
+function aerialQuality(player: MutablePlayer): number {
+  if (player.v2Input) {
+    const attributes = player.v2Input.attributes;
+    return Math.max(
+      0.55,
+      Math.min(
+        1.35,
+        (attributes.headingAccuracy * 0.48 +
+          attributes.jumping * 0.32 +
+          attributes.strength * 0.2) /
+          75
+      )
+    );
+  }
+  const attributes = player.baseInput.attributes;
+  return Math.max(
+    0.55,
+    Math.min(1.35, (attributes.jumping * 0.6 + attributes.strength * 0.4) / 75)
+  );
+}
+
+function bestAerialTarget(state: MutableMatchState, teamId: TeamId): MutablePlayer | null {
+  return (
+    state.players
+      .filter(
+        (player) => player.teamId === teamId && player.onPitch && player.baseInput.position !== "GK"
+      )
+      .sort((a, b) => aerialQuality(b) - aerialQuality(a) || a.id.localeCompare(b.id))[0] ?? null
+  );
+}
+
 function nearestPlayerTo(
   state: MutableMatchState,
   teamId: TeamId,
@@ -241,4 +490,17 @@ function nearestPlayerTo(
         (a, b) => distanceSquared(a.position, position) - distanceSquared(b.position, position)
       )[0] ?? null
   );
+}
+
+export function selectedSetPieceTaker(
+  state: MutableMatchState,
+  teamId: TeamId,
+  role: "freeKick" | "corner" | "penalty",
+  fallbackPosition: Coordinate2D
+): MutablePlayer | null {
+  const preferredId = state.setPieceTakers[teamId][role];
+  const preferred = preferredId
+    ? state.players.find((player) => player.id === preferredId && player.onPitch)
+    : null;
+  return preferred ?? nearestPlayerTo(state, teamId, fallbackPosition);
 }

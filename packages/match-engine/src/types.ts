@@ -36,6 +36,9 @@ export type PossessionChangeCause =
   | "kickoff_second_half";
 export type ShotType = "header" | "volley" | "placed" | "power" | "first_time" | "long_range";
 export type ShotFoot = "preferred" | "weak";
+export type SetPieceType = "corner" | "direct_free_kick" | "indirect_free_kick" | "penalty";
+export type CornerDeliveryType = "in_swinger" | "out_swinger" | "low";
+export type FreeKickType = "direct" | "crossed" | "passed";
 export type SaveQuality = "routine" | "good" | "spectacular";
 export type SaveResult = "caught" | "parried_safe" | "parried_dangerous";
 export type FoulSeverity = "minor" | "cynical" | "reckless";
@@ -180,6 +183,8 @@ export interface MatchDynamicsConfig {
   fatigue?: boolean;
   scoreState?: boolean;
   autoSubs?: boolean;
+  chanceCreation?: boolean;
+  setPieces?: boolean;
 }
 
 export interface ScheduledSubstitution {
@@ -214,6 +219,8 @@ export interface MatchSnapshot {
     endStamina?: { home: PlayerStaminaSummary[]; away: PlayerStaminaSummary[] };
     substitutions?: { home: SubstitutionSummary[]; away: SubstitutionSummary[] };
     scoreStateEvents?: ScoreStateEventSummary[];
+    setPieceTakers?: { home: SetPieceTakers; away: SetPieceTakers };
+    setPieces?: { home: SetPieceSummary; away: SetPieceSummary };
   };
 }
 
@@ -235,6 +242,21 @@ export interface ScoreStateEventSummary {
   tick: number;
   score: { home: number; away: number };
   urgency: { home: number; away: number };
+}
+
+export interface SetPieceTakers {
+  freeKick: string | null;
+  corner: string | null;
+  penalty: string | null;
+}
+
+export interface SetPieceSummary {
+  corners: number;
+  directFreeKicks: number;
+  indirectFreeKicks: number;
+  penalties: number;
+  setPieceShots: number;
+  setPieceGoals: number;
 }
 
 export interface SnapshotRosterPlayer {
@@ -311,6 +333,7 @@ export interface SemanticEvent {
     | "goal"
     | "goal_scored"
     | "shot"
+    | "chance_created"
     | "carry"
     | "pass"
     | "save"
@@ -318,9 +341,12 @@ export interface SemanticEvent {
     | "yellow"
     | "red"
     | "corner"
+    | "corner_taken"
     | "goal_kick"
     | "throw_in"
     | "free_kick"
+    | "free_kick_taken"
+    | "penalty_taken"
     | "possession_change"
     | "kick_off"
     | "substitution"

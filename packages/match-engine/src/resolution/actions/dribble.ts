@@ -7,6 +7,7 @@ import { emitEvent } from "../../ticks/runTick";
 import { clamp2D } from "../../utils/geometry";
 import { flankSide, isWideCarrier } from "../../utils/playerRoles";
 import { attackDirection, zoneForPosition } from "../../zones/pitchZones";
+import { maybeCreateChanceFromCarry } from "../chanceCreation";
 import { emitPossessionChange } from "../pressure";
 
 export function performDribble(state: MutableMatchState, carrier: MutablePlayer): void {
@@ -27,6 +28,9 @@ export function performDribble(state: MutableMatchState, carrier: MutablePlayer)
     if (isWideCarrier(carrier)) {
       carrier.lastWideCarryTick = state.iteration;
       emitWideCarryEvent(state, carrier, direction, previousPosition);
+      maybeCreateChanceFromCarry(state, carrier, "wide_carry");
+    } else if (zoneForPosition(carrier.teamId, carrier.position) === "att") {
+      maybeCreateChanceFromCarry(state, carrier, "central_carry");
     }
     return;
   }

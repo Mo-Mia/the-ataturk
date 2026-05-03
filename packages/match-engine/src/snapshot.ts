@@ -103,7 +103,9 @@ export function buildSnapshot(
         home: [...state.substitutions.home],
         away: [...state.substitutions.away]
       },
-      scoreStateEvents: structuredClone(state.scoreStateEvents)
+      scoreStateEvents: structuredClone(state.scoreStateEvents),
+      setPieceTakers: structuredClone(state.setPieceTakers),
+      setPieces: structuredClone(state.setPieceStats)
     }
   };
 }

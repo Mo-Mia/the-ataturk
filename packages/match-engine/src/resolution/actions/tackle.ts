@@ -1,4 +1,4 @@
-import { SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
+import { SET_PIECES, SUCCESS_PROBABILITIES } from "../../calibration/probabilities";
 import type { MutableMatchState, MutablePlayer } from "../../state/matchState";
 import { staminaEffectMultiplier } from "../../state/stamina";
 import { emitEvent } from "../../ticks/runTick";
@@ -6,7 +6,8 @@ import type { CarrierAction } from "../../calibration/probabilities";
 import type { FoulSeverity, TackleType } from "../../types";
 import { distanceSquared } from "../../utils/geometry";
 import { attackDirection } from "../../zones/pitchZones";
-import { awardFreeKick } from "../setPieces";
+import { shotDistanceContext } from "../shotDistance";
+import { awardFreeKick, awardPenalty } from "../setPieces";
 
 export type TackleOutcome = "missed" | "won" | "foul";
 interface TackleContext {
@@ -55,6 +56,17 @@ function commitFoul(
 
   if (!tackler.redCard && state.rng.next() <= SUCCESS_PROBABILITIES.redOnFoul) {
     sendOff(state, tackler, carrier, "straight_red");
+  }
+
+  const distanceBand = shotDistanceContext(carrier.teamId, carrier.position).band;
+  const penaltyProbability = SET_PIECES.penaltyFromFoulByDistanceBand[distanceBand];
+  if (
+    state.dynamics.setPieces &&
+    penaltyProbability > 0 &&
+    state.rng.next() <= penaltyProbability
+  ) {
+    awardPenalty(state, carrier.teamId, tackler.id, carrier.id);
+    return;
   }
 
   awardFreeKick(state, carrier.teamId, carrier.id, carrier.position, tackler.id);

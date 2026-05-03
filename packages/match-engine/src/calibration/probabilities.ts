@@ -135,7 +135,49 @@ export const SCORE_STATE = {
     clear: -0.2
   } satisfies Record<CarrierAction, number>,
   pressing: 0.45,
-  passRisk: 34
+  passRisk: 34,
+  lateChaseShotIntent: 30
+};
+
+export const CHANCE_CREATION = {
+  sourceBase: {
+    progressive_pass: 0.055,
+    through_ball: 0.12,
+    cross: 0.1,
+    cutback: 0.1,
+    wide_carry: 0.075,
+    central_carry: 0.09
+  },
+  pressure: { low: 1, medium: 0.58, high: 0 } satisfies Record<PressureLevel, number>,
+  distanceBand: { close: 1.15, box: 1, edge: 0.62, far: 0, speculative: 0 } satisfies Record<
+    ShotDistanceBand,
+    number
+  >,
+  urgencyInfluence: 0.9,
+  minUrgencyMultiplier: 0.8,
+  maxUrgencyMultiplier: 1.35
+};
+
+export const SET_PIECES = {
+  shotDeflectionCornerByPressure: { low: 0.025, medium: 0.045, high: 0.07 } satisfies Record<
+    PressureLevel,
+    number
+  >,
+  defensiveClearanceCorner: 0.46,
+  directFreeKickMaxDistance: 330,
+  freeKickDirectShotBase: 0.42,
+  freeKickCrossBase: 0.62,
+  penaltyFromFoulByDistanceBand: {
+    close: 1,
+    box: 0.75,
+    edge: 0.28,
+    far: 0,
+    speculative: 0
+  },
+  cornerShotBase: 0.13,
+  cornerGoalBase: 0.03,
+  directFreeKickGoalBase: 0.065,
+  penaltyGoalBase: 0.78
 };
 
 export const SUCCESS_PROBABILITIES = {

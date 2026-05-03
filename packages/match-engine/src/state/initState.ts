@@ -5,11 +5,17 @@ import type {
   MatchConfigV2,
   PlayerInput,
   PlayerInputV2,
+  SetPieceTakers,
   TeamStatistics
 } from "../types";
 import { createSeededRng } from "../utils/rng";
 import { positionTeam } from "../utils/formations";
-import { emptyTeamStatistics, type MutableMatchState, type MutablePlayer } from "./matchState";
+import {
+  emptySetPieceSummary,
+  emptyTeamStatistics,
+  type MutableMatchState,
+  type MutablePlayer
+} from "./matchState";
 import { urgencyMultiplier } from "./scoreState";
 
 export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatchState {
@@ -19,7 +25,9 @@ export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatc
   const dynamics = {
     fatigue: config.dynamics?.fatigue ?? true,
     scoreState: config.dynamics?.scoreState ?? true,
-    autoSubs: config.dynamics?.autoSubs ?? true
+    autoSubs: config.dynamics?.autoSubs ?? true,
+    chanceCreation: config.dynamics?.chanceCreation ?? true,
+    setPieces: config.dynamics?.setPieces ?? true
   };
   const players: MutablePlayer[] = [
     ...config.homeTeam.players.map((player) => mutablePlayer(player, "home")),
@@ -64,6 +72,14 @@ export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatc
     possessionStreak: { teamId: null, ticks: 0 },
     attackMomentum: { home: 0, away: 0 },
     substitutions: { home: [], away: [] },
+    setPieceTakers: {
+      home: selectSetPieceTakers(players, "home"),
+      away: selectSetPieceTakers(players, "away")
+    },
+    setPieceStats: {
+      home: emptySetPieceSummary(),
+      away: emptySetPieceSummary()
+    },
     substitutionCounts: { home: 0, away: 0 },
     lastSubstitutionTick: { home: null, away: null },
     scheduledSubstitutions: [...(config.scheduledSubstitutions ?? [])],
@@ -101,6 +117,65 @@ export function buildInitState(config: MatchConfig | MatchConfigV2): MutableMatc
 
   giveKickOffToTeam(state, "home");
   return state;
+}
+
+function selectSetPieceTakers(players: MutablePlayer[], teamId: "home" | "away"): SetPieceTakers {
+  const teamPlayers = players.filter((player) => player.teamId === teamId && !player.redCard);
+  return {
+    freeKick: rankedTaker(teamPlayers, freeKickScore)?.id ?? null,
+    corner: rankedTaker(teamPlayers, cornerScore)?.id ?? null,
+    penalty: rankedTaker(teamPlayers, penaltyScore)?.id ?? null
+  };
+}
+
+function rankedTaker(
+  players: MutablePlayer[],
+  score: (player: MutablePlayer) => number
+): MutablePlayer | null {
+  return (
+    players
+      .filter((player) => player.baseInput.position !== "GK")
+      .sort((a, b) => score(b) - score(a) || a.id.localeCompare(b.id))[0] ??
+    players.sort((a, b) => score(b) - score(a) || a.id.localeCompare(b.id))[0] ??
+    null
+  );
+}
+
+function freeKickScore(player: MutablePlayer): number {
+  if (player.v2Input) {
+    const attributes = player.v2Input.attributes;
+    return (
+      attributes.freeKickAccuracy * 0.45 +
+      attributes.shotPower * 0.25 +
+      attributes.curve * 0.15 +
+      attributes.composure * 0.15
+    );
+  }
+  const attributes = player.baseInput.attributes;
+  return (
+    attributes.penaltyTaking * 0.35 +
+    attributes.shooting * 0.3 +
+    attributes.passing * 0.2 +
+    attributes.perception * 0.15
+  );
+}
+
+function cornerScore(player: MutablePlayer): number {
+  if (player.v2Input) {
+    const attributes = player.v2Input.attributes;
+    return attributes.crossing * 0.55 + attributes.vision * 0.25 + attributes.curve * 0.2;
+  }
+  const attributes = player.baseInput.attributes;
+  return attributes.passing * 0.65 + attributes.perception * 0.35;
+}
+
+function penaltyScore(player: MutablePlayer): number {
+  if (player.v2Input) {
+    const attributes = player.v2Input.attributes;
+    return attributes.penalties * 0.55 + attributes.composure * 0.3 + attributes.shotPower * 0.15;
+  }
+  const attributes = player.baseInput.attributes;
+  return attributes.penaltyTaking * 0.65 + attributes.perception * 0.35;
 }
 
 function mutablePlayer(

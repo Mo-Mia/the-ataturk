@@ -17,6 +17,14 @@ interface SeedResult {
   shots: number;
   fouls: number;
   cards: number;
+  corners: number;
+  directFreeKicks: number;
+  indirectFreeKicks: number;
+  penalties: number;
+  setPieceGoals: number;
+  penaltyGoals: number;
+  cornerGoals: number;
+  directFreeKickGoals: number;
   elapsedMs: number;
 }
 
@@ -49,6 +57,7 @@ for (let seed = 1; seed <= options.seeds; seed += 1) {
   const elapsedMs = performance.now() - startedAt;
   const home = snapshot.finalSummary.statistics.home;
   const away = snapshot.finalSummary.statistics.away;
+  const setPieceGoalCounts = countSetPieceGoals(snapshot);
 
   results.push({
     seed,
@@ -61,6 +70,24 @@ for (let seed = 1; seed <= options.seeds; seed += 1) {
     shots: home.shots.total + away.shots.total,
     fouls: home.fouls + away.fouls,
     cards: home.yellowCards + away.yellowCards + home.redCards + away.redCards,
+    corners:
+      (snapshot.finalSummary.setPieces?.home.corners ?? 0) +
+      (snapshot.finalSummary.setPieces?.away.corners ?? 0),
+    directFreeKicks:
+      (snapshot.finalSummary.setPieces?.home.directFreeKicks ?? 0) +
+      (snapshot.finalSummary.setPieces?.away.directFreeKicks ?? 0),
+    indirectFreeKicks:
+      (snapshot.finalSummary.setPieces?.home.indirectFreeKicks ?? 0) +
+      (snapshot.finalSummary.setPieces?.away.indirectFreeKicks ?? 0),
+    penalties:
+      (snapshot.finalSummary.setPieces?.home.penalties ?? 0) +
+      (snapshot.finalSummary.setPieces?.away.penalties ?? 0),
+    setPieceGoals:
+      (snapshot.finalSummary.setPieces?.home.setPieceGoals ?? 0) +
+      (snapshot.finalSummary.setPieces?.away.setPieceGoals ?? 0),
+    penaltyGoals: setPieceGoalCounts.penalty,
+    cornerGoals: setPieceGoalCounts.corner,
+    directFreeKickGoals: setPieceGoalCounts.directFreeKick,
     elapsedMs
   });
 }
@@ -283,7 +310,22 @@ function buildReport(
   results: SeedResult[],
   targetRanges: TargetRanges
 ): {
-  averages: Record<"shots" | "goals" | "fouls" | "cards" | "elapsedMs", number>;
+  averages: Record<
+    | "shots"
+    | "goals"
+    | "fouls"
+    | "cards"
+    | "corners"
+    | "directFreeKicks"
+    | "indirectFreeKicks"
+    | "penalties"
+    | "setPieceGoals"
+    | "penaltyGoals"
+    | "cornerGoals"
+    | "directFreeKickGoals"
+    | "elapsedMs",
+    number
+  >;
   scoreDistribution: Array<{ score: string; count: number; pct: number }>;
   pass: boolean;
 } {
@@ -292,6 +334,14 @@ function buildReport(
     goals: avg(results.map((result) => result.goals)),
     fouls: avg(results.map((result) => result.fouls)),
     cards: avg(results.map((result) => result.cards)),
+    corners: avg(results.map((result) => result.corners)),
+    directFreeKicks: avg(results.map((result) => result.directFreeKicks)),
+    indirectFreeKicks: avg(results.map((result) => result.indirectFreeKicks)),
+    penalties: avg(results.map((result) => result.penalties)),
+    setPieceGoals: avg(results.map((result) => result.setPieceGoals)),
+    penaltyGoals: avg(results.map((result) => result.penaltyGoals)),
+    cornerGoals: avg(results.map((result) => result.cornerGoals)),
+    directFreeKickGoals: avg(results.map((result) => result.directFreeKickGoals)),
     elapsedMs: avg(results.map((result) => result.elapsedMs))
   };
   const counts = new Map<string, number>();
@@ -334,6 +384,26 @@ function printReport(
   console.log(
     `Cards: ${report.averages.cards.toFixed(2)} target ${range(targetRanges.cardsTarget)}`
   );
+  console.log(
+    `Set pieces: corners ${report.averages.corners.toFixed(2)}, direct FKs ${report.averages.directFreeKicks.toFixed(
+      2
+    )}, indirect FKs ${report.averages.indirectFreeKicks.toFixed(2)}, penalties ${report.averages.penalties.toFixed(
+      2
+    )}, set-piece goals ${report.averages.setPieceGoals.toFixed(2)}`
+  );
+  console.log(
+    `Set-piece goals by source: corners ${report.averages.cornerGoals.toFixed(
+      2
+    )}, direct FKs ${report.averages.directFreeKickGoals.toFixed(2)}, penalties ${report.averages.penaltyGoals.toFixed(2)}`
+  );
+  if (report.averages.penalties > 0) {
+    console.log(
+      `Penalty conversion: ${(
+        (report.averages.penaltyGoals / report.averages.penalties) *
+        100
+      ).toFixed(1)}%`
+    );
+  }
   console.log(`Average elapsed: ${report.averages.elapsedMs.toFixed(2)}ms`);
   console.log("Score distribution:");
   for (const row of report.scoreDistribution.slice(0, 8)) {
@@ -435,6 +505,32 @@ function durationLabel(duration: CliOptions["duration"]): string {
 
 function avg(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function countSetPieceGoals(snapshot: ReturnType<typeof simulateMatch>): {
+  corner: number;
+  directFreeKick: number;
+  penalty: number;
+} {
+  const counts = { corner: 0, directFreeKick: 0, penalty: 0 };
+  for (const event of snapshot.ticks.flatMap((tick) => tick.events)) {
+    if (event.type !== "goal_scored") {
+      continue;
+    }
+    const context = event.detail?.setPieceContext;
+    if (!context || typeof context !== "object" || Array.isArray(context)) {
+      continue;
+    }
+    const type = (context as { type?: unknown }).type;
+    if (type === "corner") {
+      counts.corner += 1;
+    } else if (type === "direct_free_kick") {
+      counts.directFreeKick += 1;
+    } else if (type === "penalty") {
+      counts.penalty += 1;
+    }
+  }
+  return counts;
 }
 
 function inRange(value: number, rangeValue: [number, number]): boolean {

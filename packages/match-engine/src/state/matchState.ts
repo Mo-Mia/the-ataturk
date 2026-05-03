@@ -10,6 +10,8 @@ import type {
   ScoreStateEventSummary,
   SemanticEvent,
   ScheduledSubstitution,
+  SetPieceSummary,
+  SetPieceTakers,
   SubstitutionSummary,
   Team,
   TeamV2,
@@ -49,7 +51,7 @@ export interface MutableBall {
 }
 
 export interface PendingSetPiece {
-  type: "throw_in" | "goal_kick" | "free_kick";
+  type: "throw_in" | "goal_kick" | "free_kick" | "corner" | "penalty";
   teamId: TeamId;
   takerPlayerId: string;
   position: Coordinate2D;
@@ -83,6 +85,8 @@ export interface MutableMatchState {
   possessionStreak: { teamId: TeamId | null; ticks: number };
   attackMomentum: { home: number; away: number };
   substitutions: { home: SubstitutionSummary[]; away: SubstitutionSummary[] };
+  setPieceTakers: { home: SetPieceTakers; away: SetPieceTakers };
+  setPieceStats: { home: SetPieceSummary; away: SetPieceSummary };
   substitutionCounts: { home: number; away: number };
   lastSubstitutionTick: { home: number | null; away: number | null };
   scheduledSubstitutions: ScheduledSubstitution[];
@@ -97,6 +101,17 @@ export interface MutableMatchState {
   openingKickoffPending: boolean;
   halfTimeKickoffPending: boolean;
   halfTimeEmitted: boolean;
+}
+
+export function emptySetPieceSummary(): SetPieceSummary {
+  return {
+    corners: 0,
+    directFreeKicks: 0,
+    indirectFreeKicks: 0,
+    penalties: 0,
+    setPieceShots: 0,
+    setPieceGoals: 0
+  };
 }
 
 export function emptyTeamStatistics(): TeamStatistics {

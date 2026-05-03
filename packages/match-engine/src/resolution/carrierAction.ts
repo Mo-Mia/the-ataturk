@@ -37,6 +37,7 @@ export function selectCarrierAction(
   weights.hold *= mentality.hold * tempo.hold * (carrier.baseInput.attributes.perception / 100);
   weights.clear *= mentality.clear * tempo.clear;
   applyScoreStateWeights(weights, urgency);
+  applyLateChaseShotIntent(state, carrier, weights, urgency);
 
   if (isWideCarrier(carrier)) {
     const wideModifiers = WIDE_CARRIER_ACTION_MODIFIERS[zone];
@@ -68,6 +69,24 @@ function applyScoreStateWeights(weights: Record<CarrierAction, number>, urgency:
   for (const action of ["pass", "shoot", "dribble", "hold", "clear"] as const) {
     weights[action] *= Math.max(0.05, 1 + delta * SCORE_STATE.action[action]);
   }
+}
+
+function applyLateChaseShotIntent(
+  state: MutableMatchState,
+  carrier: MutablePlayer,
+  weights: Record<CarrierAction, number>,
+  urgency: number
+): void {
+  if (!state.dynamics.chanceCreation || state.possession.zone !== "att" || urgency <= 1.12) {
+    return;
+  }
+
+  const distance = shotDistanceContext(carrier.teamId, carrier.position);
+  if (!["close", "box", "edge"].includes(distance.band)) {
+    return;
+  }
+
+  weights.shoot *= 1 + (urgency - 1) * SCORE_STATE.lateChaseShotIntent;
 }
 
 export function executeCarrierAction(

@@ -5,6 +5,7 @@ import {
   HOME_GOAL_Y
 } from "../../calibration/constants";
 import {
+  SET_PIECES,
   SHOT_PREFERRED_FOOT_PROBABILITY_BY_WEAK_FOOT_RATING,
   SHOT_WEAK_FOOT_MULTIPLIER_BY_RATING,
   SUCCESS_PROBABILITIES
@@ -17,12 +18,25 @@ import { staminaEffectMultiplier } from "../../state/stamina";
 import type { SaveQuality, SaveResult, ShotFoot, ShotType, StarRating, TeamId } from "../../types";
 import { zoneForPosition } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
-import { awardGoalKick } from "../setPieces";
+import { awardCorner, awardGoalKick } from "../setPieces";
 import { shotDistanceContext, type ShotDistanceContext } from "../shotDistance";
 
-export function performShot(state: MutableMatchState, shooter: MutablePlayer): void {
+export interface ShotContext {
+  source?: "chance_creation" | "set_piece";
+  chanceSource?: string;
+  setPieceContext?: Record<string, unknown>;
+}
+
+export function performShot(
+  state: MutableMatchState,
+  shooter: MutablePlayer,
+  context: ShotContext = {}
+): void {
   const teamStats = state.stats[shooter.teamId];
   teamStats.shots.total += 1;
+  if (context.source === "set_piece") {
+    state.setPieceStats[shooter.teamId].setPieceShots += 1;
+  }
   const shotDistance = shotDistanceContext(shooter.teamId, shooter.position);
   const shotType = shotTypeFor(shooter, shotDistance.band, state.possession.pressureLevel);
   const shotFoot = shotFootFor(state, shooter, shotType);
@@ -43,10 +57,20 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
     distancePitchUnits: Math.round(shotDistance.distanceToGoal),
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),
     distanceBand: shotDistance.band,
-    pressure: state.possession.pressureLevel
+    pressure: state.possession.pressureLevel,
+    ...(context.chanceSource ? { chanceSource: context.chanceSource } : {}),
+    ...(context.setPieceContext ? { setPieceContext: context.setPieceContext } : {})
   });
 
   if (!onTarget) {
+    if (
+      state.dynamics.setPieces &&
+      state.rng.next() <= SET_PIECES.shotDeflectionCornerByPressure[state.possession.pressureLevel]
+    ) {
+      teamStats.shots.blocked += 1;
+      awardCorner(state, shooter.teamId, shooter.position, "deflected_shot", shooter.id);
+      return;
+    }
     teamStats.shots.off += 1;
     awardGoalKick(state, otherTeam(shooter.teamId), shooter.teamId, shooter.id);
     return;
@@ -65,7 +89,7 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
   if (keeper) {
     const saveRoll = state.rng.next();
     if (saveRoll > saveProbability) {
-      commitGoal(state, shooter, shotDistance, shotType, shotFoot.foot);
+      commitGoal(state, shooter, shotDistance, shotType, shotFoot.foot, context);
       return;
     }
 
@@ -78,7 +102,7 @@ export function performShot(state: MutableMatchState, shooter: MutablePlayer): v
     return;
   }
 
-  commitGoal(state, shooter, shotDistance, shotType, shotFoot.foot);
+  commitGoal(state, shooter, shotDistance, shotType, shotFoot.foot, context);
 }
 
 function commitGoal(
@@ -86,10 +110,14 @@ function commitGoal(
   shooter: MutablePlayer,
   shotDistance: ShotDistanceContext,
   shotType: ShotType,
-  foot: ShotFoot | undefined
+  foot: ShotFoot | undefined,
+  context: ShotContext = {}
 ): void {
   const teamStats = state.stats[shooter.teamId];
   teamStats.goals += 1;
+  if (context.source === "set_piece") {
+    state.setPieceStats[shooter.teamId].setPieceGoals += 1;
+  }
   state.score[shooter.teamId] += 1;
   state.ball.position = [GOAL_CENTRE_X, shooter.teamId === "home" ? AWAY_GOAL_Y : HOME_GOAL_Y, 0];
   state.ball.inFlight = false;
@@ -115,10 +143,79 @@ function commitGoal(
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),
     distanceBand: shotDistance.band,
     pressure: state.possession.pressureLevel,
+    ...(context.chanceSource ? { chanceSource: context.chanceSource } : {}),
+    ...(context.setPieceContext ? { setPieceContext: context.setPieceContext } : {}),
     score: { ...state.score },
     restartTeam: otherTeam(shooter.teamId)
   });
   recordScoreStateEvent(state);
+}
+
+export function performPenaltyShot(
+  state: MutableMatchState,
+  taker: MutablePlayer,
+  context: Record<string, unknown>
+): void {
+  const teamStats = state.stats[taker.teamId];
+  teamStats.shots.total += 1;
+  teamStats.shots.on += 1;
+  state.setPieceStats[taker.teamId].setPieceShots += 1;
+
+  const keeper = goalkeeperFor(state, otherTeam(taker.teamId));
+  const takerQuality = taker.v2Input
+    ? (taker.v2Input.attributes.penalties * 0.55 +
+        taker.v2Input.attributes.composure * 0.3 +
+        taker.v2Input.attributes.shotPower * 0.15) /
+      100
+    : (taker.baseInput.attributes.penaltyTaking * 0.65 +
+        taker.baseInput.attributes.perception * 0.35) /
+      100;
+  const keeperQuality = keeper?.v2Input?.gkAttributes
+    ? (keeper.v2Input.gkAttributes.gkReflexes * 0.55 +
+        keeper.v2Input.gkAttributes.gkPositioning * 0.45) /
+      100
+    : (keeper?.baseInput.attributes.saving ?? 55) / 100;
+  const conversionProbability = Math.max(
+    0.58,
+    Math.min(
+      0.9,
+      SET_PIECES.penaltyGoalBase + (takerQuality - 0.75) * 0.18 - (keeperQuality - 0.75) * 0.1
+    )
+  );
+  const scored = state.rng.next() <= conversionProbability;
+
+  emitEvent(state, "shot", taker.teamId, taker.id, {
+    onTarget: true,
+    shotType: "placed",
+    foot: "preferred",
+    distancePitchUnits: 120,
+    distanceToGoalMetres: 12,
+    distanceBand: "close",
+    pressure: "low",
+    setPieceContext: { ...context, type: "penalty" }
+  });
+
+  if (scored) {
+    commitGoal(
+      state,
+      taker,
+      { distanceToGoal: 120, band: "close", actionWeight: 1, onTarget: 1, save: 1 },
+      "placed",
+      "preferred",
+      { source: "set_piece", setPieceContext: { ...context, type: "penalty" } }
+    );
+    return;
+  }
+
+  if (keeper) {
+    emitEvent(state, "save", keeper.teamId, keeper.id, {
+      shooterId: taker.id,
+      quality: "good",
+      result: "parried_safe",
+      setPieceContext: { ...context, type: "penalty" }
+    });
+    givePossession(state, keeper, taker.teamId, taker.id);
+  }
 }
 
 function givePossession(
