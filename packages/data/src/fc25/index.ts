@@ -1,4 +1,5 @@
 export * from "./adapter";
+export * from "./chanceCreationIsolatedInvestigation";
 export * from "./constants";
 export * from "./importer";
 export * from "./manualXiImpactInvestigation";
