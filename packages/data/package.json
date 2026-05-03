@@ -19,6 +19,7 @@
   },
   "scripts": {
     "fc25:import": "tsx src/fc25/importer.ts",
+    "fc25:responsiveness": "tsx src/fc25/realSquadResponsivenessCli.ts",
     "migrate": "tsx src/migrate.ts",
     "reset": "tsx src/reset.ts",
     "seed": "tsx src/seed.ts",
