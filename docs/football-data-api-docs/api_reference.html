@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Overview :: football-data API documentation</title>
+    <link rel="canonical" href="https://docs.football-data.org/general/v4/index.html">
+    <meta name="description" content="Landing page for the football-data API documentation">
+    <meta name="generator" content="Antora 3.0.0">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <script>var uiRootPath = '../../_'</script>
+<link rel="icon" href="../../_/img/favicon.ico" type="image/x-icon">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://www.football-data.org"><img class="logo-image" src="../../_/img/logo.jpg" alt="football-data API docu" /></a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#"></a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Resources</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="/general/v4/competition.html">Competition</a>
+            <a class="navbar-item" href="/general/v4/match.html">Match</a>
+            <a class="navbar-item" href="/general/v4/team.html">Team</a>
+            <div class="dropdown-divider"></div>
+            <a class="navbar-item" href="/general/v4/person.html">Person</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Subresources</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="/general/v4/competition.html#_matches">Competition / Matches</a>
+            <a class="navbar-item" href="/general/v4/team.html#_matches">Team / Matches</a>
+            <a class="navbar-item" href="/general/v4/person.html#_matches">Person / Matches</a>
+            <a class="navbar-item" href="/general/v4/competition.html#_standings">Standings</a>
+            <a class="navbar-item" href="/general/v4/competition.html#_teams">Competition / Teams</a>
+            <a class="navbar-item" href="/general/v4/competition.html#_top_scorers">(Top) Scorers</a>
+          </div>
+        </div>
+        <div class="navbar-item">
+         
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="general" data-version="v4">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="index.html">API Reference Documentation</a></h3>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="index.html">Overview</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="#_release_notes">Release notes</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="#_changelog">Changelog</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="#_vocabulary">Vocabulary</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="resources.html">Resources</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="area.html">Area</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="competition.html">Competition</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="match.html">Match</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="team.html">Team</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="person.html">Person</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="trend.html">Trend</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="coding_client.html">Coding a client</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="coding_client.html#_sample_requests">Sample requests</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="coding/bash.html">Bash</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="coding/java.html">Java</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="coding/groovy.html">Groovy</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="coding/php.html">PHP</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="coding/python.html">Python</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="coding/elixir.html">Elixir</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="policies.html">API policies</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="policies.html#_request_throttling">Request-Throttling</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="policies.html#_attributes_and_values">Attributes and values</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="policies.html#_defaults">Defaults</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="policies.html#_automatic_folding">Automatic folding</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="overtime.html">Dealing with overtime and penalty shootout</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="errors.html">Error responses</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <a class="nav-link" href="lookup_tables.html">Lookup Tables</a>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="lookup_tables.html#_enum_types">Enums</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="lookup_tables.html#_enum_types">Request Headers</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="lookup_tables.html#_enum_types">Response Headers</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="lookup_tables.html#_enum_types">Filters</a>
+  </li>
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="lookup_tables.html#_league_codes">League Codes</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link is-current"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">API Reference Documentation</a></li>
+    <li><a href="index.html">Overview</a></li>
+  </ul>
+</nav>
+  
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Overview</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This guide provides the latest, exhaustive reference documentation for the football-data API.
+I revised this text for the 4th time now and maybe it still contains way too much prose,
+which not everybody likes.
+Good news is that you don&#8217;t need to read this guide from top to bottom, feel free to skip
+particular parts and jump directly to the sections that are of interest to you.</p>
+</div>
+<div class="paragraph">
+<p>If you&#8217;re not in a hurry keep on reading. I try to point out design decisions and explain
+why the API ticks like it does.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_release_notes"><a class="anchor" href="#_release_notes"></a>Release notes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Almost 4 years after publishing the football-data API v2, today - the 20th of May 2022 - v4 sees
+light of day.</p>
+</div>
+<div class="paragraph">
+<p>Within the last 2 years or so I did a couple of shadow-releases of a v3-version, which unfortunately
+never found it&#8217;s way to public. It had several improvements, but I didn&#8217;t find the time to write
+a proper documentation, so mostly I only gave the endpoints to clients asking for stuff not available in v2.</p>
+</div>
+<div class="paragraph">
+<p>However, with 2021 ending, I decided to make some breaking changes and do a fresh v4 release and here
+we go. The main goals set for v4 were:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>flatten data structures</p>
+</li>
+<li>
+<p>improve consistency across resources</p>
+</li>
+<li>
+<p>improve expressiveness</p>
+</li>
+<li>
+<p>add control to response sizes by selectively unfolding specific nodes</p>
+</li>
+<li>
+<p>review/rewrite entire documentation</p>
+</li>
+<li>
+<p>remain as backward compatible as possible</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>I also used the upgrade to refactor code and upgrade to the latest versions of the software I use.
+Last but not least the API is more frontend-aware now, as I stumbled over several
+shortcomings while building <a href="http://native-stats.org" target="_blank" rel="noopener">native-stats.org</a> on top of it,
+so I directly tackled them.</p>
+</div>
+<div class="paragraph">
+<p>In the end I can say that I really like what I built, and I hope so do you.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changelog"><a class="anchor" href="#_changelog"></a>Changelog</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Breaking changes that you have to take care of to migrate from v2:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The <code>Player</code> resource was renamed to <code>Person</code> as - surprisingly - there are coaches and referees as well,
+that do not fit well into a player resource.</p>
+</li>
+<li>
+<p>The teams within the score node are only referenced by "home" and "away" (formerly: "homeTeam/awayTeam")</p>
+</li>
+<li>
+<p>The score node now contains a regularTime attribute to indicate the result after 90 minutes in case of
+extra times or penalty shootouts.</p>
+</li>
+<li>
+<p>Scores not available for particular match status are now optional.</p>
+</li>
+<li>
+<p>Goals contain a score-node now that shows the score at this very moment of the match.</p>
+</li>
+<li>
+<p>The captain node was removed from all responses, captains are not supported any more.</p>
+</li>
+<li>
+<p>I dissolved most nestings and introduced flat data structures instead, e.g. a competition does not hold an
+area any more, but the response itself does. Thus client side mappings can be implementated much cleaner now.</p>
+</li>
+<li>
+<p>When filtering by date ranges, elements from the specified dateTo-date are excluded now,
+e.g. &amp;dateTo=2022-02-02 will contain matches <strong>only until</strong> and excluding the 2nd of February
+(list will contain matches until ending 1st February 00:00 UTC).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Changes that don&#8217;t affect upgrading:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>You can filter dates with shortcuts like 'YESTERDAY' or 'TOMORRROW' (e.g. <a href="https://api.football-data.org/v4/matches?date=YESTERDAY" target="_blank" rel="noopener">https://api.football-data.org/v4/matches?date=YESTERDAY</a>)</p>
+</li>
+<li>
+<p>Lots of additions to the person resource. You can now easily retrieve matches filtered by person attributes.
+For instance all matches for a player that he/she started sitting on the bench (e.g. <a href="https://api.football-data.org/v4/persons/12345?lineup=BENCH" target="_blank" rel="noopener">https://api.football-data.org/v4/persons/12345?lineup=BENCH</a>).</p>
+</li>
+<li>
+<p>You can paginate most list resources.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Last, but not least some internal stuff:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Lifted Java platform to version 11 on all servers</p>
+</li>
+<li>
+<p>Lifted the backend from Grails 3.x to 4.x</p>
+</li>
+<li>
+<p>Lifted all servers to Debian Buster</p>
+</li>
+<li>
+<p>Dockerized some external services</p>
+</li>
+<li>
+<p>Moved server farm to new provider</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_vocabulary"><a class="anchor" href="#_vocabulary"></a>Vocabulary</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_technical_wording"><a class="anchor" href="#_technical_wording"></a>Technical wording</h3>
+<div class="paragraph">
+<p>Basically I use the terms <strong>Resource</strong>, <strong>Subresource</strong> and <strong>Filter</strong> to describe the API design.
+They are abstract <em>"things"</em> that can be combined in various combinations and forms to retrieve the
+data you need.</p>
+</div>
+<div class="paragraph">
+<p><strong>Resources</strong> are main building blocks of the API and most likely also appear as entities / domain
+classes in your application. <strong>Subresources</strong> on the other hand generally don&#8217;t make sense without the
+<strong>(Main) Resource</strong> they are based on. For example a standing always belongs to a Competition,
+so it&#8217;s dared to be a <strong>Subresource</strong>.
+Sometimes though the distinction cannot be made that cleanly, so some resources like <strong>Match</strong>
+appear as both: as <strong>Subresources</strong> (pre-filtered by it&#8217;s main resource) and as a sole
+<strong>Resource</strong>.
+Last but not least there are <strong>Filters</strong> to narrow down result sets. A <strong>Filter</strong> always describes
+an attribute and it&#8217;s value must be passed in an adequate format, which is declared by a
+<strong>Data Type</strong>. I usually describe these <strong>Data types</strong> using a loose regex-dialect.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_domain_wording"><a class="anchor" href="#_domain_wording"></a>Domain wording</h3>
+<div class="paragraph">
+<p>A <strong>Competition</strong> represents a football league (e.g. Premiere League). It is defined by an id, a
+unique two to four-letter-code and has a type. It consists of <strong>Seasons</strong>, that hold a number of
+scheduled fixtures named <strong>Match</strong>.
+A certain number of <strong>Teams</strong> participate in one particular <strong>Season</strong> of a <strong>Competition</strong>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+I omitted to implement Season and Matchday as hierarchical elements by purpose.
+They are only attributes and can be used as Filters, but do not claim a separate resource
+for themselves to keep the design simple and data structures flat (I cannot emphasize the
+advantages of flat data structures enough).
+So you won&#8217;t find the typical <code>round</code> of other sports APIs, it doesn&#8217;t exist.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Last but not least a <strong>Team</strong> has a squad that represents the <strong>Persons</strong> playing for that very team.</p>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p style="padding-left: 10px">This page was built using the wonderful <a href="https://antora.org/" target="_blank">Antora project</a>.</p>
+</footer>
+<script src="../../_/js/site.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

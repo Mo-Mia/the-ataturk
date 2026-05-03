@@ -83,6 +83,7 @@ pnpm typecheck
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — technical decisions
 - [`docs/LORE.md`](docs/LORE.md) — narrative framing
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — append-only decision log
+- [`docs/football-data-api-docs/`](docs/football-data-api-docs/) — saved API documentation for the football-data.org integration
 
 ## Senior Architect Review Pointers
 

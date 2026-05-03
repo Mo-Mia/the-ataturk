@@ -36,6 +36,11 @@ Currently locked at creation. Worth considering whether mid-season tweaks are in
 ### User-player kit / appearance customisation
 Cosmetic only. Probably v0.3+.
 
+## Admin & Data Management
+
+### Squad data management UI with AI-assisted verification
+Squad data management UI with AI-assisted verification. Specific design questions to resolve before scoping: source-of-truth for verification (FC25 ingest vs live), write semantics (new dataset version vs mutation), Gemini API cost shape. Aesthetic direction TBD — possible Atatürk-revival hook.
+
 ## Refactor
 
 ### Complete `VisualiserPage.tsx` decomposition
