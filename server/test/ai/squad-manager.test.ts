@@ -6,6 +6,7 @@ const genAiMocks = vi.hoisted(() => ({
     (request: {
       config: {
         systemInstruction: string;
+        thinkingConfig?: { thinkingBudget?: number };
       };
     }) => Promise<{ text: string }>
   >()
@@ -16,9 +17,6 @@ vi.mock("@google/genai", () => ({
     models = {
       generateContent: genAiMocks.generateContent
     };
-  },
-  ThinkingLevel: {
-    LOW: "LOW"
   }
 }));
 
@@ -129,6 +127,9 @@ describe("AI squad manager routes", () => {
       expect(genAiMocks.generateContent.mock.calls[0]?.[0].config.systemInstruction).toBe(
         DATA_VERACITY_RECONCILER_PROMPT
       );
+      expect(genAiMocks.generateContent.mock.calls[0]?.[0].config).toMatchObject({
+        thinkingConfig: { thinkingBudget: 1024 }
+      });
 
       const cached = await app.inject({
         method: "POST",

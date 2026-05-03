@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import {
   FC25_CLUB_IDS,
   applySquadManagerSuggestions,
@@ -417,7 +417,7 @@ async function reconcileSquads(input: {
         systemInstruction: DATA_VERACITY_RECONCILER_PROMPT,
         temperature: 0.2,
         thinkingConfig: {
-          thinkingLevel: ThinkingLevel.LOW
+          thinkingBudget: 1024
         },
         responseMimeType: "application/json",
         responseJsonSchema: RECONCILIATION_RESPONSE_SCHEMA
@@ -430,7 +430,7 @@ async function reconcileSquads(input: {
       throw error;
     }
 
-    throw new ReconciliationError("Gemini squad reconciliation failed");
+    throw new ReconciliationError(`Gemini squad reconciliation failed: ${errorMessage(error)}`);
   }
 }
 
