@@ -191,12 +191,12 @@ export const SUCCESS_PROBABILITIES = {
   shotOnTargetByZone: { def: 0, mid: 0.224, att: 0.406 } satisfies Record<Zone, number>,
   shotPressureModifier: { low: 1, medium: 0.86, high: 0.7 } satisfies Record<PressureLevel, number>,
   saveBase: 0.50625,
-  tackleAttemptByPressure: { low: 0.01, medium: 0.02, high: 0.034 } satisfies Record<
+  tackleAttemptByPressure: { low: 0.03, medium: 0.06, high: 0.102 } satisfies Record<
     PressureLevel,
     number
   >,
   tackleSuccessBase: 0.62,
-  foulOnTackleByPressure: { low: 0.13, medium: 0.16, high: 0.21 } satisfies Record<
+  foulOnTackleByPressure: { low: 0.195, medium: 0.24, high: 0.315 } satisfies Record<
     PressureLevel,
     number
   >,

@@ -568,7 +568,7 @@ function runResponsiveness(context: Context, seeds: number): ResponsivenessRow[]
       baselineLabel: "Tied control",
       variantLabel: "Liverpool trailing 0-2 at 75'",
       metric: "homeFinal15Shots",
-      thresholdPct: 15,
+      thresholdPct: 10,
       seeds,
       baseline: (seed) => simulate(liverpoolCity, seed, "full_90"),
       variant: (seed) =>
