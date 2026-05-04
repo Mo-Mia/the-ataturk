@@ -26,7 +26,8 @@ const CLUBS = [
   "manchester-city",
   "manchester-united"
 ] as const satisfies readonly Fc25ClubId[];
-const EXPECTED_COUNTS: Record<Fc25ClubId, number> = {
+type Phase13ClubId = (typeof CLUBS)[number];
+const EXPECTED_COUNTS: Record<Phase13ClubId, number> = {
   arsenal: 24,
   "aston-villa": 24,
   liverpool: 28,
@@ -61,7 +62,7 @@ export interface Phase13EventVolumeReport {
     sourceFile: string;
     sourceFileSha256: string;
     createdAt: string;
-    squadCounts: Record<Fc25ClubId, number>;
+    squadCounts: Record<Phase13ClubId, number>;
   };
   methodology: {
     fixtures: Phase13Fixture[];
@@ -73,7 +74,7 @@ export interface Phase13EventVolumeReport {
   sanity: {
     seeds: number;
     pass: boolean;
-    activePlayersPerClub: Record<Fc25ClubId, number>;
+    activePlayersPerClub: Record<Phase13ClubId, number>;
     lineupWarnings: string[];
   };
   fixtures: Phase13FixtureSummary[];
@@ -89,8 +90,8 @@ export interface Phase13EventVolumeReport {
 }
 
 export interface Phase13Fixture {
-  home: Fc25ClubId;
-  away: Fc25ClubId;
+  home: Phase13ClubId;
+  away: Phase13ClubId;
   reason: string;
 }
 
@@ -103,8 +104,8 @@ export interface DefinitionAuditRow {
 }
 
 export interface Phase13FixtureSummary {
-  home: Fc25ClubId;
-  away: Fc25ClubId;
+  home: Phase13ClubId;
+  away: Phase13ClubId;
   seeds: number;
   averages: EventVolumeMetrics;
   standardErrors: EventVolumeMetrics;
@@ -178,12 +179,12 @@ export interface MechanismCandidate {
 
 interface Context {
   version: Fc25DatasetVersion;
-  squadCounts: Record<Fc25ClubId, number>;
-  squads: Record<Fc25ClubId, LoadedSquad>;
+  squadCounts: Record<Phase13ClubId, number>;
+  squads: Record<Phase13ClubId, LoadedSquad>;
 }
 
 interface LoadedSquad {
-  clubId: Fc25ClubId;
+  clubId: Phase13ClubId;
   clubName: string;
   shortName: string;
   players: Fc25SquadPlayer[];
@@ -448,16 +449,18 @@ function buildContext(db: SqliteDatabase): Context {
   }
   const clubs = listFc25Clubs(version.id, db);
   const squadCounts = Object.fromEntries(
-    clubs.map((club) => [
-      club.id,
-      db
-        .prepare<[string, string], { count: number }>(
-          "SELECT COUNT(*) AS count FROM fc25_squads WHERE dataset_version_id = ? AND club_id = ?"
-        )
-        .get(version.id, club.id)?.count ?? 0
+    CLUBS.map((clubId) => [
+      clubId,
+      clubs.some((club) => club.id === clubId)
+        ? db
+            .prepare<[string, string], { count: number }>(
+              "SELECT COUNT(*) AS count FROM fc25_squads WHERE dataset_version_id = ? AND club_id = ?"
+            )
+            .get(version.id, clubId)?.count ?? 0
+        : 0
     ])
-  ) as Record<Fc25ClubId, number>;
-  for (const [clubId, expected] of Object.entries(EXPECTED_COUNTS) as Array<[Fc25ClubId, number]>) {
+  ) as Record<Phase13ClubId, number>;
+  for (const [clubId, expected] of Object.entries(EXPECTED_COUNTS) as Array<[Phase13ClubId, number]>) {
     if (squadCounts[clubId] !== expected) {
       throw new Error(
         `Expected ${expected} FC26 squad rows for ${clubId}, found ${squadCounts[clubId] ?? 0}`
@@ -467,18 +470,15 @@ function buildContext(db: SqliteDatabase): Context {
   return {
     version,
     squadCounts,
-    squads: {
-      arsenal: loadSquad("arsenal", version.id, db),
-      "aston-villa": loadSquad("aston-villa", version.id, db),
-      liverpool: loadSquad("liverpool", version.id, db),
-      "manchester-city": loadSquad("manchester-city", version.id, db),
-      "manchester-united": loadSquad("manchester-united", version.id, db)
-    }
+    squads: Object.fromEntries(CLUBS.map((clubId) => [clubId, loadSquad(clubId, version.id, db)])) as Record<
+      Phase13ClubId,
+      LoadedSquad
+    >
   };
 }
 
-function loadSquad(clubId: Fc25ClubId, versionId: string, db: SqliteDatabase): LoadedSquad {
-  return loadFc25Squad(clubId, versionId, { include: "all", db });
+function loadSquad(clubId: Phase13ClubId, versionId: string, db: SqliteDatabase): LoadedSquad {
+  return { ...loadFc25Squad(clubId, versionId, { include: "all", db }), clubId };
 }
 
 function runSanity(
@@ -486,7 +486,7 @@ function runSanity(
   seeds: number
 ): Phase13EventVolumeReport["sanity"] {
   const lineupWarnings: string[] = [];
-  const activePlayersPerClub = {} as Record<Fc25ClubId, number>;
+  const activePlayersPerClub = {} as Record<Phase13ClubId, number>;
   for (const clubId of CLUBS) {
     const lineup = selectLineup(context.squads[clubId].players, BASELINE_FORMATION);
     activePlayersPerClub[clubId] = lineup.xi.length;

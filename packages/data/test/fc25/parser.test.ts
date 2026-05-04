@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   FC25_CLUBS,
+  FC25_FOOTSIM_CLUBS,
   FC25_SOURCE_TEAM_NAMES,
   Fc25ParseError,
   parseFc25PlayersCsv,
@@ -66,21 +67,18 @@ describe("FC25 CSV parser", () => {
     });
   });
 
-  it("exposes the five-club Phase 1 whitelist", () => {
-    expect(FC25_CLUBS.map((club) => club.id)).toEqual([
+  it("exposes the PL20 universe and five-club FootSim subset", () => {
+    expect(FC25_CLUBS).toHaveLength(20);
+    expect(FC25_CLUBS.map((club) => club.id)).toContain("chelsea");
+    expect(FC25_FOOTSIM_CLUBS.map((club) => club.id)).toEqual([
       "arsenal",
-      "manchester-city",
-      "manchester-united",
+      "aston-villa",
       "liverpool",
-      "aston-villa"
+      "manchester-city",
+      "manchester-united"
     ]);
-    expect(FC25_SOURCE_TEAM_NAMES).toEqual([
-      "Arsenal",
-      "Manchester City",
-      "Man Utd",
-      "Liverpool",
-      "Aston Villa"
-    ]);
+    expect(FC25_SOURCE_TEAM_NAMES).toContain("AFC Bournemouth");
+    expect(FC25_SOURCE_TEAM_NAMES).toContain("Manchester City");
   });
 
   it("throws a typed parse error for unsupported source positions", () => {

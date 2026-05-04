@@ -15,6 +15,7 @@ import { migrate } from "../../src/migrate";
 import { createTestDatabase, type TestDatabase } from "../test-db";
 
 const FIXTURE_PATH = "data/fc-25/fixtures/male_players_top5pl.csv";
+const FC26_PATH = "data/fc-25/FC26_20250921.csv";
 
 let testDatabase: TestDatabase | undefined;
 let tempDirectory: string | undefined;
@@ -196,6 +197,33 @@ describe("FC25 importer", () => {
     }
   });
 
+  it("imports the English Premier League 20-club FC26 universe on request", () => {
+    testDatabase = createMigratedDatabase("fc26-pl20-import");
+
+    const result = importFc25Dataset({
+      databasePath: testDatabase.path,
+      csvPath: FC26_PATH,
+      format: "fc26",
+      clubUniverse: "pl20",
+      datasetVersionId: "fc26-pl20-test-v1",
+      name: "FC26 PL20 test fixture"
+    });
+
+    expect(result).toMatchObject({
+      datasetVersionId: "fc26-pl20-test-v1",
+      clubs: 20,
+      players: 547,
+      squads: 547
+    });
+
+    const clubs = listFc25Clubs("fc26-pl20-test-v1");
+    expect(clubs).toHaveLength(20);
+    expect(clubs.map((club) => club.id)).toContain("chelsea");
+    expect(clubs.map((club) => club.id)).not.toContain("dynamo-kyiv");
+    expect(loadFc25Squad("chelsea", "fc26-pl20-test-v1", { include: "all" }).players).toHaveLength(30);
+    expect(loadFc25Squad("sunderland", "fc26-pl20-test-v1", { include: "all" }).players).toHaveLength(36);
+  }, 20_000);
+
   it("warns but proceeds when an imported club exceeds 35 players", () => {
     testDatabase = createMigratedDatabase("fc26-warning");
     const csvPath = writeTempCsv(
@@ -244,6 +272,8 @@ describe("FC25 importer", () => {
         "fc25-fixture",
         "--format",
         "fc26",
+        "--club-universe",
+        "pl20",
         "--cap",
         "22"
       ])
@@ -253,6 +283,7 @@ describe("FC25 importer", () => {
       name: "Fixture import",
       datasetVersionId: "fc25-fixture",
       format: "fc26",
+      clubUniverse: "pl20",
       squadCap: 22
     });
   });

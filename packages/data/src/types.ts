@@ -301,11 +301,26 @@ export interface SquadPlayerWithAttributes {
 }
 
 export const FC25_CLUB_IDS = [
+  "afc-bournemouth",
   "arsenal",
+  "brentford",
+  "brighton",
+  "burnley",
+  "chelsea",
+  "crystal-palace",
+  "everton",
+  "fulham",
+  "leeds-united",
   "manchester-city",
   "manchester-united",
+  "newcastle-united",
+  "nottingham-forest",
   "liverpool",
-  "aston-villa"
+  "aston-villa",
+  "sunderland",
+  "tottenham-hotspur",
+  "west-ham-united",
+  "wolverhampton-wanderers"
 ] as const;
 export type Fc25ClubId = (typeof FC25_CLUB_IDS)[number];
 
@@ -353,6 +368,7 @@ export interface Fc25ClubDefinition {
   shortName: string;
   country: string;
   league: string;
+  sourceLeagueId?: number;
   sourceTeam: string;
   sourceTeamAliases?: readonly string[];
 }
@@ -451,6 +467,7 @@ export interface Fc25ParsedPlayerRow {
   alternativePositions: Fc25Position[];
   age: number;
   nationality: string;
+  leagueId: number | null;
   league: string;
   sourceTeam: string;
   preferredFoot: Fc25PreferredFoot;

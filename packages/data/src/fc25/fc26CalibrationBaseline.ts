@@ -28,15 +28,17 @@ import { selectLineup, type SupportedFormation } from "./selectStartingXI";
 
 const DEFAULT_OUTPUT_PATH = "packages/match-engine/artifacts/calibration-baseline-fc26.json";
 const EXPECTED_SOURCE_FILE = "FC26_20250921.csv";
-const EXPECTED_COUNTS: Record<Fc25ClubId, number> = {
+const EXPECTED_COUNTS = {
   arsenal: 24,
   "aston-villa": 24,
   liverpool: 28,
   "manchester-city": 26,
   "manchester-united": 26
-};
-const HOME_CLUB: Fc25ClubId = "liverpool";
-const AWAY_CLUB: Fc25ClubId = "manchester-city";
+} satisfies Partial<Record<Fc25ClubId, number>>;
+type BaselineClubId = keyof typeof EXPECTED_COUNTS & Fc25ClubId;
+const BASELINE_CLUBS = Object.keys(EXPECTED_COUNTS) as BaselineClubId[];
+const HOME_CLUB: BaselineClubId = "liverpool";
+const AWAY_CLUB: BaselineClubId = "manchester-city";
 const BASELINE_FORMATION: SupportedFormation = "4-3-3";
 const BASELINE_TACTICS: TeamTactics = {
   formation: BASELINE_FORMATION,
@@ -81,12 +83,12 @@ export interface Fc26CalibrationBaselineReport {
     sourceFile: string;
     sourceFileSha256: string;
     createdAt: string;
-    squadCounts: Record<Fc25ClubId, number>;
+    squadCounts: Record<BaselineClubId, number>;
   };
   sanity: {
     seeds: number;
     pass: boolean;
-    activePlayersPerClub: Record<Fc25ClubId, number>;
+    activePlayersPerClub: Record<BaselineClubId, number>;
     lineupWarnings: string[];
     full90: Pick<CharacterisationRow, "metrics" | "standardErrors" | "scoreDistribution">;
   };
@@ -212,12 +214,12 @@ interface RunMetrics {
 
 interface Context {
   version: Fc25DatasetVersion;
-  squadCounts: Record<Fc25ClubId, number>;
-  squads: Record<Fc25ClubId, LoadedSquad>;
+  squadCounts: Record<BaselineClubId, number>;
+  squads: Record<BaselineClubId, LoadedSquad>;
 }
 
 interface LoadedSquad {
-  clubId: Fc25ClubId;
+  clubId: BaselineClubId;
   clubName: string;
   shortName: string;
   players: Fc25SquadPlayer[];
@@ -383,17 +385,19 @@ function buildContext(db: SqliteDatabase): Context {
   assertFc26Columns(db);
   const clubs = listFc25Clubs(version.id, db);
   const squadCounts = Object.fromEntries(
-    clubs.map((club) => [
-      club.id,
-      db
-        .prepare<[string, string], { count: number }>(
-          "SELECT COUNT(*) AS count FROM fc25_squads WHERE dataset_version_id = ? AND club_id = ?"
-        )
-        .get(version.id, club.id)?.count ?? 0
+    BASELINE_CLUBS.map((clubId) => [
+      clubId,
+      clubs.some((club) => club.id === clubId)
+        ? db
+            .prepare<[string, string], { count: number }>(
+              "SELECT COUNT(*) AS count FROM fc25_squads WHERE dataset_version_id = ? AND club_id = ?"
+            )
+            .get(version.id, clubId)?.count ?? 0
+        : 0
     ])
-  ) as Record<Fc25ClubId, number>;
+  ) as Record<BaselineClubId, number>;
 
-  for (const [clubId, expected] of Object.entries(EXPECTED_COUNTS) as Array<[Fc25ClubId, number]>) {
+  for (const [clubId, expected] of Object.entries(EXPECTED_COUNTS) as Array<[BaselineClubId, number]>) {
     if (squadCounts[clubId] !== expected) {
       throw new Error(
         `Expected ${expected} FC26 squad rows for ${clubId}, found ${squadCounts[clubId] ?? 0}`
@@ -404,13 +408,9 @@ function buildContext(db: SqliteDatabase): Context {
   return {
     version,
     squadCounts,
-    squads: {
-      arsenal: loadSquad("arsenal", version.id, db),
-      "aston-villa": loadSquad("aston-villa", version.id, db),
-      liverpool: loadSquad("liverpool", version.id, db),
-      "manchester-city": loadSquad("manchester-city", version.id, db),
-      "manchester-united": loadSquad("manchester-united", version.id, db)
-    }
+    squads: Object.fromEntries(
+      BASELINE_CLUBS.map((clubId) => [clubId, loadSquad(clubId, version.id, db)])
+    ) as Record<BaselineClubId, LoadedSquad>
   };
 }
 
@@ -424,8 +424,8 @@ function assertFc26Columns(db: SqliteDatabase): void {
   }
 }
 
-function loadSquad(clubId: Fc25ClubId, versionId: string, db: SqliteDatabase): LoadedSquad {
-  return loadFc25Squad(clubId, versionId, { include: "all", db });
+function loadSquad(clubId: BaselineClubId, versionId: string, db: SqliteDatabase): LoadedSquad {
+  return { ...loadFc25Squad(clubId, versionId, { include: "all", db }), clubId };
 }
 
 function runSanity(
@@ -433,8 +433,8 @@ function runSanity(
   seeds: number
 ): Fc26CalibrationBaselineReport["sanity"] {
   const lineupWarnings: string[] = [];
-  const activePlayersPerClub = {} as Record<Fc25ClubId, number>;
-  for (const clubId of Object.keys(EXPECTED_COUNTS) as Fc25ClubId[]) {
+  const activePlayersPerClub = {} as Record<BaselineClubId, number>;
+  for (const clubId of BASELINE_CLUBS) {
     const lineup = selectLineup(context.squads[clubId].players, BASELINE_FORMATION);
     activePlayersPerClub[clubId] = lineup.xi.length;
     lineupWarnings.push(

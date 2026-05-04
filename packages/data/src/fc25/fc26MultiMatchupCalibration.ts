@@ -21,15 +21,16 @@ const DEFAULT_OUTPUT_PATH = "packages/match-engine/artifacts/calibration-multi-m
 const EXPECTED_SOURCE_FILE = "FC26_20250921.csv";
 const DEFAULT_PRIMARY_BENCHMARK_URL = "https://www.football-data.co.uk/mmz4281/2526/E0.csv";
 const DEFAULT_CROSS_CHECK_BENCHMARK_URL = "https://www.football-data.co.uk/mmz4281/2425/E0.csv";
-const EXPECTED_COUNTS: Record<Fc25ClubId, number> = {
+const EXPECTED_COUNTS = {
   arsenal: 24,
   "aston-villa": 24,
   liverpool: 28,
   "manchester-city": 26,
   "manchester-united": 26
-};
-const CLUBS = Object.keys(EXPECTED_COUNTS) as Fc25ClubId[];
-const CLUB_LABELS: Record<Fc25ClubId, string> = {
+} satisfies Partial<Record<Fc25ClubId, number>>;
+type MultiMatchupClubId = keyof typeof EXPECTED_COUNTS & Fc25ClubId;
+const CLUBS = Object.keys(EXPECTED_COUNTS) as MultiMatchupClubId[];
+const CLUB_LABELS: Record<MultiMatchupClubId, string> = {
   arsenal: "Arsenal",
   "aston-villa": "Aston Villa",
   liverpool: "Liverpool",
@@ -70,16 +71,16 @@ export interface Fc26MultiMatchupReport {
     sourceFile: string;
     sourceFileSha256: string;
     createdAt: string;
-    squadCounts: Record<Fc25ClubId, number>;
+    squadCounts: Record<MultiMatchupClubId, number>;
   };
   sanity: {
     seeds: number;
     pass: boolean;
-    activePlayersPerClub: Record<Fc25ClubId, number>;
+    activePlayersPerClub: Record<MultiMatchupClubId, number>;
     lineupWarnings: string[];
     sampleFull90: DirectionalFixtureSummary;
   };
-  fixtureMatrix: Array<{ home: Fc25ClubId; away: Fc25ClubId; seeds: number }>;
+  fixtureMatrix: Array<{ home: MultiMatchupClubId; away: MultiMatchupClubId; seeds: number }>;
   fixtures: DirectionalFixtureSummary[];
   aggregate: AggregateSummary;
   varianceDecomposition: Record<BenchmarkMetric, VarianceDecomposition>;
@@ -100,8 +101,8 @@ export interface Fc26MultiMatchupReport {
 }
 
 export interface DirectionalFixtureSummary {
-  home: Fc25ClubId;
-  away: Fc25ClubId;
+  home: MultiMatchupClubId;
+  away: MultiMatchupClubId;
   seeds: number;
   metrics: FixtureMetrics;
   standardErrors: FixtureMetrics;
@@ -195,8 +196,8 @@ export interface HomeAwayEffect {
   possession: { meanHomeMinusAway: number; standardError: number };
   pairDirectionComparisons: Array<{
     pairing: string;
-    firstDirection: { home: Fc25ClubId; away: Fc25ClubId; goalDiff: number; shotDiff: number };
-    reverseDirection: { home: Fc25ClubId; away: Fc25ClubId; goalDiff: number; shotDiff: number };
+    firstDirection: { home: MultiMatchupClubId; away: MultiMatchupClubId; goalDiff: number; shotDiff: number };
+    reverseDirection: { home: MultiMatchupClubId; away: MultiMatchupClubId; goalDiff: number; shotDiff: number };
   }>;
 }
 
@@ -221,12 +222,12 @@ export interface RebasingInventory {
 
 interface Context {
   version: Fc25DatasetVersion;
-  squadCounts: Record<Fc25ClubId, number>;
-  squads: Record<Fc25ClubId, LoadedSquad>;
+  squadCounts: Record<MultiMatchupClubId, number>;
+  squads: Record<MultiMatchupClubId, LoadedSquad>;
 }
 
 interface LoadedSquad {
-  clubId: Fc25ClubId;
+  clubId: MultiMatchupClubId;
   clubName: string;
   shortName: string;
   players: Fc25SquadPlayer[];
@@ -356,8 +357,8 @@ export async function runFc26MultiMatchupCalibration(
   return report;
 }
 
-export function buildDirectionalFixtureMatrix(): Array<{ home: Fc25ClubId; away: Fc25ClubId }> {
-  const fixtures: Array<{ home: Fc25ClubId; away: Fc25ClubId }> = [];
+export function buildDirectionalFixtureMatrix(): Array<{ home: MultiMatchupClubId; away: MultiMatchupClubId }> {
+  const fixtures: Array<{ home: MultiMatchupClubId; away: MultiMatchupClubId }> = [];
   for (let homeIndex = 0; homeIndex < CLUBS.length; homeIndex += 1) {
     for (let awayIndex = homeIndex + 1; awayIndex < CLUBS.length; awayIndex += 1) {
       const first = CLUBS[homeIndex]!;
@@ -507,16 +508,18 @@ function buildContext(db: SqliteDatabase): Context {
   }
   const clubs = listFc25Clubs(version.id, db);
   const squadCounts = Object.fromEntries(
-    clubs.map((club) => [
-      club.id,
-      db
-        .prepare<[string, string], { count: number }>(
-          "SELECT COUNT(*) AS count FROM fc25_squads WHERE dataset_version_id = ? AND club_id = ?"
-        )
-        .get(version.id, club.id)?.count ?? 0
+    CLUBS.map((clubId) => [
+      clubId,
+      clubs.some((club) => club.id === clubId)
+        ? db
+            .prepare<[string, string], { count: number }>(
+              "SELECT COUNT(*) AS count FROM fc25_squads WHERE dataset_version_id = ? AND club_id = ?"
+            )
+            .get(version.id, clubId)?.count ?? 0
+        : 0
     ])
-  ) as Record<Fc25ClubId, number>;
-  for (const [clubId, expected] of Object.entries(EXPECTED_COUNTS) as Array<[Fc25ClubId, number]>) {
+  ) as Record<MultiMatchupClubId, number>;
+  for (const [clubId, expected] of Object.entries(EXPECTED_COUNTS) as Array<[MultiMatchupClubId, number]>) {
     if (squadCounts[clubId] !== expected) {
       throw new Error(
         `Expected ${expected} FC26 squad rows for ${clubId}, found ${squadCounts[clubId] ?? 0}`
@@ -526,18 +529,15 @@ function buildContext(db: SqliteDatabase): Context {
   return {
     version,
     squadCounts,
-    squads: {
-      arsenal: loadSquad("arsenal", version.id, db),
-      "aston-villa": loadSquad("aston-villa", version.id, db),
-      liverpool: loadSquad("liverpool", version.id, db),
-      "manchester-city": loadSquad("manchester-city", version.id, db),
-      "manchester-united": loadSquad("manchester-united", version.id, db)
-    }
+    squads: Object.fromEntries(CLUBS.map((clubId) => [clubId, loadSquad(clubId, version.id, db)])) as Record<
+      MultiMatchupClubId,
+      LoadedSquad
+    >
   };
 }
 
-function loadSquad(clubId: Fc25ClubId, versionId: string, db: SqliteDatabase): LoadedSquad {
-  return loadFc25Squad(clubId, versionId, { include: "all", db });
+function loadSquad(clubId: MultiMatchupClubId, versionId: string, db: SqliteDatabase): LoadedSquad {
+  return { ...loadFc25Squad(clubId, versionId, { include: "all", db }), clubId };
 }
 
 function runSanity(
@@ -545,7 +545,7 @@ function runSanity(
   seeds: number
 ): Fc26MultiMatchupReport["sanity"] {
   const lineupWarnings: string[] = [];
-  const activePlayersPerClub = {} as Record<Fc25ClubId, number>;
+  const activePlayersPerClub = {} as Record<MultiMatchupClubId, number>;
   for (const clubId of CLUBS) {
     const lineup = selectLineup(context.squads[clubId].players, BASELINE_FORMATION);
     activePlayersPerClub[clubId] = lineup.xi.length;
@@ -567,16 +567,16 @@ function runSanity(
 
 function fixtureRuns(
   context: Context,
-  home: Fc25ClubId,
-  away: Fc25ClubId,
+  home: MultiMatchupClubId,
+  away: MultiMatchupClubId,
   seeds: number
 ): RunMetrics[] {
   return runSeeds(seeds, (seed) => simulate(context, seed, home, away));
 }
 
 function summariseDirectionalFixture(
-  home: Fc25ClubId,
-  away: Fc25ClubId,
+  home: MultiMatchupClubId,
+  away: MultiMatchupClubId,
   runs: RunMetrics[]
 ): DirectionalFixtureSummary {
   return {
@@ -592,8 +592,8 @@ function summariseDirectionalFixture(
 function simulate(
   context: Context,
   seed: number,
-  home: Fc25ClubId,
-  away: Fc25ClubId,
+  home: MultiMatchupClubId,
+  away: MultiMatchupClubId,
   duration: MatchDuration = "full_90"
 ): RunMetrics {
   const config: MatchConfigV2 = {

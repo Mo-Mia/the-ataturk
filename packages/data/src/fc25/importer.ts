@@ -8,6 +8,7 @@ import { migrate } from "../migrate";
 import { resolveRepoPath } from "../paths";
 import type {
   Fc25Club,
+  Fc25ClubDefinition,
   Fc25ClubId,
   Fc25DatasetVersion,
   Fc25ParsedPlayerRow,
@@ -17,7 +18,11 @@ import type {
   Fc25StarRating
 } from "../types";
 import { adaptFc25RowToPlayerInputV2 } from "./adapter";
-import { FC25_CLUBS, FC25_SOURCE_FILE_DEFAULT } from "./constants";
+import {
+  clubsForUniverse,
+  FC25_SOURCE_FILE_DEFAULT,
+  type Fc25ClubUniverse
+} from "./constants";
 import { parseFc25PlayersCsv, type Fc25CsvFormat } from "./parser";
 
 const STARTER_COUNT = 11;
@@ -30,6 +35,7 @@ export interface Fc25ImportOptions {
   name?: string;
   datasetVersionId?: string;
   format?: Fc25CsvFormat;
+  clubUniverse?: Fc25ClubUniverse;
   squadCap?: number;
   now?: Date;
 }
@@ -141,7 +147,9 @@ export function importFc25Dataset(options: Fc25ImportOptions = {}): Fc25ImportRe
   const datasetVersionId =
     options.datasetVersionId ?? createDatasetVersionId(now, sourceFileSha256);
   const squadCap = options.squadCap ?? null;
-  const selectedRows = selectRowsForImport(parsedRows, squadCap);
+  const clubUniverse = options.clubUniverse ?? "footsim";
+  const clubs = clubsForUniverse(clubUniverse);
+  const selectedRows = selectRowsForImport(parsedRows, squadCap, clubs);
   migrate(options.databasePath ? { databasePath: options.databasePath } : {});
   const db = getDb(options.databasePath);
 
@@ -153,7 +161,7 @@ export function importFc25Dataset(options: Fc25ImportOptions = {}): Fc25ImportRe
       sourceFileSha256,
       nowIso
     });
-    insertClubs(db, datasetVersionId, nowIso);
+    insertClubs(db, datasetVersionId, nowIso, clubs);
     const counts = insertSelectedRows(db, datasetVersionId, selectedRows, nowIso);
     activateDatasetVersion(db, datasetVersionId, nowIso);
     return counts;
@@ -166,7 +174,7 @@ export function importFc25Dataset(options: Fc25ImportOptions = {}): Fc25ImportRe
     databasePath: getDatabasePath(options.databasePath),
     sourceFile: csvPath,
     sourceFileSha256,
-    clubs: FC25_CLUBS.length,
+    clubs: clubs.length,
     players: counts.players,
     squads: counts.squads
   };
@@ -275,6 +283,10 @@ export function parseFc25ImportCliArgs(args: string[]): Fc25ImportOptions {
         options.format = parseCliFormat(requireCliValue(arg, next));
         index += 1;
         break;
+      case "--club-universe":
+        options.clubUniverse = parseCliClubUniverse(requireCliValue(arg, next));
+        index += 1;
+        break;
       case "--cap":
         options.squadCap = parseCliPositiveInteger(arg, requireCliValue(arg, next));
         index += 1;
@@ -289,13 +301,14 @@ export function parseFc25ImportCliArgs(args: string[]): Fc25ImportOptions {
 
 function selectRowsForImport(
   rows: Fc25ParsedPlayerRow[],
-  squadCap: number | null
+  squadCap: number | null,
+  clubs: readonly Fc25ClubDefinition[]
 ): Array<{ clubId: Fc25ClubId; row: Fc25ParsedPlayerRow; squadIndex: number }> {
-  return FC25_CLUBS.flatMap((club) => {
+  return clubs.flatMap((club) => {
     const sourceTeamAliases = "sourceTeamAliases" in club ? club.sourceTeamAliases : [];
     const sourceTeams = new Set<string>([club.sourceTeam, ...sourceTeamAliases]);
     const clubRows = rows
-      .filter((row) => sourceTeams.has(row.sourceTeam) && row.league === club.league)
+      .filter((row) => sourceTeams.has(row.sourceTeam) && matchesClubLeague(row, club))
       .sort(compareRowsForSquad);
 
     if (clubRows.length === 0) {
@@ -314,6 +327,13 @@ function selectRowsForImport(
       squadIndex
     }));
   });
+}
+
+function matchesClubLeague(row: Fc25ParsedPlayerRow, club: Fc25ClubDefinition): boolean {
+  if (club.sourceLeagueId !== undefined && row.leagueId !== null) {
+    return row.leagueId === club.sourceLeagueId;
+  }
+  return row.league === club.league;
 }
 
 function compareRowsForSquad(a: Fc25ParsedPlayerRow, b: Fc25ParsedPlayerRow): number {
@@ -345,7 +365,12 @@ function insertDatasetVersion(
   ).run(input);
 }
 
-function insertClubs(db: SqliteDatabase, datasetVersionId: string, nowIso: string): void {
+function insertClubs(
+  db: SqliteDatabase,
+  datasetVersionId: string,
+  nowIso: string,
+  clubs: readonly Fc25ClubDefinition[]
+): void {
   const insertClub = db.prepare(
     `
       INSERT INTO fc25_clubs (
@@ -359,7 +384,7 @@ function insertClubs(db: SqliteDatabase, datasetVersionId: string, nowIso: strin
     `
   );
 
-  for (const club of FC25_CLUBS) {
+  for (const club of clubs) {
     insertClub.run({
       datasetVersionId,
       ...club,
@@ -673,6 +698,13 @@ function parseCliFormat(value: string): Fc25CsvFormat {
     return value;
   }
   throw new Error(`Invalid --format '${value}'; expected fc25, fc26, or auto`);
+}
+
+function parseCliClubUniverse(value: string): Fc25ClubUniverse {
+  if (value === "footsim" || value === "pl20") {
+    return value;
+  }
+  throw new Error(`Invalid --club-universe '${value}'; expected footsim or pl20`);
 }
 
 function isCliEntrypoint(): boolean {

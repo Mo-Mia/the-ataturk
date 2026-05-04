@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  FC25_CLUB_IDS,
   Fc25LineupSelectionError,
   getDb,
   importFc25Dataset,
+  listFc25Clubs,
   loadFc25Squad,
   selectLineup,
   selectStartingXI,
@@ -83,7 +83,7 @@ describe("selectStartingXI", () => {
   it("selects valid XIs for every imported club and supported formation", () => {
     const db = importFixture();
 
-    for (const clubId of FC25_CLUB_IDS) {
+    for (const clubId of listFc25Clubs("fc25-xi-test", db).map((club) => club.id)) {
       const squad = loadFc25Squad(clubId, "fc25-xi-test", { include: "all", db }).players;
       for (const formation of FORMATIONS) {
         const xi = selectStartingXI(squad, formation);
