@@ -3,6 +3,7 @@ export * from "./chanceCreationIsolatedInvestigation";
 export * from "./constants";
 export * from "./fc26CalibrationBaseline";
 export * from "./fc26MultiMatchupCalibration";
+export * from "./fc26Pl20Baseline";
 export * from "./importer";
 export * from "./manualXiImpactInvestigation";
 export * from "./parser";

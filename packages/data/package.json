@@ -21,6 +21,7 @@
     "fc25:chance-creation-investigation": "tsx src/fc25/chanceCreationIsolatedInvestigationCli.ts",
     "fc25:fc26-baseline": "tsx src/fc25/fc26CalibrationBaselineCli.ts",
     "fc25:fc26-multi-matchup": "tsx src/fc25/fc26MultiMatchupCalibrationCli.ts",
+    "fc25:fc26-pl20-baseline": "tsx src/fc25/fc26Pl20BaselineCli.ts",
     "fc25:import": "tsx src/fc25/importer.ts",
     "fc25:manual-xi-investigation": "tsx src/fc25/manualXiImpactInvestigationCli.ts",
     "fc25:phase13-event-volume": "tsx src/fc25/phase13EventVolumeDiagnosticsCli.ts",
