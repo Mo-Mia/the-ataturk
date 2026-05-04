@@ -18,7 +18,7 @@ import type {
 } from "../types";
 import { adaptFc25RowToPlayerInputV2 } from "./adapter";
 import { FC25_CLUBS, FC25_SOURCE_FILE_DEFAULT } from "./constants";
-import { parseFc25PlayersCsv } from "./parser";
+import { parseFc25PlayersCsv, type Fc25CsvFormat } from "./parser";
 
 const DEFAULT_SQUAD_CAP = 25;
 const STARTER_COUNT = 11;
@@ -29,6 +29,7 @@ export interface Fc25ImportOptions {
   databasePath?: string;
   name?: string;
   datasetVersionId?: string;
+  format?: Fc25CsvFormat;
   squadCap?: number;
   now?: Date;
 }
@@ -117,7 +118,7 @@ export function importFc25Dataset(options: Fc25ImportOptions = {}): Fc25ImportRe
   const csvPath = resolveRepoPath(options.csvPath ?? FC25_SOURCE_FILE_DEFAULT);
   const sourceCsv = readFileSync(csvPath, "utf8");
   const sourceFileSha256 = createHash("sha256").update(sourceCsv).digest("hex");
-  const parsedRows = parseFc25PlayersCsv(sourceCsv);
+  const parsedRows = parseFc25PlayersCsv(sourceCsv, { format: options.format ?? "auto" });
   const now = options.now ?? new Date();
   const nowIso = now.toISOString();
   const datasetVersionId =
@@ -251,6 +252,10 @@ export function parseFc25ImportCliArgs(args: string[]): Fc25ImportOptions {
         break;
       case "--version-id":
         options.datasetVersionId = requireCliValue(arg, next);
+        index += 1;
+        break;
+      case "--format":
+        options.format = parseCliFormat(requireCliValue(arg, next));
         index += 1;
         break;
       case "--cap":
@@ -581,6 +586,13 @@ function parseCliPositiveInteger(option: string, value: string): number {
     throw new Error(`${option} must be a positive integer`);
   }
   return parsed;
+}
+
+function parseCliFormat(value: string): Fc25CsvFormat {
+  if (value === "fc25" || value === "fc26" || value === "auto") {
+    return value;
+  }
+  throw new Error(`Invalid --format '${value}'; expected fc25, fc26, or auto`);
 }
 
 function isCliEntrypoint(): boolean {

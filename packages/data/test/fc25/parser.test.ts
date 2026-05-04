@@ -5,7 +5,8 @@ import {
   FC25_SOURCE_TEAM_NAMES,
   Fc25ParseError,
   parseFc25PlayersCsv,
-  parseFc25PlayerRecord
+  parseFc25PlayerRecord,
+  parseFc26PlayerRecord
 } from "../../src/fc25";
 
 const FC25_FIXTURE = `Unnamed: 0,Rank,Name,OVR,Acceleration,Sprint Speed,Positioning,Finishing,Shot Power,Long Shots,Volleys,Penalties,Vision,Crossing,Free Kick Accuracy,Short Passing,Long Passing,Curve,Dribbling,Agility,Balance,Reactions,Ball Control,Composure,Interceptions,Heading Accuracy,Def Awareness,Standing Tackle,Sliding Tackle,Jumping,Stamina,Strength,Aggression,Position,Weak foot,Skill moves,Preferred foot,Height,Weight,Alternative positions,Age,Nation,League,Team,play style,url,GK Diving,GK Handling,GK Kicking,GK Positioning,GK Reflexes
@@ -92,4 +93,149 @@ describe("FC25 CSV parser", () => {
       )
     ).toThrow(Fc25ParseError);
   });
+
+  it("parses FC26 SoFIFA rows into the FC25 row model", () => {
+    const wirtz = parseFc26PlayerRecord(fc26Record(), 2);
+
+    expect(wirtz).toMatchObject({
+      fc25PlayerId: "256630",
+      name: "Florian Wirtz",
+      overall: 89,
+      position: "AM",
+      sourcePosition: "CAM",
+      alternativePositions: ["ST", "CM"],
+      age: 22,
+      nationality: "Germany",
+      sourceTeam: "Liverpool",
+      squadNumber: 7,
+      sourceSquadRole: "CAM",
+      preferredFoot: "right",
+      weakFootRating: 4,
+      skillMovesRating: 4
+    });
+    expect(wirtz.attributes.shortPassing).toBe(89);
+    expect(wirtz.fc26Metadata).toMatchObject({
+      potential: 91,
+      valueEur: 132000000,
+      wageEur: 230000,
+      releaseClauseEur: 254100000,
+      bodyType: "Lean",
+      workRate: "High/Med",
+      internationalReputation: 4,
+      playerTraits: "Finesse Shot",
+      playerTags: "#Dribbler",
+      categoryPace: 82,
+      positionRatings: { cam: 89, st: 86 }
+    });
+  });
+
+  it("auto-detects FC26 headers and supports explicit format overrides", () => {
+    const record = fc26Record({ player_positions: "CAM" });
+    const csv = `${Object.keys(record).join(",")}\n${Object.values(record).join(",")}`;
+
+    expect(parseFc25PlayersCsv(csv)).toHaveLength(1);
+    expect(parseFc25PlayersCsv(csv, { format: "fc26" })[0]?.name).toBe("Florian Wirtz");
+    expect(() => parseFc25PlayersCsv(csv, { format: "fc25" })).toThrow(Fc25ParseError);
+  });
 });
+
+function fc26Record(overrides: Record<string, string> = {}): Record<string, string> {
+  return {
+    player_id: "256630",
+    player_url: "https://sofifa.com/player/256630/florian-wirtz/260001",
+    short_name: "F. Wirtz",
+    long_name: "Florian Wirtz",
+    player_positions: "CAM, ST, CM",
+    overall: "89",
+    potential: "91",
+    value_eur: "132000000",
+    wage_eur: "230000",
+    age: "22",
+    dob: "2003-05-03",
+    height_cm: "177",
+    weight_kg: "71",
+    league_name: "Premier League",
+    club_name: "Liverpool",
+    club_position: "CAM",
+    club_jersey_number: "7",
+    nationality_name: "Germany",
+    preferred_foot: "Right",
+    weak_foot: "4",
+    skill_moves: "4",
+    international_reputation: "4",
+    work_rate: "High/Med",
+    body_type: "Lean",
+    release_clause_eur: "254100000",
+    player_tags: "#Dribbler",
+    player_traits: "Finesse Shot",
+    pace: "82",
+    shooting: "84",
+    passing: "88",
+    dribbling: "91",
+    defending: "52",
+    physic: "70",
+    attacking_crossing: "83",
+    attacking_finishing: "88",
+    attacking_heading_accuracy: "54",
+    attacking_short_passing: "89",
+    attacking_volleys: "83",
+    skill_dribbling: "91",
+    skill_curve: "87",
+    skill_fk_accuracy: "80",
+    skill_long_passing: "85",
+    skill_ball_control: "92",
+    movement_acceleration: "86",
+    movement_sprint_speed: "79",
+    movement_agility: "91",
+    movement_reactions: "90",
+    movement_balance: "88",
+    power_shot_power: "82",
+    power_jumping: "62",
+    power_stamina: "82",
+    power_strength: "67",
+    power_long_shots: "86",
+    mentality_aggression: "59",
+    mentality_interceptions: "54",
+    mentality_positioning: "91",
+    mentality_vision: "91",
+    mentality_penalties: "78",
+    mentality_composure: "89",
+    defending_marking_awareness: "50",
+    defending_standing_tackle: "54",
+    defending_sliding_tackle: "47",
+    goalkeeping_diving: "13",
+    goalkeeping_handling: "7",
+    goalkeeping_kicking: "9",
+    goalkeeping_positioning: "14",
+    goalkeeping_reflexes: "11",
+    goalkeeping_speed: "",
+    ls: "86",
+    st: "86",
+    rs: "86",
+    lw: "88",
+    lf: "89",
+    cf: "89",
+    rf: "89",
+    rw: "88",
+    lam: "89",
+    cam: "89",
+    ram: "89",
+    lm: "88",
+    lcm: "88",
+    cm: "88",
+    rcm: "88",
+    rm: "88",
+    lwb: "78",
+    ldm: "80",
+    cdm: "80",
+    rdm: "80",
+    rwb: "78",
+    lb: "74",
+    lcb: "73",
+    cb: "73",
+    rcb: "73",
+    rb: "74",
+    gk: "22",
+    ...overrides
+  };
+}

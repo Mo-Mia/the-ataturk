@@ -135,6 +135,8 @@ describe("FC25 importer", () => {
         "Fixture import",
         "--version-id",
         "fc25-fixture",
+        "--format",
+        "fc26",
         "--cap",
         "22"
       ])
@@ -143,6 +145,7 @@ describe("FC25 importer", () => {
       databasePath: "/tmp/fc25.sqlite",
       name: "Fixture import",
       datasetVersionId: "fc25-fixture",
+      format: "fc26",
       squadCap: 22
     });
   });

@@ -15,9 +15,39 @@ import { FC25_SOURCE_TO_ENGINE_POSITION } from "./constants";
 
 type CsvValue = string | undefined;
 type Fc25CsvRecord = Record<string, CsvValue>;
+export type Fc25CsvFormat = "fc25" | "fc26" | "auto";
 
 const SOURCE_POSITIONS = new Set<string>(FC25_SOURCE_POSITIONS);
 const ENGINE_POSITIONS = new Set<string>(FC25_POSITIONS);
+const FC26_POSITION_RATING_FIELDS = [
+  "ls",
+  "st",
+  "rs",
+  "lw",
+  "lf",
+  "cf",
+  "rf",
+  "rw",
+  "lam",
+  "cam",
+  "ram",
+  "lm",
+  "lcm",
+  "cm",
+  "rcm",
+  "rm",
+  "lwb",
+  "ldm",
+  "cdm",
+  "rdm",
+  "rwb",
+  "lb",
+  "lcb",
+  "cb",
+  "rcb",
+  "rb",
+  "gk"
+] as const;
 
 export class Fc25ParseError extends Error {
   constructor(message: string) {
@@ -26,7 +56,10 @@ export class Fc25ParseError extends Error {
   }
 }
 
-export function parseFc25PlayersCsv(content: string): Fc25ParsedPlayerRow[] {
+export function parseFc25PlayersCsv(
+  content: string,
+  options: { format?: Fc25CsvFormat } = {}
+): Fc25ParsedPlayerRow[] {
   const records = parse<Fc25CsvRecord>(content, {
     columns: true,
     bom: true,
@@ -34,7 +67,12 @@ export function parseFc25PlayersCsv(content: string): Fc25ParsedPlayerRow[] {
     trim: true
   });
 
-  return records.map((record, index) => parseFc25PlayerRecord(record, index + 2));
+  const format = resolveCsvFormat(records[0], options.format ?? "auto");
+  return records.map((record, index) =>
+    format === "fc26"
+      ? parseFc26PlayerRecord(record, index + 2)
+      : parseFc25PlayerRecord(record, index + 2)
+  );
 }
 
 export function parseFc25PlayerRecord(
@@ -68,8 +106,79 @@ export function parseFc25PlayerRecord(
     weightKg: parseMetricPrefix(required(record, "Weight", sourceLine), "Weight", sourceLine),
     playStyle: nullableText(record["play style"]),
     sourceUrl: required(record, "url", sourceLine),
+    squadNumber: null,
+    sourceSquadRole: null,
+    fc26Metadata: null,
     attributes: parseAttributes(record, sourceLine),
     gkAttributes: position === "GK" ? parseGoalkeeperAttributes(record, sourceLine) : null
+  };
+}
+
+export function parseFc26PlayerRecord(
+  record: Fc25CsvRecord,
+  sourceLine: number
+): Fc25ParsedPlayerRow {
+  const sourcePositions = parseFc26SourcePositions(
+    required(record, "player_positions", sourceLine),
+    sourceLine
+  );
+  const sourcePosition = sourcePositions[0]!;
+  const position = FC25_SOURCE_TO_ENGINE_POSITION[sourcePosition];
+  const alternativePositions = sourcePositions
+    .slice(1)
+    .map((value) => FC25_SOURCE_TO_ENGINE_POSITION[value]);
+
+  return {
+    sourceIndex: sourceLine - 1,
+    rank: sourceLine - 1,
+    fc25PlayerId: required(record, "player_id", sourceLine),
+    name: required(record, "long_name", sourceLine),
+    overall: parseRating(required(record, "overall", sourceLine), "overall", sourceLine),
+    position,
+    sourcePosition,
+    alternativePositions,
+    age: parseInteger(required(record, "age", sourceLine), "age", sourceLine),
+    nationality: required(record, "nationality_name", sourceLine),
+    league: required(record, "league_name", sourceLine),
+    sourceTeam: required(record, "club_name", sourceLine),
+    preferredFoot: parsePreferredFoot(required(record, "preferred_foot", sourceLine), sourceLine),
+    weakFootRating: parseStarRating(required(record, "weak_foot", sourceLine), "weak_foot", sourceLine),
+    skillMovesRating: parseStarRating(
+      required(record, "skill_moves", sourceLine),
+      "skill_moves",
+      sourceLine
+    ),
+    heightCm: parseInteger(required(record, "height_cm", sourceLine), "height_cm", sourceLine),
+    weightKg: parseInteger(required(record, "weight_kg", sourceLine), "weight_kg", sourceLine),
+    playStyle: nullableText(record.player_traits),
+    sourceUrl: required(record, "player_url", sourceLine),
+    squadNumber: nullableInteger(record.club_jersey_number, "club_jersey_number", sourceLine),
+    sourceSquadRole: nullableText(record.club_position),
+    fc26Metadata: {
+      potential: nullableInteger(record.potential, "potential", sourceLine),
+      valueEur: nullableInteger(record.value_eur, "value_eur", sourceLine),
+      wageEur: nullableInteger(record.wage_eur, "wage_eur", sourceLine),
+      releaseClauseEur: nullableInteger(record.release_clause_eur, "release_clause_eur", sourceLine),
+      bodyType: nullableText(record.body_type),
+      workRate: nullableText(record.work_rate),
+      internationalReputation: nullableInteger(
+        record.international_reputation,
+        "international_reputation",
+        sourceLine
+      ),
+      playerTraits: nullableText(record.player_traits),
+      playerTags: nullableText(record.player_tags),
+      categoryPace: nullableRating(record.pace, "pace", sourceLine),
+      categoryShooting: nullableRating(record.shooting, "shooting", sourceLine),
+      categoryPassing: nullableRating(record.passing, "passing", sourceLine),
+      categoryDribbling: nullableRating(record.dribbling, "dribbling", sourceLine),
+      categoryDefending: nullableRating(record.defending, "defending", sourceLine),
+      categoryPhysic: nullableRating(record.physic, "physic", sourceLine),
+      goalkeepingSpeed: nullableRating(record.goalkeeping_speed, "goalkeeping_speed", sourceLine),
+      positionRatings: parseFc26PositionRatings(record, sourceLine)
+    },
+    attributes: parseFc26Attributes(record, sourceLine),
+    gkAttributes: position === "GK" ? parseFc26GoalkeeperAttributes(record, sourceLine) : null
   };
 }
 
@@ -152,6 +261,167 @@ function parseGoalkeeperAttributes(
   };
 }
 
+function parseFc26Attributes(record: Fc25CsvRecord, sourceLine: number): Fc25PlayerAttributes {
+  return {
+    acceleration: parseRating(
+      required(record, "movement_acceleration", sourceLine),
+      "movement_acceleration",
+      sourceLine
+    ),
+    sprintSpeed: parseRating(
+      required(record, "movement_sprint_speed", sourceLine),
+      "movement_sprint_speed",
+      sourceLine
+    ),
+    finishing: parseRating(
+      required(record, "attacking_finishing", sourceLine),
+      "attacking_finishing",
+      sourceLine
+    ),
+    shotPower: parseRating(required(record, "power_shot_power", sourceLine), "power_shot_power", sourceLine),
+    longShots: parseRating(required(record, "power_long_shots", sourceLine), "power_long_shots", sourceLine),
+    positioning: parseRating(
+      required(record, "mentality_positioning", sourceLine),
+      "mentality_positioning",
+      sourceLine
+    ),
+    volleys: parseRating(required(record, "attacking_volleys", sourceLine), "attacking_volleys", sourceLine),
+    penalties: parseRating(
+      required(record, "mentality_penalties", sourceLine),
+      "mentality_penalties",
+      sourceLine
+    ),
+    vision: parseRating(required(record, "mentality_vision", sourceLine), "mentality_vision", sourceLine),
+    crossing: parseRating(
+      required(record, "attacking_crossing", sourceLine),
+      "attacking_crossing",
+      sourceLine
+    ),
+    freeKickAccuracy: parseRating(
+      required(record, "skill_fk_accuracy", sourceLine),
+      "skill_fk_accuracy",
+      sourceLine
+    ),
+    shortPassing: parseRating(
+      required(record, "attacking_short_passing", sourceLine),
+      "attacking_short_passing",
+      sourceLine
+    ),
+    longPassing: parseRating(
+      required(record, "skill_long_passing", sourceLine),
+      "skill_long_passing",
+      sourceLine
+    ),
+    curve: parseRating(required(record, "skill_curve", sourceLine), "skill_curve", sourceLine),
+    dribbling: parseRating(required(record, "skill_dribbling", sourceLine), "skill_dribbling", sourceLine),
+    agility: parseRating(required(record, "movement_agility", sourceLine), "movement_agility", sourceLine),
+    balance: parseRating(required(record, "movement_balance", sourceLine), "movement_balance", sourceLine),
+    reactions: parseRating(
+      required(record, "movement_reactions", sourceLine),
+      "movement_reactions",
+      sourceLine
+    ),
+    ballControl: parseRating(
+      required(record, "skill_ball_control", sourceLine),
+      "skill_ball_control",
+      sourceLine
+    ),
+    composure: parseRating(
+      required(record, "mentality_composure", sourceLine),
+      "mentality_composure",
+      sourceLine
+    ),
+    interceptions: parseRating(
+      required(record, "mentality_interceptions", sourceLine),
+      "mentality_interceptions",
+      sourceLine
+    ),
+    headingAccuracy: parseRating(
+      required(record, "attacking_heading_accuracy", sourceLine),
+      "attacking_heading_accuracy",
+      sourceLine
+    ),
+    defensiveAwareness: parseRating(
+      required(record, "defending_marking_awareness", sourceLine),
+      "defending_marking_awareness",
+      sourceLine
+    ),
+    standingTackle: parseRating(
+      required(record, "defending_standing_tackle", sourceLine),
+      "defending_standing_tackle",
+      sourceLine
+    ),
+    slidingTackle: parseRating(
+      required(record, "defending_sliding_tackle", sourceLine),
+      "defending_sliding_tackle",
+      sourceLine
+    ),
+    jumping: parseRating(required(record, "power_jumping", sourceLine), "power_jumping", sourceLine),
+    stamina: parseRating(required(record, "power_stamina", sourceLine), "power_stamina", sourceLine),
+    strength: parseRating(required(record, "power_strength", sourceLine), "power_strength", sourceLine),
+    aggression: parseRating(
+      required(record, "mentality_aggression", sourceLine),
+      "mentality_aggression",
+      sourceLine
+    )
+  };
+}
+
+function parseFc26GoalkeeperAttributes(
+  record: Fc25CsvRecord,
+  sourceLine: number
+): Fc25GoalkeeperAttributes {
+  return {
+    gkDiving: parseRating(required(record, "goalkeeping_diving", sourceLine), "goalkeeping_diving", sourceLine),
+    gkHandling: parseRating(
+      required(record, "goalkeeping_handling", sourceLine),
+      "goalkeeping_handling",
+      sourceLine
+    ),
+    gkKicking: parseRating(required(record, "goalkeeping_kicking", sourceLine), "goalkeeping_kicking", sourceLine),
+    gkPositioning: parseRating(
+      required(record, "goalkeeping_positioning", sourceLine),
+      "goalkeeping_positioning",
+      sourceLine
+    ),
+    gkReflexes: parseRating(
+      required(record, "goalkeeping_reflexes", sourceLine),
+      "goalkeeping_reflexes",
+      sourceLine
+    )
+  };
+}
+
+function parseFc26PositionRatings(
+  record: Fc25CsvRecord,
+  sourceLine: number
+): Record<string, number> {
+  return Object.fromEntries(
+    FC26_POSITION_RATING_FIELDS.flatMap((field) => {
+      const rating = nullableRating(record[field], field, sourceLine);
+      return rating === null ? [] : [[field, rating]];
+    })
+  );
+}
+
+function parseFc26SourcePositions(value: string, sourceLine: number): Fc25SourcePosition[] {
+  const positions = value.split(",").map((position) => parseSourcePosition(position.trim(), sourceLine));
+  if (positions.length === 0) {
+    throw new Fc25ParseError(`Missing player_positions on CSV line ${sourceLine}`);
+  }
+  return positions;
+}
+
+function resolveCsvFormat(record: Fc25CsvRecord | undefined, format: Fc25CsvFormat): Exclude<Fc25CsvFormat, "auto"> {
+  if (format !== "auto") {
+    return format;
+  }
+  if (record && "player_id" in record && "player_positions" in record && "club_name" in record) {
+    return "fc26";
+  }
+  return "fc25";
+}
+
 function required(record: Fc25CsvRecord, field: string, sourceLine: number): string {
   const value = record[field];
   if (value === undefined || value.trim().length === 0) {
@@ -173,12 +443,22 @@ function parseInteger(value: string, field: string, sourceLine: number): number 
   return parsed;
 }
 
+function nullableInteger(value: CsvValue, field: string, sourceLine: number): number | null {
+  const trimmed = value?.trim() ?? "";
+  return trimmed.length === 0 ? null : parseInteger(trimmed, field, sourceLine);
+}
+
 function parseRating(value: string, field: string, sourceLine: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) {
     throw new Fc25ParseError(`Invalid ${field} "${value}" on CSV line ${sourceLine}`);
   }
   return Math.round(parsed);
+}
+
+function nullableRating(value: CsvValue, field: string, sourceLine: number): number | null {
+  const trimmed = value?.trim() ?? "";
+  return trimmed.length === 0 ? null : parseRating(trimmed, field, sourceLine);
 }
 
 function parseStarRating(value: string, field: string, sourceLine: number): Fc25StarRating {

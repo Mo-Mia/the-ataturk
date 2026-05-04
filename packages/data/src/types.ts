@@ -419,6 +419,26 @@ export interface Fc25GoalkeeperAttributes {
   gkReflexes: number;
 }
 
+export interface Fc26PlayerMetadata {
+  potential: number | null;
+  valueEur: number | null;
+  wageEur: number | null;
+  releaseClauseEur: number | null;
+  bodyType: string | null;
+  workRate: string | null;
+  internationalReputation: number | null;
+  playerTraits: string | null;
+  playerTags: string | null;
+  categoryPace: number | null;
+  categoryShooting: number | null;
+  categoryPassing: number | null;
+  categoryDribbling: number | null;
+  categoryDefending: number | null;
+  categoryPhysic: number | null;
+  goalkeepingSpeed: number | null;
+  positionRatings: Record<string, number>;
+}
+
 export interface Fc25ParsedPlayerRow {
   sourceIndex: number;
   rank: number;
@@ -439,6 +459,9 @@ export interface Fc25ParsedPlayerRow {
   weightKg: number;
   playStyle: string | null;
   sourceUrl: string;
+  squadNumber: number | null;
+  sourceSquadRole: string | null;
+  fc26Metadata: Fc26PlayerMetadata | null;
   attributes: Fc25PlayerAttributes;
   gkAttributes: Fc25GoalkeeperAttributes | null;
 }
