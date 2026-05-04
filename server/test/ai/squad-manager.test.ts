@@ -274,7 +274,7 @@ describe("AI squad manager routes", () => {
           {
             type: "stale_profile_flag",
             playerId: "mohamed-salah",
-            changes: { age: 33 },
+            changes: { age: 34 },
             rationale: "Live data indicates a different age."
           }
         ]
@@ -295,8 +295,52 @@ describe("AI squad manager routes", () => {
       ).toMatchObject({
         type: "player_update",
         playerId: "mohamed-salah",
-        changes: { age: 33 }
+        changes: { age: 34 }
       });
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("drops Gemini attribute warnings when the proposed value already matches local data", async () => {
+    testDatabase = createFc25ServerDatabase("ai-squad-manager-no-op-warnings");
+    process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
+    process.env.GEMINI_API_KEY = "gemini-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        jsonResponse({
+          id: 64,
+          name: "Liverpool FC",
+          squad: []
+        })
+      )
+    );
+    genAiMocks.generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        missingPlayers: [],
+        suggestions: [],
+        attributeWarnings: [
+          {
+            type: "age_mismatch",
+            playerId: "209331",
+            changes: { age: 32 },
+            rationale: "Live data confirms this age."
+          }
+        ]
+      })
+    });
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/ai/verify-squad",
+        payload: { clubId: "liverpool", datasetVersionId: "fc25-base" }
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json<VerifySquadTestResponse>().verification.attributeWarnings).toEqual([]);
     } finally {
       await app.close();
     }

@@ -41,8 +41,11 @@ describe("VerificationPanel", () => {
       <VerificationPanel
         result={result}
         acceptedIds={new Set()}
+        inspectedSuggestionId={null}
         onToggle={onToggle}
+        onToggleMany={vi.fn()}
         onInspect={onInspect}
+        renderEditor={() => <p>Editor</p>}
       />
     );
 
@@ -51,5 +54,56 @@ describe("VerificationPanel", () => {
 
     expect(onToggle).toHaveBeenCalledWith("sug-1");
     expect(onInspect).toHaveBeenCalledWith(result.verification.missingPlayers[0]);
+  });
+
+  it("selects and clears all suggestions in a section", () => {
+    const onToggleMany = vi.fn();
+    render(
+      <VerificationPanel
+        result={result}
+        acceptedIds={new Set()}
+        inspectedSuggestionId={null}
+        onToggle={vi.fn()}
+        onToggleMany={onToggleMany}
+        onInspect={vi.fn()}
+        renderEditor={() => <p>Editor</p>}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
+    expect(onToggleMany).toHaveBeenCalledWith(["sug-1"], true);
+
+    cleanup();
+    render(
+      <VerificationPanel
+        result={result}
+        acceptedIds={new Set(["sug-1"])}
+        inspectedSuggestionId={null}
+        onToggle={vi.fn()}
+        onToggleMany={onToggleMany}
+        onInspect={vi.fn()}
+        renderEditor={() => <p>Editor</p>}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(onToggleMany).toHaveBeenCalledWith(["sug-1"], false);
+  });
+
+  it("renders the inspected editor inline", () => {
+    render(
+      <VerificationPanel
+        result={result}
+        acceptedIds={new Set()}
+        inspectedSuggestionId="sug-1"
+        onToggle={vi.fn()}
+        onToggleMany={vi.fn()}
+        onInspect={vi.fn()}
+        renderEditor={(suggestion) => <p>Editing {suggestion.suggestionId}</p>}
+      />
+    );
+
+    expect(screen.getByText("Editing sug-1")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Close" })).not.toBeNull();
   });
 });

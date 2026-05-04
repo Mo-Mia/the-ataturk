@@ -170,6 +170,17 @@
   font-variant: small-caps;
 }
 
+.verification-panel__section-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 10px 4px;
+}
+
+.verification-panel__section-actions button {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
 .verification-items {
   display: grid;
   gap: 8px;
@@ -193,8 +204,22 @@
   padding: 5px 8px;
 }
 
+.verification-item__editor {
+  margin-top: 8px;
+}
+
+.verification-item__editor .player-editor-widget {
+  border-width: 1px;
+}
+
+.verification-item__editor .player-editor-widget h2 {
+  padding: 6px 8px;
+  font-size: 17px;
+}
+
 .retro-form-grid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding: 10px;
 }

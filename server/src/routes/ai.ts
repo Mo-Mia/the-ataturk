@@ -455,7 +455,7 @@ async function reconcileSquads(input: {
       response = await geminiCurlFallbackRunner(apiKey, request);
     }
 
-    return normaliseGeminiVerification(response.text, input.liveSquad);
+    return normaliseGeminiVerification(response.text, input.liveSquad, input.localSquad);
   } catch (error) {
     if (error instanceof ReconciliationError) {
       throw error;
@@ -645,7 +645,8 @@ function isGeminiSdkFallbackWorthyError(error: unknown): boolean {
 
 function normaliseGeminiVerification(
   rawText: string | undefined,
-  liveSquad: FootballDataSquadMember[]
+  liveSquad: FootballDataSquadMember[],
+  localSquad: Fc25SquadPlayer[]
 ): GeminiVerification {
   if (!rawText) {
     throw new ReconciliationError("Gemini returned an empty squad reconciliation response");
@@ -662,7 +663,7 @@ function normaliseGeminiVerification(
     throw new ReconciliationError("Gemini squad reconciliation response must be an object");
   }
 
-  return {
+  const verification = {
     missingPlayers: parseSuggestionArray(parsed.missingPlayers, "missingPlayers", liveSquad),
     suggestions: parseSuggestionArray(parsed.suggestions, "suggestions", liveSquad),
     attributeWarnings: parseSuggestionArray(
@@ -671,6 +672,55 @@ function normaliseGeminiVerification(
       liveSquad
     )
   };
+
+  return {
+    missingPlayers: verification.missingPlayers,
+    suggestions: removeNoOpPlayerUpdates(verification.suggestions, localSquad),
+    attributeWarnings: removeNoOpPlayerUpdates(verification.attributeWarnings, localSquad)
+  };
+}
+
+function removeNoOpPlayerUpdates(
+  suggestions: SquadManagerSuggestion[],
+  localSquad: Fc25SquadPlayer[]
+): SquadManagerSuggestion[] {
+  const filtered: SquadManagerSuggestion[] = [];
+
+  for (const suggestion of suggestions) {
+    if (suggestion.type !== "player_update") {
+      filtered.push(suggestion);
+      continue;
+    }
+
+    const localPlayer = localSquad.find((player) => player.id === suggestion.playerId);
+    if (!localPlayer) {
+      if (Object.keys(suggestion.changes).length > 0) {
+        filtered.push(suggestion);
+      }
+      continue;
+    }
+
+    const changes: Extract<SquadManagerSuggestion, { type: "player_update" }>["changes"] = {
+      ...suggestion.changes
+    };
+    if (changes.name === localPlayer.name) {
+      delete changes.name;
+    }
+    if (changes.position === localPlayer.position) {
+      delete changes.position;
+    }
+    if (changes.age === localPlayer.age) {
+      delete changes.age;
+    }
+
+    if (Object.keys(changes).length === 0) {
+      continue;
+    }
+
+    filtered.push({ ...suggestion, changes });
+  }
+
+  return filtered;
 }
 
 function parseSuggestionArray(

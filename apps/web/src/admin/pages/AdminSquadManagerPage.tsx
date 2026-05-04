@@ -10,6 +10,7 @@ import {
   getSquadManagerContext,
   getSquadManagerSquad,
   verifySquad,
+  type Fc25SquadPlayer,
   type SquadManagerSuggestion,
   type VerifySquadResponse
 } from "../lib/api";
@@ -84,6 +85,12 @@ export function AdminSquadManagerPage() {
   const acceptedSuggestions = allSuggestions.filter((suggestion) =>
     acceptedIds.has(suggestion.suggestionId)
   );
+  const focusedSquad =
+    focusedClubId === homeClubId
+      ? (homeSquadQuery.data?.squad ?? [])
+      : focusedClubId === awayClubId
+        ? (awaySquadQuery.data?.squad ?? [])
+        : [];
 
   function toggleAccepted(suggestionId: string): void {
     setAcceptedIds((current) => {
@@ -92,6 +99,20 @@ export function AdminSquadManagerPage() {
         next.delete(suggestionId);
       } else {
         next.add(suggestionId);
+      }
+      return next;
+    });
+  }
+
+  function toggleAcceptedMany(suggestionIds: string[], shouldAccept: boolean): void {
+    setAcceptedIds((current) => {
+      const next = new Set(current);
+      for (const suggestionId of suggestionIds) {
+        if (shouldAccept) {
+          next.add(suggestionId);
+        } else {
+          next.delete(suggestionId);
+        }
       }
       return next;
     });
@@ -108,6 +129,19 @@ export function AdminSquadManagerPage() {
       suggestions: acceptedSuggestions,
       rationale: "Accepted via Squad Manager admin UI"
     });
+  }
+
+  function inspectSuggestion(suggestion: SquadManagerSuggestion | null): void {
+    setInspectedSuggestion(suggestion);
+  }
+
+  function localPlayerForSuggestion(
+    suggestion: SquadManagerSuggestion
+  ): Fc25SquadPlayer | undefined {
+    if (suggestion.type === "player_addition") {
+      return undefined;
+    }
+    return focusedSquad.find((player) => player.id === suggestion.playerId);
   }
 
   const clubs = contextQuery.data?.clubs ?? [];
@@ -199,10 +233,17 @@ export function AdminSquadManagerPage() {
           <VerificationPanel
             result={verification}
             acceptedIds={acceptedIds}
+            inspectedSuggestionId={inspectedSuggestion?.suggestionId ?? null}
             onToggle={toggleAccepted}
-            onInspect={setInspectedSuggestion}
+            onToggleMany={toggleAcceptedMany}
+            onInspect={inspectSuggestion}
+            renderEditor={(suggestion) => (
+              <PlayerEditorWidget
+                suggestion={suggestion}
+                localPlayer={localPlayerForSuggestion(suggestion)}
+              />
+            )}
           />
-          <PlayerEditorWidget suggestion={inspectedSuggestion} />
           <button
             type="button"
             onClick={() => setApplyOpen(true)}

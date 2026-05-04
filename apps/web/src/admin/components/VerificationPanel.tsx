@@ -1,10 +1,15 @@
+import type { ReactNode } from "react";
+
 import type { SquadManagerSuggestion, VerifySquadResponse } from "../lib/api";
 
 interface VerificationPanelProps {
   result: VerifySquadResponse | null;
   acceptedIds: Set<string>;
+  inspectedSuggestionId: string | null;
   onToggle: (suggestionId: string) => void;
-  onInspect: (suggestion: SquadManagerSuggestion) => void;
+  onToggleMany: (suggestionIds: string[], shouldAccept: boolean) => void;
+  onInspect: (suggestion: SquadManagerSuggestion | null) => void;
+  renderEditor: (suggestion: SquadManagerSuggestion) => ReactNode;
 }
 
 const SECTIONS = [
@@ -16,8 +21,11 @@ const SECTIONS = [
 export function VerificationPanel({
   result,
   acceptedIds,
+  inspectedSuggestionId,
   onToggle,
-  onInspect
+  onToggleMany,
+  onInspect,
+  renderEditor
 }: VerificationPanelProps) {
   if (!result) {
     return (
@@ -37,34 +45,67 @@ export function VerificationPanel({
           {result.apiQuotaRemaining.day}/day
         </p>
       </header>
-      {SECTIONS.map(([title, key]) => (
-        <details key={key} open>
-          <summary>
-            {title} ({result.verification[key].length})
-          </summary>
-          <div className="verification-items">
-            {result.verification[key].map((suggestion) => (
-              <article key={suggestion.suggestionId} className="verification-item">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={acceptedIds.has(suggestion.suggestionId)}
-                    onChange={() => onToggle(suggestion.suggestionId)}
-                  />
-                  <span>{labelForSuggestion(suggestion)}</span>
-                </label>
-                <button type="button" onClick={() => onInspect(suggestion)}>
-                  Inspect
+      {SECTIONS.map(([title, key]) => {
+        const suggestions = result.verification[key];
+        const suggestionIds = suggestions.map((suggestion) => suggestion.suggestionId);
+        const allAccepted =
+          suggestionIds.length > 0 &&
+          suggestionIds.every((suggestionId) => acceptedIds.has(suggestionId));
+
+        return (
+          <details key={key} open>
+            <summary>
+              {title} ({suggestions.length})
+            </summary>
+            {suggestions.length > 0 ? (
+              <div className="verification-panel__section-actions">
+                <button
+                  type="button"
+                  onClick={() => onToggleMany(suggestionIds, true)}
+                  disabled={allAccepted}
+                >
+                  Select all
                 </button>
-                {suggestion.rationale ? <p>{suggestion.rationale}</p> : null}
-              </article>
-            ))}
-            {result.verification[key].length === 0 ? (
-              <p className="squad-manager-muted">No items.</p>
+                <button
+                  type="button"
+                  onClick={() => onToggleMany(suggestionIds, false)}
+                  disabled={!suggestionIds.some((suggestionId) => acceptedIds.has(suggestionId))}
+                >
+                  Clear
+                </button>
+              </div>
             ) : null}
-          </div>
-        </details>
-      ))}
+            <div className="verification-items">
+              {suggestions.map((suggestion) => {
+                const isInspected = inspectedSuggestionId === suggestion.suggestionId;
+                return (
+                  <article key={suggestion.suggestionId} className="verification-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={acceptedIds.has(suggestion.suggestionId)}
+                        onChange={() => onToggle(suggestion.suggestionId)}
+                      />
+                      <span>{labelForSuggestion(suggestion)}</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => onInspect(isInspected ? null : suggestion)}
+                    >
+                      {isInspected ? "Close" : "Inspect"}
+                    </button>
+                    {suggestion.rationale ? <p>{suggestion.rationale}</p> : null}
+                    {isInspected ? (
+                      <div className="verification-item__editor">{renderEditor(suggestion)}</div>
+                    ) : null}
+                  </article>
+                );
+              })}
+              {suggestions.length === 0 ? <p className="squad-manager-muted">No items.</p> : null}
+            </div>
+          </details>
+        );
+      })}
     </section>
   );
 }
