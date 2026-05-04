@@ -376,11 +376,11 @@ export function parseFootballDataBenchmark(input: {
   complete: boolean;
 }): RealPlBenchmarkSet {
   const normalised = input.csv.replace(/^\uFEFF/, "");
-  const rows = parse(normalised, {
+  const rows = parse<FootballDataCsvRow>(normalised, {
     columns: true,
     skip_empty_lines: true,
     trim: true
-  }) as FootballDataCsvRow[];
+  });
   const finished = rows.filter((row) => row.FTHG !== undefined && row.FTHG !== "");
   const metrics = finished.map((row) => {
     const homeGoals = numberField(row.FTHG, "FTHG");
