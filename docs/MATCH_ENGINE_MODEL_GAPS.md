@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-04 10:30 SAST
+Last updated: 2026-05-04 11:27 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -87,6 +87,15 @@ below both real-PL references. This is now a real event-volume model gap rather
 than a Liverpool vs Manchester City matchup artefact. Do not rebase Phase 8
 synthetic bands directly until Mo/SA decide whether to tune or accept the
 low-volume/high-conversion style.
+
+Phase 13 diagnosed the event-volume gap. Football-Data.co.uk metric definitions
+are close enough to FootSim's emitted/final-summary metrics that the gap is not
+mostly apparent. Shot supply is dominated by carrier-action shoot selection
+(`95.3%` of shots); chance creation contributes only `0.17` shots/match in
+ordinary FC26 play. Fouls are low because emitted challenge volume is low, not
+because card conversion is the first problem. Corners are low in absolute terms
+but plausible relative to current shot volume, so they should be retested after
+shot supply moves.
 
 FC26 also exposes richer data that is still deliberately unused by the engine:
 `position_ratings_json`, `work_rate`, body data, traits, and tags. These remain

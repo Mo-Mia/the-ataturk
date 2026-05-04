@@ -4,6 +4,32 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-04 — FootSim Phase 13 outcome: event volume gap diagnosed
+
+Phase 13 diagnosed the Phase 12 FC26 event-volume gap without engine changes or
+tuning. Football-Data.co.uk definitions were audited first: shots, goals, fouls,
+and corners are definitionally comparable to FootSim's emitted/final-summary
+metrics; cards have only a minor second-yellow caveat that does not explain the
+gap. The low volume is therefore real, not mostly a source-definition artefact.
+
+The snapshot-only diagnostic harness ran five representative directional FC26
+fixtures, 100 full-90 seeds each. Result: `11.79` shots/match, `1.90`
+goals/match, `4.47` fouls/match, `1.99` corners/match. Shot supply is dominated
+by carrier-action shoot selection: `11.23` open-play carrier shots/match
+(`95.3%` of shots), while chance creation contributes only `0.17` shots/match.
+Foul volume is low because the emitted challenge economy is small (`11.62`
+observable foul-or-successful-tackle resolutions/match). Corners are low in
+absolute terms but plausible relative to current shot volume (`16.9` corners per
+100 shots), so they should be retested after shot volume moves.
+
+Decision: Phase 14 should tune with hypothesis, not blindly. Priority order is
+baseline shot supply first, foul genesis second, then corner retest/tuning if
+needed, with chance creation as a secondary shot-texture lever. No direct card
+tuning before foul volume is addressed.
+
+Out of scope and tracked in BACKLOG: executing Phase 14 tuning, adding new event
+vocabulary, exact pre-roll instrumentation, and consuming FC26-rich fields.
+
 ## 2026-05-04 — FootSim Phase 12 outcome: FC26 multi-matchup measured against real PL
 
 Phase 12 measured FC26-active real-squad output across 20 directional fixtures:

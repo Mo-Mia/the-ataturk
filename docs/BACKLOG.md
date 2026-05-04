@@ -38,12 +38,16 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
-### Decide whether to tune FC26 low event volume before rebasing
-Phase 12 showed FC26 cross-matchup goals are real-PL realistic and cards are
-defensible, but shots, fouls, and corners are materially below both 2025/26
-to-date and 2024/25 complete Premier League benchmarks. Decide whether to tune
-event volume, accept low-volume/high-conversion as FootSim style, or keep
-synthetic and real-squad gates separate.
+### Phase 14 event-volume tuning sprint
+Use `docs/PHASE_13_INVESTIGATION_FINDINGS.md` to tune with hypothesis: baseline
+carrier-action shot supply first, foul genesis second, then corner retest/tuning
+if still low relative to the new shot volume. Use paired seeds and protect goals
+as the primary guardrail.
+
+### ~~Decide whether to tune FC26 low event volume before rebasing~~ ✅ Done
+Phase 13 resolved the Phase 12 Mo/SA call into a tuning recommendation: tune low
+event volume before any pure real-PL rebasing sprint. See
+`docs/PHASE_13_INVESTIGATION_FINDINGS.md`.
 
 ### Rebase calibration docs/tests to real-PL bands after the event-volume call
 If Mo/SA accept the Phase 12 evidence without tuning, update calibration tests,

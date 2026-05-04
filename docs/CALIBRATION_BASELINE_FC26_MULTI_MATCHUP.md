@@ -1,6 +1,6 @@
 # Calibration Baseline — FC26 Multi-Matchup
 
-Last updated: 2026-05-04 10:30 SAST
+Last updated: 2026-05-04 11:27 SAST
 
 ## Purpose
 
@@ -11,6 +11,12 @@ single-matchup undershoot, or is the real-squad FC26 event-volume gap broader?
 
 No match-engine code changed. No calibration tuning happened. Phase 8 remains
 historical until a future rebasing or tuning sprint acts on this recommendation.
+
+Phase 13 has now diagnosed the Bucket 3 event-volume metrics from this baseline.
+See `docs/PHASE_13_INVESTIGATION_FINDINGS.md`: the gap is not mostly a
+definition mismatch; shot volume is governed primarily by carrier-action shoot
+selection, fouls by low emitted challenge volume, and corners should be retested
+after shot volume moves.
 
 Raw report: `packages/match-engine/artifacts/calibration-multi-matchup-fc26.json`
 (gitignored runtime artefact).
