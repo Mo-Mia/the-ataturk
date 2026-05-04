@@ -38,11 +38,23 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
+### Add football-data.org mappings for all 20 FC26 Premier League clubs
+Match-engine browsing and simulation now support the active PL20 dataset, but
+Squad Manager live verification is still configured only for the original five
+football-data.org team ids. Add mappings and tests before advertising
+verification for the other 15 clubs.
+
 ### Phase 14 event-volume tuning sprint
-Use `docs/PHASE_13_INVESTIGATION_FINDINGS.md` to tune with hypothesis: baseline
+Use `docs/PHASE_13_INVESTIGATION_FINDINGS.md` and
+`docs/CALIBRATION_BASELINE_FC26_PL20.md` to tune with hypothesis: baseline
 carrier-action shot supply first, foul genesis second, then corner retest/tuning
-if still low relative to the new shot volume. Use paired seeds and protect goals
-as the primary guardrail.
+if still low relative to the new shot volume. Use paired seeds, the PL20 runtime
+dataset, and protect goals as the primary guardrail.
+
+### ~~Ingest complete FC26 Premier League dataset before Phase 14~~ ✅ Done
+Phase 13.5 imported all 20 English Premier League clubs from
+`FC26_20250921.csv` into the runtime DB and ran a 9,500-run PL20 baseline. See
+`docs/CALIBRATION_BASELINE_FC26_PL20.md`.
 
 ### ~~Decide whether to tune FC26 low event volume before rebasing~~ ✅ Done
 Phase 13 resolved the Phase 12 Mo/SA call into a tuning recommendation: tune low

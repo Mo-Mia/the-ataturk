@@ -1,6 +1,6 @@
 # Calibration Baseline — FC26 Multi-Matchup
 
-Last updated: 2026-05-04 11:27 SAST
+Last updated: 2026-05-04 12:37 SAST
 
 ## Purpose
 
@@ -20,6 +20,11 @@ after shot volume moves.
 
 Raw report: `packages/match-engine/artifacts/calibration-multi-matchup-fc26.json`
 (gitignored runtime artefact).
+
+Phase 13.5 has now superseded this five-club matrix as the immediate tuning
+input by importing all 20 English Premier League clubs and running a PL20
+baseline. See `docs/CALIBRATION_BASELINE_FC26_PL20.md`. The five-club evidence
+is preserved because it explains why Phase 13 was scoped.
 
 ## Dataset And Command
 

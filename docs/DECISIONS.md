@@ -4,6 +4,34 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-04 — FootSim Phase 13.5 outcome: FC26 PL20 runtime ingestion and baseline
+
+Before Phase 14 tuning, the FC26 runtime dataset was broadened from the original
+five FootSim clubs to all 20 English Premier League clubs in
+`data/fc-25/FC26_20250921.csv`. The import uses `league_id = 13` as the source
+truth for English PL membership, not league name text, because the CSV includes
+other "Premier League" competitions.
+
+The runtime SQLite DB is now active on dataset
+`fc25-20260504102445-4399cb2b-a504ee92` (`FC26 PL20 import 2026-05-04`): 20
+clubs, 547 players, 547 squad rows. The 25-player import cap remains lifted;
+Sunderland's 36-player squad emits a warning but imports successfully.
+
+Phase 13.5 also added a PL20 baseline harness: 380 ordered directional fixtures
+at 25 full-90 seeds each, default 4-3-3 balanced tactics, 9,500 runs total.
+Aggregate output was `10.42` shots/match, `1.65` goals/match, `4.09`
+fouls/match, and `2.00` corners/match. The event-volume gap therefore persists
+after complete PL20 ingestion and remains a valid Phase 14 tuning target.
+
+Server match-engine routes now validate club ids against the active FC dataset
+rather than a hardcoded five-club list. Squad Manager football-data.org
+verification remains configured only for the mapped five clubs and returns a
+clear unsupported-club error for new PL clubs until mappings are added.
+
+Out of scope and tracked in BACKLOG: adding football-data.org mappings for all
+20 clubs, consuming FC26-rich fields in the engine, and executing Phase 14
+tuning.
+
 ## 2026-05-04 — FootSim Phase 13 outcome: event volume gap diagnosed
 
 Phase 13 diagnosed the Phase 12 FC26 event-volume gap without engine changes or

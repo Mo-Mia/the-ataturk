@@ -1,6 +1,6 @@
 # Phase 13 Investigation Findings — Event Volume Gap Diagnostic
 
-Last updated: 2026-05-04 11:27 SAST
+Last updated: 2026-05-04 12:37 SAST
 
 ## Purpose
 
@@ -12,6 +12,11 @@ what risks the tuning sprint should control.
 Raw diagnostic report:
 `packages/match-engine/artifacts/phase13-event-volume-diagnostics.json`
 (gitignored runtime artefact).
+
+Phase 13.5 imported the complete English Premier League FC26 club universe and
+confirmed the same event-volume problem at PL20 scale. Use
+`docs/CALIBRATION_BASELINE_FC26_PL20.md` as the immediate Phase 14 measurement
+anchor, and use this document for mechanism priority and risk framing.
 
 Command:
 
