@@ -4,6 +4,33 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-04 — FootSim Phase 12 outcome: FC26 multi-matchup measured against real PL
+
+Phase 12 measured FC26-active real-squad output across 20 directional fixtures:
+all 10 unique pairings among Arsenal, Aston Villa, Liverpool, Manchester City,
+and Manchester United, both home/away directions, 100 full-90 seeds each.
+
+The real-PL benchmark anchor changed from the original brief: 2025/26 to date is
+primary because it matches the FC26 export era; 2024/25 complete is a stability
+cross-check. Football-Data.co.uk supplies detailed goals, shots, fouls, cards,
+and corners. The existing football-data.org token was probed and returned PL
+scores but not detailed match statistics, so it is not the detailed benchmark
+source.
+
+Result: goals are real-PL realistic (`1.93` vs 2025/26 `2.75`, within one SD);
+cards are defensible (`1.17` vs `3.85`, within two SDs); shots, fouls, and
+corners are Bucket 3 (`11.80`, `4.49`, `2.00` vs real-PL `24.80`, `21.59`,
+`9.93`). The 2024/25 cross-check points the same way, so this is not a
+current-season artefact.
+
+Decision: do not execute pure rebasing yet. Phase 8 synthetic bands remain
+historical but not retired by code or tests. Next Mo/SA call is whether to tune
+low event volume, accept low-volume/high-conversion as FootSim style, or keep
+synthetic and real-squad gates separate.
+
+Out of scope and tracked in BACKLOG: tuning event volume, rebasing tests/docs to
+real-PL bands, and periodic benchmark refreshes.
+
 ## 2026-05-04 — FootSim Phase 11 outcome: FC26 baseline measured, characterisation drift surfaced
 
 Phase 11 closed the FC25-vs-FC26 dataset-version loop by making the runtime DB

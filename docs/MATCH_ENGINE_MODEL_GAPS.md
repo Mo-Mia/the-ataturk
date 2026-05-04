@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-04 09:52 SAST
+Last updated: 2026-05-04 10:30 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -80,9 +80,17 @@ event volume is below the old synthetic Phase 8 target bands for shots, fouls,
 and cards. Decide whether to create real-squad FC26 characterisation bands or
 keep synthetic targets as the only calibration gate before tuning.
 
+Phase 12 broadened that finding across 20 directional FC26 fixtures and compared
+against real-PL 2025/26-to-date with 2024/25 as cross-check. Goals are
+realistic, cards are defensible, but shots, fouls, and corners are materially
+below both real-PL references. This is now a real event-volume model gap rather
+than a Liverpool vs Manchester City matchup artefact. Do not rebase Phase 8
+synthetic bands directly until Mo/SA decide whether to tune or accept the
+low-volume/high-conversion style.
+
 FC26 also exposes richer data that is still deliberately unused by the engine:
 `position_ratings_json`, `work_rate`, body data, traits, and tags. These remain
-Phase 12+ candidates because consuming them would change behaviour and needs a
+Phase 13+ candidates because consuming them would change behaviour and needs a
 calibrated sprint.
 
 ## Potential Pre-integration Concerns

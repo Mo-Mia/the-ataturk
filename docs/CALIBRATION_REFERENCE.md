@@ -1,19 +1,27 @@
 # Calibration Reference
 
-Last updated: 2026-05-04 09:52 SAST
+Last updated: 2026-05-04 10:30 SAST
 
 This is the living reference for FootSim calibration. Future sprints that add or
 change calibrated constants should update this document in the same commit.
 
-Phase 8 documents current state only. No constants were tuned while writing this
-reference.
+Phase 8 documents the historical FC25/synthetic calibration state. Phase 12
+adds real-PL benchmark evidence but does not tune constants or execute rebasing.
 
 Dataset-version note: calibration constants are dataset-agnostic, but baselines
 are dataset-specific. The locked Phase 8 calibration baseline and the
 responsiveness figures referenced there were established against FC25/synthetic
 inputs. FC26 is now the active data version for workbench and Squad Manager use;
 Phase 11 measured that current runtime state separately in
-`docs/CALIBRATION_BASELINE_FC26.md`.
+`docs/CALIBRATION_BASELINE_FC26.md`; Phase 12 measured the broader
+multi-matchup FC26 matrix in
+`docs/CALIBRATION_BASELINE_FC26_MULTI_MATCHUP.md`.
+
+Real-PL reference note: `docs/CALIBRATION_REFERENCE_REAL_PL.md` is now the
+auditable source for 2025/26-to-date and 2024/25 benchmark numbers. Phase 12
+does not yet retire the Phase 8 synthetic bands; it recommends Mo/SA discussion
+because FC26 real-squad shots, fouls, and corners are materially below real-PL
+benchmarks.
 
 ## How To Read This
 

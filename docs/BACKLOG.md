@@ -38,11 +38,27 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
-### Decide FC26 real-squad characterisation policy
-Phase 11 found FC26 Liverpool vs Manchester City real-squad event volume below
-the old synthetic Phase 8 target bands while responsiveness still passed.
-Decide whether to create separate real-squad FC26 bands or keep synthetic
-targets as the only calibration gate before tuning.
+### Decide whether to tune FC26 low event volume before rebasing
+Phase 12 showed FC26 cross-matchup goals are real-PL realistic and cards are
+defensible, but shots, fouls, and corners are materially below both 2025/26
+to-date and 2024/25 complete Premier League benchmarks. Decide whether to tune
+event volume, accept low-volume/high-conversion as FootSim style, or keep
+synthetic and real-squad gates separate.
+
+### Rebase calibration docs/tests to real-PL bands after the event-volume call
+If Mo/SA accept the Phase 12 evidence without tuning, update calibration tests,
+UAT guidance, and docs to use real-PL-anchored bands for real-squad FC26 checks.
+If tuning is chosen, do this after the tuning sprint lands.
+
+### Refresh real-PL benchmark source periodically
+Phase 12 uses 2025/26-to-date as primary and 2024/25 complete as cross-check.
+Refresh after the 2025/26 season completes and periodically before future
+calibration-policy sprints.
+
+### ~~Decide FC26 real-squad characterisation policy~~ ✅ Done
+Phase 12 resolved the Phase 11 Liverpool vs Manchester City question with a
+20-directional-fixture matrix. The issue is not matchup-specific; the open
+decision is now whether to tune low event volume before rebasing.
 
 ### Document standard errors in future calibration baselines
 Future locked calibration baselines should document standard errors alongside

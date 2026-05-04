@@ -1,6 +1,6 @@
 # Calibration Baseline — FC26 Active Dataset
 
-Last updated: 2026-05-04 09:52 SAST
+Last updated: 2026-05-04 10:30 SAST
 
 ## Purpose
 
@@ -10,6 +10,12 @@ FC25/synthetic-reference baseline. Phase 11 answers a narrower question: what
 does the current engine do when the runtime FC dataset is the FC26 import?
 
 No match-engine constants were changed. No tuning happened in this sprint.
+
+Phase 12 supersedes this document for representative FC26 real-squad
+characterisation. Keep the Liverpool vs Manchester City numbers below as a
+single-matchup snapshot; use
+`docs/CALIBRATION_BASELINE_FC26_MULTI_MATCHUP.md` for the broader FC26
+multi-matchup evidence and real-PL comparison.
 
 ## Source Dataset
 

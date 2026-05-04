@@ -1,6 +1,6 @@
 # Calibration Baseline — Phase 8
 
-Last updated: 2026-05-04 09:52 SAST
+Last updated: 2026-05-04 10:30 SAST
 
 ## Purpose
 
@@ -14,9 +14,12 @@ when Phase 8 and Phase 9 ran. The repo now has FC26 active intentionally. Future
 characterisation against FC26-active squads should be measured and documented as
 a separate baseline, not assumed equivalent to these FC25 numbers.
 
-Phase 11 created that separate FC26-active baseline in
-`docs/CALIBRATION_BASELINE_FC26.md`. Do not overwrite the Phase 8 numbers with
-FC26 results; use both documents side by side.
+Phase 11 created a single-matchup FC26-active baseline in
+`docs/CALIBRATION_BASELINE_FC26.md`. Phase 12 created the representative
+multi-matchup FC26 baseline in
+`docs/CALIBRATION_BASELINE_FC26_MULTI_MATCHUP.md`. Do not overwrite the Phase 8
+numbers with FC26 results; use the documents side by side until a future
+rebasing or tuning sprint explicitly changes calibration policy.
 
 Two precision tiers are used:
 
