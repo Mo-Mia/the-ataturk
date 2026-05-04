@@ -4,6 +4,24 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-04 — FC26 dataset ingestion before Gemini shirt-number fallback
+
+FC26 SoFIFA-format data is the preferred first fix for Squad Manager staleness
+before adding any Gemini fallback for missing shirt numbers. The importer now
+supports explicit `--format fc25|fc26|auto`, keeps auto-detection as the
+default, imports full club squads without a 25-player cap, and warns without
+blocking when a club exceeds 35 rows.
+
+FC26-only metadata is preserved in `fc25_players` for future work: potential,
+value, wage, release clause, body type, work rate, international reputation,
+traits, tags, category ratings, goalkeeper speed, and position ratings JSON.
+Nation-team, contract, loan/joined, and extra sourcing fields remain out of
+scope.
+
+No match-engine behaviour changed. Richer FC26 fields are tracked in BACKLOG
+for a separate calibrated engine sprint so dataset freshness does not silently
+change simulation output.
+
 ## 2026-05-03 — FootSim Squad Manager: admin tool with football-data.org verification
 
 Squad Manager ships as the first FootSim admin tool: an `/admin/squad-manager`

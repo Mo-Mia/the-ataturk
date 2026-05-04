@@ -38,6 +38,23 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
+### Use FC26 positional ratings for XI and bench fit
+Use preserved `position_ratings_json` from FC26 imports to improve auto-XI,
+bench ordering, and substitution replacement fit. This should supplement or
+replace hand-written adjacency only after characterisation shows stable match
+output.
+
+### Derive player overrides from FC26 traits and tags
+Map FC26 `player_traits` and `player_tags` into existing `PlayerOverrides`
+where the mapping is defensible, such as killer-pass or carry/shoot tendencies.
+Keep this out of ingestion so dataset freshness does not change simulation
+behaviour without calibration.
+
+### Use FC26 work-rate and body data in engine refinement
+Evaluate `work_rate`, `height_cm`, `weight_kg`, `body_type`, and goalkeeper
+speed for pressing, movement fatigue, aerial contests, and keeper sweeping in a
+future calibrated engine sprint.
+
 ### Persistent cache for football-data.org responses
 Move Squad Manager's 24h in-memory football-data.org cache to Redis or a
 SQLite-backed cache if the server runs multiple processes or needs restart
