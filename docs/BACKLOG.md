@@ -38,18 +38,37 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
+### Phase 17 corner-generation pathway implementation
+Phase 16 found Phase 14b corner tuning saturates around `6.52` corners/match
+because `defensiveClearanceCorner` is effectively capped once it reaches `1.0`.
+Implement new corner-eligible pathways instead of raising the same probability:
+start with goalkeeper save/parry-wide corners, then blocked wide-delivery
+corners if the PL20 floor is still missed. See
+`docs/PHASE_16_INVESTIGATION_FINDINGS.md`.
+
+### Investigate score-state lever-authority decay under realistic event volume
+Phase 14b's B1 foul economy reduced score-state shot impact from Phase 15's
+`+39.33%` to the `+10-14%` range. The mechanism remains positive, but future
+responsiveness policy should check whether mentality, pressing, and tempo show
+similar authority changes after realistic event-volume tuning.
+
+### Phase 14b baseline lock and Phase 8 retirement after corner pathway work
+B1 foul tuning is committed, but C5 corner constants remain uncommitted and
+Phase 14b is not yet a lockable baseline because corners remain slightly below
+band. Resume baseline lock after Phase 17 either lands corners in band or Mo/SA
+explicitly accept a known-low corner baseline.
+
 ### Add football-data.org mappings for all 20 FC26 Premier League clubs
 Match-engine browsing and simulation now support the active PL20 dataset, but
 Squad Manager live verification is still configured only for the original five
 football-data.org team ids. Add mappings and tests before advertising
 verification for the other 15 clubs.
 
-### Phase 14b event-volume tuning: foul genesis, then corner retest
-Resume from the Phase 15 alpha configuration documented in
-`docs/PHASE_15_INVESTIGATION_FINDINGS.md`. Shots/goals and score-state
-responsiveness pass, but shots are low-band (`21.35`/match), so foul tuning must
-protect the shot floor. Foul tuning should use direct tackle-attempt/foul
-probabilities first; retest corners after shot and foul volume stabilise.
+### ~~Phase 14b foul genesis tuning~~ ✅ Done / corner work paused
+B1 foul tuning landed in `c2ef557`. Shots, goals, fouls, and cards are in band.
+Corner tuning paused after C5 because the existing defensive-clearance
+probability path saturated below the real-PL corner floor. See Phase 16 findings
+for the Phase 17 pathway recommendation.
 
 ### ~~Phase 14 Strand A shot-volume tune~~ ✅ Done / paused into Phase 15
 Phase 14 A5 moved shots/goals into band but exposed score-state modulation

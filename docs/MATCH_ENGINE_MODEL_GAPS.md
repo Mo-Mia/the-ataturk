@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-04 17:21 SAST
+Last updated: 2026-05-04 23:23 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -105,6 +105,16 @@ keeps PL20 shots/goals in band (`21.35` shots, `1.93` goals) and restores
 score-state shot impact (`+39.33%`). Fouls and corners remain open Phase 14b
 tuning targets.
 
+Phase 16 diagnosed the remaining corner issue. Existing engine vocabulary can
+award corners only from deflected missed shots and defensive clearances.
+Phase 14b C4/C5 saturated `defensiveClearanceCorner` at an effective certainty
+on the eligible-clearance branch and still produced only `6.52` corners/match
+against the real-PL floor of `6.7`. Missing real-football pathways include
+keeper saves/parries wide, blocked wide deliveries, byline tackle deflections,
+defensive headers behind, and emergency goal-line blocks. This is now an event
+vocabulary gap rather than a simple probability-tuning gap; see
+`docs/PHASE_16_INVESTIGATION_FINDINGS.md`.
+
 FC26 also exposes richer data that is still deliberately unused by the engine:
 `position_ratings_json`, `work_rate`, body data, traits, and tags. These remain
 Phase 13+ candidates because consuming them would change behaviour and needs a
@@ -138,6 +148,9 @@ agency, public API shape, or obvious UAT realism.
   event volume can fall below the old synthetic target bands while
   responsiveness still passes. This is a calibration-policy question before it
   is an engine-tuning question.
+- **Corner-generation pathway gap**: Phase 16 shows realistic corner volume
+  needs more corner-eligible events, not higher probabilities on the saturated
+  defensive-clearance branch.
 
 ## Deferred Unless UAT Finds A Blocker
 

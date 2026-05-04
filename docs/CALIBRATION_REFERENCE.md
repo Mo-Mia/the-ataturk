@@ -1,6 +1,6 @@
 # Calibration Reference
 
-Last updated: 2026-05-04 17:21 SAST
+Last updated: 2026-05-04 23:23 SAST
 
 This is the living reference for FootSim calibration. Future sprints that add or
 change calibrated constants should update this document in the same commit.
@@ -29,6 +29,13 @@ weights can compress responsiveness headroom even without a hard clamp. Future
 action-selection tuning should report headroom for the affected levers before
 locking constants. Tackle attempts are different: they use direct probability
 multiplication and are not affected by carrier-action normalisation.
+
+Phase 16 corner-pathway note: `SET_PIECES.defensiveClearanceCorner` is compared
+directly with `rng.next()`, so values greater than or equal to `1.0` are
+effectively saturated. Phase 14b C4/C5 reached that ceiling and still produced
+`6.52` corners/match, below the real-PL floor. Future corner work should add
+corner-eligible pathways, such as save/parry-wide and blocked wide-delivery
+branches, rather than raising this probability again.
 
 ## How To Read This
 
@@ -164,7 +171,7 @@ contexts into one threshold.
 | Constant group | Value summary | Location | Controls | Origin | Coverage | Sensitivity |
 | --- | --- | --- | --- | --- | --- | --- |
 | `SET_PIECES.shotDeflectionCornerByPressure` | low/medium/high `0.025/0.045/0.07` | `probabilities.ts:162` | Corners from blocked/deflected shots | empirical Phase 6 | implicit via set-piece baseline | medium |
-| `defensiveClearanceCorner` | `0.46` | `probabilities.ts:166` | Corners from defensive clearances | empirical Phase 6 | implicit via set-piece baseline | high |
+| `defensiveClearanceCorner` | `0.46`; Phase 14b C4/C5 showed effective saturation once tuned above `1.0` | `probabilities.ts:166` | Corners from defensive clearances | empirical Phase 6; saturation diagnosed Phase 16 | implicit via set-piece baseline | high |
 | `directFreeKickMaxDistance` | `330` | `probabilities.ts:167` | Direct FK range | intuitive Phase 6 | implicit via set-piece baseline | medium |
 | `freeKickDirectShotBase` / `freeKickCrossBase` | `0.42` / `0.62` | `probabilities.ts:168` | FK resolution choice | intuitive Phase 6 | implicit via set-piece tests | medium |
 | `penaltyFromFoulByDistanceBand` | close/box/edge `1/0.75/0.28` | `probabilities.ts:170` | Penalty frequency from attacking fouls | empirical Phase 6 | implicit via set-piece baseline | high |

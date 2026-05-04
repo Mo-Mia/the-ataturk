@@ -4,6 +4,31 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-04 — FootSim Phase 16 outcome: corner-generation pathway gap diagnosed
+
+Phase 14b's corner tuning saturated just below the real-PL floor. C4
+(`defensiveClearanceCorner = 1.012`) and C5 (`1.058`) both produced `6.52`
+corners/match against the `[6.7, 13.2]` band. This is expected once the code is
+read: `defensiveClearanceCorner` is compared directly with `rng.next()`, so
+values above `1.0` are effectively certain on the existing eligible-clearance
+branch.
+
+Phase 16 audited the corner-generation pathways. FootSim currently awards
+corners only from deflected missed shots and defensive clearances. Several
+ordinary real-football pathways are missing: goalkeeper saves/parries wide,
+blocked crosses/cutbacks, byline tackles or duels deflected behind, defensive
+headers behind, and emergency goal-line blocks.
+
+Decision: stop trying to close the corner gap by raising existing corner
+probabilities. Phase 17 should add corner-eligible pathways, starting with
+save/parry-wide corners and then blocked wide-delivery corners if needed. The
+committed B1 foul tuning remains; the uncommitted C5 corner constants are held
+pending Phase 17 rather than locked as the final Phase 14b baseline.
+
+Out of scope and tracked in BACKLOG: implementing Phase 17 pathways, new aerial
+duel/header vocabulary, and Phase 8 retirement until the Phase 14b/17 baseline
+is lockable.
+
 ## 2026-05-04 — FootSim Phase 15 outcome: modulation saturation diagnosed, alpha probe accepted
 
 Phase 14 A5 landed PL20 shot volume (`22.24` shots/match) but broke
