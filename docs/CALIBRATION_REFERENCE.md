@@ -1,6 +1,6 @@
 # Calibration Reference
 
-Last updated: 2026-05-04 09:05 SAST
+Last updated: 2026-05-04 09:52 SAST
 
 This is the living reference for FootSim calibration. Future sprints that add or
 change calibrated constants should update this document in the same commit.
@@ -8,11 +8,12 @@ change calibrated constants should update this document in the same commit.
 Phase 8 documents current state only. No constants were tuned while writing this
 reference.
 
-Dataset-version note: the locked Phase 8 calibration baseline and the
-responsiveness figures referenced here were established against the FC25 active
-dataset. FC26 is now the active data version for workbench and Squad Manager
-use, so future FC26 characterisation will produce different numbers. Treat that
-as a new measurement set, not a regression against the FC25 baseline.
+Dataset-version note: calibration constants are dataset-agnostic, but baselines
+are dataset-specific. The locked Phase 8 calibration baseline and the
+responsiveness figures referenced there were established against FC25/synthetic
+inputs. FC26 is now the active data version for workbench and Squad Manager use;
+Phase 11 measured that current runtime state separately in
+`docs/CALIBRATION_BASELINE_FC26.md`.
 
 ## How To Read This
 
@@ -48,6 +49,11 @@ measurement moved from Phase 6 `+2.05%` to Phase 8 `-7.14%` to Phase 10
 ordinary-context effect, not tuning. Under a forced late deficit, however, the
 same toggle produced `+43.99%` final-15 shots across 1000 paired seeds. Future
 chance-creation tests must state the tactical context they are measuring.
+
+Phase 11 confirms the manual-XI high-variance rule still holds on FC26. The
+specific players changed to Salah, Van Dijk, and Isak out; Wirtz, Szoboszlai,
+and Ekitiké in. The 1000-seed paired result was `-22.10%`, paired SE `3.91pp`,
+95% CI `[-29.77%, -14.43%]`.
 
 ## Calibration Targets
 
@@ -188,3 +194,6 @@ but their location is a calibration-locality issue and is tracked in BACKLOG.
   calibration module.
 - The isolated chance-creation toggle anomaly needs a future investigation
   before any threshold/tuning decision.
+- Future locked calibration baselines should document standard errors alongside
+  means. Phase 8 documented means only, so Phase 11 equivalence checks use
+  FC26-derived SE as the available comparison width.

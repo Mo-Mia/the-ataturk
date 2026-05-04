@@ -38,11 +38,21 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
-### Re-run characterisation and responsiveness against FC26 active dataset
-Run characterisation plus real-squad responsiveness against the FC26 active
-dataset, document the new baseline numbers, and decide whether roster drift
-warrants tuning. This is a discrete calibration-validation sprint, not part of
-UAT or commentary work.
+### Decide FC26 real-squad characterisation policy
+Phase 11 found FC26 Liverpool vs Manchester City real-squad event volume below
+the old synthetic Phase 8 target bands while responsiveness still passed.
+Decide whether to create separate real-squad FC26 bands or keep synthetic
+targets as the only calibration gate before tuning.
+
+### Document standard errors in future calibration baselines
+Future locked calibration baselines should document standard errors alongside
+means. Phase 8 documented means only; Phase 11 used FC26-derived SE as the
+available equivalence width. Preserving SE will support cleaner A/B equivalence
+testing.
+
+### ~~Re-run characterisation and responsiveness against FC26 active dataset~~ ✅ Done
+Shipped in Phase 11. See `docs/CALIBRATION_BASELINE_FC26.md` and commits
+`8c74b7e`, `1afce7f`, `a98aec4`.
 
 ### Use FC26 positional ratings for XI and bench fit
 Use preserved `position_ratings_json` from FC26 imports to improve auto-XI,

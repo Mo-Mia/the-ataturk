@@ -1,18 +1,22 @@
 # Calibration Baseline — Phase 8
 
-Last updated: 2026-05-04 09:05 SAST
+Last updated: 2026-05-04 09:52 SAST
 
 ## Purpose
 
-This document locks the current FootSim calibration baseline after Phase 9's
-manual-XI investigation. It is the source of truth for Phase 8 consolidation
-work: documentation and tests may assert against these numbers, but this sprint
-does not tune engine behaviour.
+This document locks the historical FC25/Phase 8 FootSim calibration baseline
+after Phase 9's manual-XI investigation. It is the source of truth for Phase 8
+consolidation work: documentation and tests may assert against these numbers,
+but this sprint does not tune engine behaviour.
 
 Dataset-version anchor: this baseline is tied to the FC25 dataset version active
 when Phase 8 and Phase 9 ran. The repo now has FC26 active intentionally. Future
 characterisation against FC26-active squads should be measured and documented as
 a separate baseline, not assumed equivalent to these FC25 numbers.
+
+Phase 11 created that separate FC26-active baseline in
+`docs/CALIBRATION_BASELINE_FC26.md`. Do not overwrite the Phase 8 numbers with
+FC26 results; use both documents side by side.
 
 Two precision tiers are used:
 

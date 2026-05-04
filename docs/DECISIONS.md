@@ -4,6 +4,34 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-04 — FootSim Phase 11 outcome: FC26 baseline measured, characterisation drift surfaced
+
+Phase 11 closed the FC25-vs-FC26 dataset-version loop by making the runtime DB
+FC26-active and measuring current engine behaviour against the imported
+`FC26_20250921.csv` dataset. The active FC dataset version is
+`fc25-20260504073604-4399cb2b-7d80bef5`; the previous FC25 runtime version is
+still present but inactive.
+
+No engine changes and no calibration tuning. Phase 8 remains the historical
+FC25/synthetic-reference baseline. Phase 11 is a separate current
+FC26-active baseline documented in `docs/CALIBRATION_BASELINE_FC26.md`.
+
+Responsiveness survived FC26: mentality, pressing, tempo, fatigue, Auto Subs,
+score-state shot impact, and 1000-seed paired manual XI all passed. Manual XI
+now removes Salah, Van Dijk, and Isak, replacing them with Wirtz, Szoboszlai,
+and Ekitiké; the result was `-22.10%`, paired SE `3.91pp`, 95% CI
+`[-29.77%, -14.43%]`.
+
+The main drift is event volume. FC26 real-squad Liverpool vs Manchester City
+characterisation fell below the old synthetic Phase 8 bands for shots, fouls,
+and cards. This is classified as Bucket 3 and surfaced for Mo/SA discussion
+before tuning. Likely decision: create separate real-squad FC26 bands or keep
+synthetic targets as the only calibration gate.
+
+Out of scope and tracked in BACKLOG: tuning from Bucket 3 outcomes, policy for
+real-squad vs synthetic calibration gates, and future use of FC26-only fields
+such as `work_rate`, `position_ratings_json`, traits, and tags.
+
 ## 2026-05-04 — FC26 dataset ingestion before Gemini shirt-number fallback
 
 FC26 SoFIFA-format data is the preferred first fix for Squad Manager staleness

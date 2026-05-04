@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-04 09:05 SAST
+Last updated: 2026-05-04 09:52 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -71,6 +71,20 @@ real FC25 data path:
 
 See `docs/FOOTSIM_REAL_SQUAD_RESPONSIVENESS.md` for the full table.
 
+## FC26 Baseline Findings
+
+Phase 11 measured the engine against the FC26-active runtime dataset. Tactical
+responsiveness remains healthy, and manual XI impact is strong. The revealed
+gap is calibration interpretation: real-squad FC26 Liverpool vs Manchester City
+event volume is below the old synthetic Phase 8 target bands for shots, fouls,
+and cards. Decide whether to create real-squad FC26 characterisation bands or
+keep synthetic targets as the only calibration gate before tuning.
+
+FC26 also exposes richer data that is still deliberately unused by the engine:
+`position_ratings_json`, `work_rate`, body data, traits, and tags. These remain
+Phase 12+ candidates because consuming them would change behaviour and needs a
+calibrated sprint.
+
 ## Potential Pre-integration Concerns
 
 These are not automatic sprint items. Promote one only if it affects v0.1
@@ -95,6 +109,10 @@ agency, public API shape, or obvious UAT realism.
   different end in the second half. This is intentional and matches real match
   convention. Ball heatmaps stay raw; team-attacking-territory diagnostics are
   direction-aware.
+- **Real-squad vs synthetic calibration gates**: Phase 11 showed FC26 real-squad
+  event volume can fall below the old synthetic target bands while
+  responsiveness still passes. This is a calibration-policy question before it
+  is an engine-tuning question.
 
 ## Deferred Unless UAT Finds A Blocker
 
