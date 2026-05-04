@@ -26,13 +26,6 @@ const CLUBS = [
   "manchester-city",
   "manchester-united"
 ] as const satisfies readonly Fc25ClubId[];
-const CLUB_LABELS: Record<Fc25ClubId, string> = {
-  arsenal: "Arsenal",
-  "aston-villa": "Aston Villa",
-  liverpool: "Liverpool",
-  "manchester-city": "Manchester City",
-  "manchester-united": "Manchester United"
-};
 const EXPECTED_COUNTS: Record<Fc25ClubId, number> = {
   arsenal: 24,
   "aston-villa": 24,
@@ -212,15 +205,12 @@ export function runPhase13EventVolumeDiagnostics(
   if (!sanity.pass) {
     throw new Error("Phase 13 event-volume sanity check failed");
   }
-  const fixtureSummaries = fixtures.map((fixture) =>
-    summariseFixture(
-      fixture,
-      runSeeds(seedsPerFixture, (seed) => analyseFixtureSeed(context, fixture, seed))
-    )
-  );
-  const allRuns = fixtures.flatMap((fixture) =>
-    runSeeds(seedsPerFixture, (seed) => analyseFixtureSeed(context, fixture, seed))
-  );
+  const runsByFixture = fixtures.map((fixture) => ({
+    fixture,
+    runs: runSeeds(seedsPerFixture, (seed) => analyseFixtureSeed(context, fixture, seed))
+  }));
+  const fixtureSummaries = runsByFixture.map(({ fixture, runs }) => summariseFixture(fixture, runs));
+  const allRuns = runsByFixture.flatMap(({ runs }) => runs);
   const aggregate = aggregateSummary(allRuns, fixtureSummaries.length);
   const report: Phase13EventVolumeReport = {
     schemaVersion: 1,
