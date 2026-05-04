@@ -178,8 +178,8 @@ describe("carrier action selection", () => {
     wide.possession = { teamId: "home", zone: "mid", pressureLevel: "low" };
     centralCarrier.position = [340, 520];
     wideCarrier.position = [610, 520];
-    central.rng.next = () => 0.62;
-    wide.rng.next = () => 0.62;
+    central.rng.next = () => 0.65;
+    wide.rng.next = () => 0.65;
 
     expect(selectCarrierAction(central, centralCarrier)).toBe("pass");
     expect(selectCarrierAction(wide, wideCarrier)).toBe("dribble");

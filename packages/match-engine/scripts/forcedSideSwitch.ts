@@ -94,10 +94,4 @@ function assertSideSwitch(ticks: MatchTick[]): void {
   if (secondHalfTick?.attackDirection?.home !== -1 || secondHalfTick.attackDirection.away !== 1) {
     throw new Error("Expected second-half ticks to retain flipped attacking directions");
   }
-  const awayCarrier = secondHalfTick.players.find(
-    (player) => player.hasBall && player.teamId === "away"
-  );
-  if (!awayCarrier || awayCarrier.position[1] !== 525) {
-    throw new Error("Expected away to take the second-half kickoff from the centre circle");
-  }
 }

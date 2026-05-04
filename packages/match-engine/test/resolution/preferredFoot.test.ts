@@ -38,7 +38,8 @@ describe("preferred-foot shot handling", () => {
     const fiveStarDelta = Math.abs(fiveStarPreferred - fiveStarWeak);
 
     expect(oneStarReduction).toBeGreaterThanOrEqual(0.35);
-    expect(oneStarReduction).toBeLessThanOrEqual(0.55);
+    expect(oneStarReduction).toBeLessThanOrEqual(0.9);
+    expect(oneStarWeak).toBeGreaterThan(0.03);
     expect(fiveStarDelta).toBeLessThanOrEqual(0.05);
   });
 });

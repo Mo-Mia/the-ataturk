@@ -43,14 +43,14 @@ export const ACTION_WEIGHTS: Record<Zone, Record<PressureLevel, Record<CarrierAc
     high: { pass: 0.34, dribble: 0.02, hold: 0.14, clear: 0.5, shoot: 0 }
   },
   mid: {
-    low: { pass: 0.58, dribble: 0.12, hold: 0.28, clear: 0.015, shoot: 0.002 },
-    medium: { pass: 0.52, dribble: 0.1, hold: 0.31, clear: 0.05, shoot: 0.006 },
-    high: { pass: 0.44, dribble: 0.07, hold: 0.32, clear: 0.13, shoot: 0.012 }
+    low: { pass: 0.58, dribble: 0.12, hold: 0.28, clear: 0.015, shoot: 0.004 },
+    medium: { pass: 0.52, dribble: 0.1, hold: 0.31, clear: 0.05, shoot: 0.012 },
+    high: { pass: 0.44, dribble: 0.07, hold: 0.32, clear: 0.13, shoot: 0.024 }
   },
   att: {
-    low: { pass: 0.56, dribble: 0.12, hold: 0.25, clear: 0.005, shoot: 0.18 },
-    medium: { pass: 0.5, dribble: 0.1, hold: 0.29, clear: 0.01, shoot: 0.26 },
-    high: { pass: 0.42, dribble: 0.07, hold: 0.34, clear: 0.02, shoot: 0.38 }
+    low: { pass: 0.56, dribble: 0.12, hold: 0.25, clear: 0.005, shoot: 0.5508 },
+    medium: { pass: 0.5, dribble: 0.1, hold: 0.29, clear: 0.01, shoot: 0.7956 },
+    high: { pass: 0.42, dribble: 0.07, hold: 0.34, clear: 0.02, shoot: 1.1628 }
   }
 };
 
@@ -129,14 +129,14 @@ export const SCORE_STATE = {
   },
   action: {
     pass: 1.04,
-    shoot: 1.28,
+    shoot: 1.85,
     dribble: 1.12,
     hold: -0.42,
     clear: -0.2
   } satisfies Record<CarrierAction, number>,
   pressing: 0.45,
   passRisk: 34,
-  lateChaseShotIntent: 30
+  lateChaseShotIntent: 42
 };
 
 export const CHANCE_CREATION = {
@@ -188,9 +188,9 @@ export const SUCCESS_PROBABILITIES = {
     PressureLevel,
     number
   >,
-  shotOnTargetByZone: { def: 0, mid: 0.32, att: 0.58 } satisfies Record<Zone, number>,
+  shotOnTargetByZone: { def: 0, mid: 0.224, att: 0.406 } satisfies Record<Zone, number>,
   shotPressureModifier: { low: 1, medium: 0.86, high: 0.7 } satisfies Record<PressureLevel, number>,
-  saveBase: 0.405,
+  saveBase: 0.50625,
   tackleAttemptByPressure: { low: 0.01, medium: 0.02, high: 0.034 } satisfies Record<
     PressureLevel,
     number
@@ -209,7 +209,7 @@ export const SUCCESS_PROBABILITIES = {
     box: { maxDistanceToGoal: 210, actionWeight: 1.08, onTarget: 1, save: 0.78 },
     edge: { maxDistanceToGoal: 380, actionWeight: 1, onTarget: 0.84, save: 0.96 },
     far: { maxDistanceToGoal: 450, actionWeight: 0.7, onTarget: 0.62, save: 1.12 },
-    speculative: { maxDistanceToGoal: Infinity, actionWeight: 0.12, onTarget: 0.2, save: 1.5 }
+    speculative: { maxDistanceToGoal: Infinity, actionWeight: 0.1968, onTarget: 0.2, save: 1.5 }
   } satisfies Record<
     ShotDistanceBand,
     { maxDistanceToGoal: number; actionWeight: number; onTarget: number; save: number }
