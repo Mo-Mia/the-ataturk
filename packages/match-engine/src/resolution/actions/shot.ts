@@ -51,6 +51,7 @@ export function performShot(
   emitEvent(state, "shot", shooter.teamId, shooter.id, {
     onTarget,
     shotType,
+    fromZone: state.possession.zone,
     ...(shotFoot.foot ? { foot: shotFoot.foot } : {}),
     distancePitchUnits: Math.round(shotDistance.distanceToGoal),
     distanceToGoalMetres: Math.round(shotDistance.distanceToGoal / 10),

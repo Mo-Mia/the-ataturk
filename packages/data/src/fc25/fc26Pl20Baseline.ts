@@ -5,6 +5,7 @@ import {
   simulateMatch,
   type MatchConfigV2,
   type MatchSnapshot,
+  type SemanticEvent,
   type TeamTactics,
   type TeamV2
 } from "@the-ataturk/match-engine";
@@ -67,6 +68,7 @@ export interface Fc26Pl20BaselineReport {
   fixtureMatrix: Array<{ home: Fc25ClubId; away: Fc25ClubId; seeds: number }>;
   fixtures: Pl20FixtureSummary[];
   aggregate: Pl20AggregateSummary;
+  shotComposition: ShotCompositionMetrics;
   homeAwayEffect: {
     goals: { meanHomeMinusAway: number; standardError: number };
     shots: { meanHomeMinusAway: number; standardError: number };
@@ -117,6 +119,18 @@ export interface Pl20AggregateSummary {
   maxByFixture: Pl20FixtureMetrics;
 }
 
+export interface ShotCompositionMetrics {
+  attZoneCarrierShots: number;
+  midZoneCarrierShots: number;
+  defZoneCarrierShots: number;
+  speculativeShots: number;
+  setPieceShots: number;
+  chanceCreationShots: number;
+  closeShots: number;
+  mediumShots: number;
+  longShots: number;
+}
+
 interface Context {
   version: Fc25DatasetVersion;
   clubs: Fc25Club[];
@@ -152,6 +166,7 @@ interface RunMetrics {
   indirectFreeKicks: number;
   penalties: number;
   setPieceGoals: number;
+  shotComposition: ShotCompositionMetrics;
 }
 
 export function runFc26Pl20Baseline(
@@ -200,6 +215,7 @@ export function runFc26Pl20Baseline(
     fixtureMatrix: fixtureMatrix.map((fixture) => ({ ...fixture, seeds: seedsPerFixture })),
     fixtures,
     aggregate,
+    shotComposition: shotCompositionFromRuns(runsByFixture.flatMap(({ runs }) => runs)),
     homeAwayEffect: homeAwayEffect(fixtures),
     synthesis: {
       fixturesRun: fixtures.length,
@@ -353,7 +369,8 @@ function metricsFor(seed: number, snapshot: MatchSnapshot): RunMetrics {
     indirectFreeKicks:
       (setPieces?.home.indirectFreeKicks ?? 0) + (setPieces?.away.indirectFreeKicks ?? 0),
     penalties: (setPieces?.home.penalties ?? 0) + (setPieces?.away.penalties ?? 0),
-    setPieceGoals: (setPieces?.home.setPieceGoals ?? 0) + (setPieces?.away.setPieceGoals ?? 0)
+    setPieceGoals: (setPieces?.home.setPieceGoals ?? 0) + (setPieces?.away.setPieceGoals ?? 0),
+    shotComposition: shotCompositionFor(snapshot)
   };
 }
 
@@ -458,6 +475,63 @@ function average(values: number[]): number {
     return 0;
   }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function shotCompositionFor(snapshot: MatchSnapshot): ShotCompositionMetrics {
+  const shots = snapshot.ticks
+    .flatMap((tick) => tick.events)
+    .filter((event) => event.type === "shot");
+  const carrierShots = shots.filter(
+    (event) => detailObject(event, "setPieceContext") === null && stringDetail(event, "chanceSource") === null
+  );
+  return {
+    attZoneCarrierShots: carrierShots.filter((event) => stringDetail(event, "fromZone") === "att").length,
+    midZoneCarrierShots: carrierShots.filter((event) => stringDetail(event, "fromZone") === "mid").length,
+    defZoneCarrierShots: carrierShots.filter((event) => stringDetail(event, "fromZone") === "def").length,
+    speculativeShots: shots.filter((event) => stringDetail(event, "distanceBand") === "speculative").length,
+    setPieceShots: shots.filter((event) => detailObject(event, "setPieceContext") !== null).length,
+    chanceCreationShots: shots.filter((event) => stringDetail(event, "chanceSource") !== null).length,
+    closeShots: shots.filter((event) => coarseDistanceBand(event) === "close").length,
+    mediumShots: shots.filter((event) => coarseDistanceBand(event) === "medium").length,
+    longShots: shots.filter((event) => coarseDistanceBand(event) === "long").length
+  };
+}
+
+function shotCompositionFromRuns(runs: RunMetrics[]): ShotCompositionMetrics {
+  return {
+    attZoneCarrierShots: average(runs.map((run) => run.shotComposition.attZoneCarrierShots)),
+    midZoneCarrierShots: average(runs.map((run) => run.shotComposition.midZoneCarrierShots)),
+    defZoneCarrierShots: average(runs.map((run) => run.shotComposition.defZoneCarrierShots)),
+    speculativeShots: average(runs.map((run) => run.shotComposition.speculativeShots)),
+    setPieceShots: average(runs.map((run) => run.shotComposition.setPieceShots)),
+    chanceCreationShots: average(runs.map((run) => run.shotComposition.chanceCreationShots)),
+    closeShots: average(runs.map((run) => run.shotComposition.closeShots)),
+    mediumShots: average(runs.map((run) => run.shotComposition.mediumShots)),
+    longShots: average(runs.map((run) => run.shotComposition.longShots))
+  };
+}
+
+function coarseDistanceBand(event: SemanticEvent): "close" | "medium" | "long" {
+  const band = stringDetail(event, "distanceBand");
+  if (band === "close" || band === "box") {
+    return "close";
+  }
+  if (band === "edge") {
+    return "medium";
+  }
+  return "long";
+}
+
+function stringDetail(event: SemanticEvent, key: string): string | null {
+  const value = event.detail?.[key];
+  return typeof value === "string" ? value : null;
+}
+
+function detailObject(event: SemanticEvent, key: string): Record<string, unknown> | null {
+  const value = event.detail?.[key];
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
 }
 
 function standardError(values: number[]): number {
