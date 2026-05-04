@@ -109,6 +109,23 @@ interface Fc25PlayerDbRow {
   gk_kicking: number | null;
   gk_positioning: number | null;
   gk_reflexes: number | null;
+  potential: number | null;
+  value_eur: number | null;
+  wage_eur: number | null;
+  release_clause_eur: number | null;
+  body_type: string | null;
+  work_rate: string | null;
+  international_reputation: number | null;
+  player_traits: string | null;
+  player_tags: string | null;
+  category_pace: number | null;
+  category_shooting: number | null;
+  category_passing: number | null;
+  category_dribbling: number | null;
+  category_defending: number | null;
+  category_physic: number | null;
+  goalkeeping_speed: number | null;
+  position_ratings_json: string | null;
   shirt_number: number | null;
 }
 
@@ -356,6 +373,10 @@ function insertSelectedRows(
         composure, interceptions, heading_accuracy, defensive_awareness, standing_tackle,
         sliding_tackle, jumping, stamina, strength, aggression,
         gk_diving, gk_handling, gk_kicking, gk_positioning, gk_reflexes,
+        potential, value_eur, wage_eur, release_clause_eur, body_type, work_rate,
+        international_reputation, player_traits, player_tags,
+        category_pace, category_shooting, category_passing, category_dribbling,
+        category_defending, category_physic, goalkeeping_speed, position_ratings_json,
         created_at, updated_at
       )
       VALUES (
@@ -368,6 +389,10 @@ function insertSelectedRows(
         @composure, @interceptions, @headingAccuracy, @defensiveAwareness, @standingTackle,
         @slidingTackle, @jumping, @stamina, @strength, @aggression,
         @gkDiving, @gkHandling, @gkKicking, @gkPositioning, @gkReflexes,
+        @potential, @valueEur, @wageEur, @releaseClauseEur, @bodyType, @workRate,
+        @internationalReputation, @playerTraits, @playerTags,
+        @categoryPace, @categoryShooting, @categoryPassing, @categoryDribbling,
+        @categoryDefending, @categoryPhysic, @goalkeepingSpeed, @positionRatingsJson,
         @nowIso, @nowIso
       )
     `
@@ -379,7 +404,7 @@ function insertSelectedRows(
         overall, created_at, updated_at
       )
       VALUES (
-        @datasetVersionId, @clubId, @playerId, @squadRole, NULL, @sortOrder,
+        @datasetVersionId, @clubId, @playerId, @squadRole, @shirtNumber, @sortOrder,
         @overall, @nowIso, @nowIso
       )
     `
@@ -398,6 +423,7 @@ function insertSelectedRows(
       clubId,
       playerId: row.fc25PlayerId,
       squadRole: roleForSquadIndex(squadIndex),
+      shirtNumber: row.squadNumber,
       sortOrder: squadIndex,
       overall: row.overall,
       nowIso
@@ -464,6 +490,25 @@ function playerInsertParams(datasetVersionId: string, row: Fc25ParsedPlayerRow, 
     gkKicking: row.gkAttributes?.gkKicking ?? null,
     gkPositioning: row.gkAttributes?.gkPositioning ?? null,
     gkReflexes: row.gkAttributes?.gkReflexes ?? null,
+    potential: row.fc26Metadata?.potential ?? null,
+    valueEur: row.fc26Metadata?.valueEur ?? null,
+    wageEur: row.fc26Metadata?.wageEur ?? null,
+    releaseClauseEur: row.fc26Metadata?.releaseClauseEur ?? null,
+    bodyType: row.fc26Metadata?.bodyType ?? null,
+    workRate: row.fc26Metadata?.workRate ?? null,
+    internationalReputation: row.fc26Metadata?.internationalReputation ?? null,
+    playerTraits: row.fc26Metadata?.playerTraits ?? null,
+    playerTags: row.fc26Metadata?.playerTags ?? null,
+    categoryPace: row.fc26Metadata?.categoryPace ?? null,
+    categoryShooting: row.fc26Metadata?.categoryShooting ?? null,
+    categoryPassing: row.fc26Metadata?.categoryPassing ?? null,
+    categoryDribbling: row.fc26Metadata?.categoryDribbling ?? null,
+    categoryDefending: row.fc26Metadata?.categoryDefending ?? null,
+    categoryPhysic: row.fc26Metadata?.categoryPhysic ?? null,
+    goalkeepingSpeed: row.fc26Metadata?.goalkeepingSpeed ?? null,
+    positionRatingsJson: row.fc26Metadata
+      ? JSON.stringify(row.fc26Metadata.positionRatings)
+      : null,
     nowIso
   };
 }

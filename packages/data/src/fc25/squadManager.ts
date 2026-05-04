@@ -297,6 +297,10 @@ function copyVersionRows(
         composure, interceptions, heading_accuracy, defensive_awareness, standing_tackle,
         sliding_tackle, jumping, stamina, strength, aggression,
         gk_diving, gk_handling, gk_kicking, gk_positioning, gk_reflexes,
+        potential, value_eur, wage_eur, release_clause_eur, body_type, work_rate,
+        international_reputation, player_traits, player_tags,
+        category_pace, category_shooting, category_passing, category_dribbling,
+        category_defending, category_physic, goalkeeping_speed, position_ratings_json,
         created_at, updated_at
       )
       SELECT
@@ -309,6 +313,10 @@ function copyVersionRows(
         composure, interceptions, heading_accuracy, defensive_awareness, standing_tackle,
         sliding_tackle, jumping, stamina, strength, aggression,
         gk_diving, gk_handling, gk_kicking, gk_positioning, gk_reflexes,
+        potential, value_eur, wage_eur, release_clause_eur, body_type, work_rate,
+        international_reputation, player_traits, player_tags,
+        category_pace, category_shooting, category_passing, category_dribbling,
+        category_defending, category_physic, goalkeeping_speed, position_ratings_json,
         ?, ?
       FROM fc25_players
       WHERE dataset_version_id = ?
@@ -397,6 +405,10 @@ function applyPlayerAddition(
         composure, interceptions, heading_accuracy, defensive_awareness, standing_tackle,
         sliding_tackle, jumping, stamina, strength, aggression,
         gk_diving, gk_handling, gk_kicking, gk_positioning, gk_reflexes,
+        potential, value_eur, wage_eur, release_clause_eur, body_type, work_rate,
+        international_reputation, player_traits, player_tags,
+        category_pace, category_shooting, category_passing, category_dribbling,
+        category_defending, category_physic, goalkeeping_speed, position_ratings_json,
         created_at, updated_at
       )
       VALUES (
@@ -409,6 +421,10 @@ function applyPlayerAddition(
         @composure, @interceptions, @headingAccuracy, @defensiveAwareness, @standingTackle,
         @slidingTackle, @jumping, @stamina, @strength, @aggression,
         @gkDiving, @gkHandling, @gkKicking, @gkPositioning, @gkReflexes,
+        NULL, NULL, NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL,
+        NULL, NULL, NULL, NULL,
         @nowIso, @nowIso
       )
     `

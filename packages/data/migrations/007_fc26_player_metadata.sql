@@ -1,0 +1,17 @@
+ALTER TABLE fc25_players ADD COLUMN potential INTEGER;
+ALTER TABLE fc25_players ADD COLUMN value_eur INTEGER;
+ALTER TABLE fc25_players ADD COLUMN wage_eur INTEGER;
+ALTER TABLE fc25_players ADD COLUMN release_clause_eur INTEGER;
+ALTER TABLE fc25_players ADD COLUMN body_type TEXT;
+ALTER TABLE fc25_players ADD COLUMN work_rate TEXT;
+ALTER TABLE fc25_players ADD COLUMN international_reputation INTEGER;
+ALTER TABLE fc25_players ADD COLUMN player_traits TEXT;
+ALTER TABLE fc25_players ADD COLUMN player_tags TEXT;
+ALTER TABLE fc25_players ADD COLUMN category_pace INTEGER;
+ALTER TABLE fc25_players ADD COLUMN category_shooting INTEGER;
+ALTER TABLE fc25_players ADD COLUMN category_passing INTEGER;
+ALTER TABLE fc25_players ADD COLUMN category_dribbling INTEGER;
+ALTER TABLE fc25_players ADD COLUMN category_defending INTEGER;
+ALTER TABLE fc25_players ADD COLUMN category_physic INTEGER;
+ALTER TABLE fc25_players ADD COLUMN goalkeeping_speed INTEGER;
+ALTER TABLE fc25_players ADD COLUMN position_ratings_json TEXT;
