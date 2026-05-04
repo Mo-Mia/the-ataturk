@@ -210,7 +210,7 @@ function fc26Record(overrides: Record<string, string> = {}): Record<string, stri
     goalkeeping_reflexes: "11",
     goalkeeping_speed: "",
     ls: "86",
-    st: "86",
+    st: "86+3",
     rs: "86",
     lw: "88",
     lf: "89",

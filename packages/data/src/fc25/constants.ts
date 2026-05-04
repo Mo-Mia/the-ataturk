@@ -25,7 +25,8 @@ export const FC25_CLUBS = [
     shortName: "MUN",
     country: "England",
     league: "Premier League",
-    sourceTeam: "Man Utd"
+    sourceTeam: "Man Utd",
+    sourceTeamAliases: ["Manchester United"]
   },
   {
     id: "liverpool",

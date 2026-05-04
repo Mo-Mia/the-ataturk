@@ -20,9 +20,9 @@ import { adaptFc25RowToPlayerInputV2 } from "./adapter";
 import { FC25_CLUBS, FC25_SOURCE_FILE_DEFAULT } from "./constants";
 import { parseFc25PlayersCsv, type Fc25CsvFormat } from "./parser";
 
-const DEFAULT_SQUAD_CAP = 25;
 const STARTER_COUNT = 11;
 const SUB_COUNT = 7;
+const SQUAD_SIZE_WARNING_THRESHOLD = 35;
 
 export interface Fc25ImportOptions {
   csvPath?: string;
@@ -140,7 +140,7 @@ export function importFc25Dataset(options: Fc25ImportOptions = {}): Fc25ImportRe
   const nowIso = now.toISOString();
   const datasetVersionId =
     options.datasetVersionId ?? createDatasetVersionId(now, sourceFileSha256);
-  const squadCap = options.squadCap ?? DEFAULT_SQUAD_CAP;
+  const squadCap = options.squadCap ?? null;
   const selectedRows = selectRowsForImport(parsedRows, squadCap);
   migrate(options.databasePath ? { databasePath: options.databasePath } : {});
   const db = getDb(options.databasePath);
@@ -289,18 +289,26 @@ export function parseFc25ImportCliArgs(args: string[]): Fc25ImportOptions {
 
 function selectRowsForImport(
   rows: Fc25ParsedPlayerRow[],
-  squadCap: number
+  squadCap: number | null
 ): Array<{ clubId: Fc25ClubId; row: Fc25ParsedPlayerRow; squadIndex: number }> {
   return FC25_CLUBS.flatMap((club) => {
+    const sourceTeamAliases = "sourceTeamAliases" in club ? club.sourceTeamAliases : [];
+    const sourceTeams = new Set<string>([club.sourceTeam, ...sourceTeamAliases]);
     const clubRows = rows
-      .filter((row) => row.sourceTeam === club.sourceTeam && row.league === club.league)
+      .filter((row) => sourceTeams.has(row.sourceTeam) && row.league === club.league)
       .sort(compareRowsForSquad);
 
     if (clubRows.length === 0) {
       throw new Error(`No FC25 rows found for required club '${club.sourceTeam}'`);
     }
+    if (clubRows.length > SQUAD_SIZE_WARNING_THRESHOLD) {
+      console.warn(
+        `FC dataset import found ${clubRows.length} rows for ${club.name}; expected a senior squad-sized group. Import will continue.`
+      );
+    }
 
-    return clubRows.slice(0, squadCap).map((row, squadIndex) => ({
+    const selectedRows = squadCap === null ? clubRows : clubRows.slice(0, squadCap);
+    return selectedRows.map((row, squadIndex) => ({
       clubId: club.id,
       row,
       squadIndex
@@ -309,7 +317,12 @@ function selectRowsForImport(
 }
 
 function compareRowsForSquad(a: Fc25ParsedPlayerRow, b: Fc25ParsedPlayerRow): number {
-  return b.overall - a.overall || a.rank - b.rank || a.sourceIndex - b.sourceIndex;
+  return (
+    squadRoleSortRank(a) - squadRoleSortRank(b) ||
+    b.overall - a.overall ||
+    a.rank - b.rank ||
+    a.sourceIndex - b.sourceIndex
+  );
 }
 
 function insertDatasetVersion(
@@ -422,7 +435,7 @@ function insertSelectedRows(
       datasetVersionId,
       clubId,
       playerId: row.fc25PlayerId,
-      squadRole: roleForSquadIndex(squadIndex),
+      squadRole: roleForRow(row, squadIndex),
       shirtNumber: row.squadNumber,
       sortOrder: squadIndex,
       overall: row.overall,
@@ -513,11 +526,33 @@ function playerInsertParams(datasetVersionId: string, row: Fc25ParsedPlayerRow, 
   };
 }
 
+function roleForRow(row: Fc25ParsedPlayerRow, index: number): "starter" | "sub" | "reserve" {
+  const role = row.sourceSquadRole?.trim().toUpperCase();
+  if (role === "SUB") {
+    return "sub";
+  }
+  if (role === "RES") {
+    return "reserve";
+  }
+  return roleForSquadIndex(index);
+}
+
 function roleForSquadIndex(index: number): "starter" | "sub" | "reserve" {
   if (index < STARTER_COUNT) {
     return "starter";
   }
   return index < STARTER_COUNT + SUB_COUNT ? "sub" : "reserve";
+}
+
+function squadRoleSortRank(row: Fc25ParsedPlayerRow): number {
+  const role = row.sourceSquadRole?.trim().toUpperCase();
+  if (role === "SUB") {
+    return 1;
+  }
+  if (role === "RES") {
+    return 2;
+  }
+  return 0;
 }
 
 function activateDatasetVersion(db: SqliteDatabase, datasetVersionId: string, nowIso: string): void {

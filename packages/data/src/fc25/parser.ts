@@ -139,8 +139,8 @@ export function parseFc26PlayerRecord(
     alternativePositions,
     age: parseInteger(required(record, "age", sourceLine), "age", sourceLine),
     nationality: required(record, "nationality_name", sourceLine),
-    league: required(record, "league_name", sourceLine),
-    sourceTeam: required(record, "club_name", sourceLine),
+    league: nullableText(record.league_name) ?? "",
+    sourceTeam: nullableText(record.club_name) ?? "",
     preferredFoot: parsePreferredFoot(required(record, "preferred_foot", sourceLine), sourceLine),
     weakFootRating: parseStarRating(required(record, "weak_foot", sourceLine), "weak_foot", sourceLine),
     skillMovesRating: parseStarRating(
@@ -398,7 +398,7 @@ function parseFc26PositionRatings(
 ): Record<string, number> {
   return Object.fromEntries(
     FC26_POSITION_RATING_FIELDS.flatMap((field) => {
-      const rating = nullableRating(record[field], field, sourceLine);
+      const rating = nullablePositionRating(record[field], field, sourceLine);
       return rating === null ? [] : [[field, rating]];
     })
   );
@@ -459,6 +459,18 @@ function parseRating(value: string, field: string, sourceLine: number): number {
 function nullableRating(value: CsvValue, field: string, sourceLine: number): number | null {
   const trimmed = value?.trim() ?? "";
   return trimmed.length === 0 ? null : parseRating(trimmed, field, sourceLine);
+}
+
+function nullablePositionRating(value: CsvValue, field: string, sourceLine: number): number | null {
+  const trimmed = value?.trim() ?? "";
+  if (trimmed.length === 0) {
+    return null;
+  }
+  const match = /^(\d+)/.exec(trimmed);
+  if (!match) {
+    throw new Fc25ParseError(`Invalid ${field} "${value}" on CSV line ${sourceLine}`);
+  }
+  return parseRating(match[1]!, field, sourceLine);
 }
 
 function parseStarRating(value: string, field: string, sourceLine: number): Fc25StarRating {

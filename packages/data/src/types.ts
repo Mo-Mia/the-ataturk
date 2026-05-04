@@ -354,6 +354,7 @@ export interface Fc25ClubDefinition {
   country: string;
   league: string;
   sourceTeam: string;
+  sourceTeamAliases?: readonly string[];
 }
 
 export interface Fc25DatasetVersion {
