@@ -21,9 +21,8 @@ import {
 import type { FastifyInstance } from "fastify";
 
 export const SQUAD_RECONCILIATION_MODEL = "gemini-2.5-pro";
-export const FOOTBALL_DATA_TEAMS: Record<
-  Fc25ClubId,
-  { footballDataTeamId: number; footballDataName: string }
+export const FOOTBALL_DATA_TEAMS: Partial<
+  Record<Fc25ClubId, { footballDataTeamId: number; footballDataName: string }>
 > = {
   arsenal: { footballDataTeamId: 57, footballDataName: "Arsenal FC" },
   "aston-villa": { footballDataTeamId: 58, footballDataName: "Aston Villa FC" },
@@ -211,6 +210,7 @@ export function registerAiRoutes(app: FastifyInstance): void {
     }
 
     try {
+      assertFootballDataMapping(parsed.clubId);
       const localSquad = loadFc25SquadForVerification(parsed.clubId, datasetVersionId);
       const teamResult = await getFootballDataTeam(parsed.clubId);
       const verification = await reconcileSquads({
@@ -235,6 +235,11 @@ export function registerAiRoutes(app: FastifyInstance): void {
 
       if (error instanceof ReconciliationError) {
         reply.code(502).send({ error: error.message });
+        return;
+      }
+
+      if (error instanceof UnsupportedFootballDataClubError) {
+        reply.code(400).send({ error: error.message });
         return;
       }
 
@@ -382,7 +387,7 @@ async function fetchFootballDataTeam(clubId: Fc25ClubId): Promise<FootballDataTe
     throw new Error("FOOTBALL_DATA_API_KEY is required for squad verification");
   }
 
-  const teamId = FOOTBALL_DATA_TEAMS[clubId].footballDataTeamId;
+  const teamId = footballDataTeamIdFor(clubId);
   let response: Response;
   try {
     response = await fetch(`http://api.football-data.org/v4/teams/${teamId}`, {
@@ -1090,6 +1095,24 @@ function isFc25Position(value: unknown): value is Fc25Position {
   );
 }
 
+function assertFootballDataMapping(clubId: Fc25ClubId): void {
+  if (!FOOTBALL_DATA_TEAMS[clubId]) {
+    throw new UnsupportedFootballDataClubError(
+      `Squad verification is not configured for '${clubId}' yet`
+    );
+  }
+}
+
+function footballDataTeamIdFor(clubId: Fc25ClubId): number {
+  const mapping = FOOTBALL_DATA_TEAMS[clubId];
+  if (!mapping) {
+    throw new UnsupportedFootballDataClubError(
+      `Squad verification is not configured for '${clubId}' yet`
+    );
+  }
+  return mapping.footballDataTeamId;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -1157,5 +1180,12 @@ class ReconciliationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "ReconciliationError";
+  }
+}
+
+class UnsupportedFootballDataClubError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UnsupportedFootballDataClubError";
   }
 }

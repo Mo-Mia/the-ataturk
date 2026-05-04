@@ -1,7 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import {
-  FC25_CLUB_IDS,
   createMatchRunId,
   createMatchRuns,
   deleteMatchRun,
@@ -163,7 +162,7 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
   app.get<{ Params: ClubParams; Querystring: SquadQuery }>(
     "/api/match-engine/clubs/:clubId/squad",
     (request, reply) => {
-      if (!isFc25ClubId(request.params.clubId)) {
+      if (!isActiveFc25ClubId(request.params.clubId)) {
         return reply.code(404).send({ error: "Club not found" });
       }
 
@@ -404,8 +403,10 @@ function parseTeamSelection(
     return { error: `${label} must be an object` };
   }
 
-  if (typeof value.clubId !== "string" || !isFc25ClubId(value.clubId)) {
-    return { error: `${label}.clubId must be one of: ${FC25_CLUB_IDS.join(", ")}` };
+  if (typeof value.clubId !== "string" || !isActiveFc25ClubId(value.clubId)) {
+    return {
+      error: `${label}.clubId must be one of active FC dataset clubs: ${activeClubIds().join(", ")}`
+    };
   }
 
   const tactics = parseTactics(value.tactics);
@@ -714,8 +715,12 @@ function isErrorReply(value: unknown): value is ErrorReply {
   return isRecord(value) && typeof value.error === "string";
 }
 
-function isFc25ClubId(value: string): value is Fc25ClubId {
-  return FC25_CLUB_IDS.includes(value as Fc25ClubId);
+function isActiveFc25ClubId(value: string): value is Fc25ClubId {
+  return activeClubIds().includes(value as Fc25ClubId);
+}
+
+function activeClubIds(): Fc25ClubId[] {
+  return listFc25Clubs().map((club) => club.id);
 }
 
 async function filterRunsWithArtifacts(runs: MatchRun[]): Promise<MatchRun[]> {

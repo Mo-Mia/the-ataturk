@@ -89,7 +89,7 @@ describe("AI squad manager routes", () => {
     process.env.GEMINI_API_KEY = "gemini-key";
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({
-        id: FOOTBALL_DATA_TEAMS.liverpool.footballDataTeamId,
+        id: FOOTBALL_DATA_TEAMS.liverpool!.footballDataTeamId,
         name: "Liverpool FC",
         squad: [
           {

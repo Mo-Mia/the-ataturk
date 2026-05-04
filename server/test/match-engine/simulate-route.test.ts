@@ -413,7 +413,7 @@ describe("match-engine simulation routes", () => {
       expect(response.statusCode).toBe(400);
       expect(response.json()).toEqual({
         error:
-          "home.clubId must be one of: arsenal, manchester-city, manchester-united, liverpool, aston-villa"
+          "home.clubId must be one of active FC dataset clubs: arsenal, aston-villa, liverpool, manchester-city, manchester-united"
       });
     } finally {
       await app.close();
