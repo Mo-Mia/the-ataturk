@@ -1,12 +1,18 @@
 # Calibration Reference
 
-Last updated: 2026-05-03 17:55 SAST
+Last updated: 2026-05-04 09:05 SAST
 
 This is the living reference for FootSim calibration. Future sprints that add or
 change calibrated constants should update this document in the same commit.
 
 Phase 8 documents current state only. No constants were tuned while writing this
 reference.
+
+Dataset-version note: the locked Phase 8 calibration baseline and the
+responsiveness figures referenced here were established against the FC25 active
+dataset. FC26 is now the active data version for workbench and Squad Manager
+use, so future FC26 characterisation will produce different numbers. Treat that
+as a new measurement set, not a regression against the FC25 baseline.
 
 ## How To Read This
 

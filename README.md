@@ -41,6 +41,18 @@ To import the tracked five-club FC25 fixture for workbench smoke testing:
 pnpm --filter @the-ataturk/data fc25:import -- --csv data/fc-25/fixtures/male_players_top5pl.csv
 ```
 
+To import the refreshed FC26 SoFIFA export:
+
+```sh
+pnpm --filter @the-ataturk/data fc25:import -- --csv data/fc-25/FC26_20250921.csv --format fc26
+```
+
+The importer defaults to `--format auto`, with `--format fc25` and
+`--format fc26` available as escape hatches when header detection is wrong.
+Imports now keep full club squads by default. Use `--cap <number>` only when a
+deliberately capped fixture is needed; clubs above 35 imported players emit a
+warning but still import.
+
 Squad Manager verification needs these environment variables when calling live
 services:
 
@@ -97,6 +109,7 @@ pnpm typecheck
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — technical decisions
 - [`docs/LORE.md`](docs/LORE.md) — narrative framing
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — append-only decision log
+- [`docs/design/STYLE_GUIDE.md`](docs/design/STYLE_GUIDE.md) — Atatürk visual style guide
 - [`docs/football-data-api-docs/`](docs/football-data-api-docs/) — saved API documentation for the football-data.org integration
 
 ## Senior Architect Review Pointers

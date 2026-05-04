@@ -38,6 +38,12 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
+### Re-run characterisation and responsiveness against FC26 active dataset
+Run characterisation plus real-squad responsiveness against the FC26 active
+dataset, document the new baseline numbers, and decide whether roster drift
+warrants tuning. This is a discrete calibration-validation sprint, not part of
+UAT or commentary work.
+
 ### Use FC26 positional ratings for XI and bench fit
 Use preserved `position_ratings_json` from FC26 imports to improve auto-XI,
 bench ordering, and substitution replacement fit. This should supplement or
@@ -100,8 +106,9 @@ football-data.org daily quota.
 ### Suggestion history per player
 Record which sprint or verification run suggested each player-level correction.
 
-### Squad data management UI with AI-assisted verification
-Squad data management UI with AI-assisted verification. Specific design questions to resolve before scoping: source-of-truth for verification (FC25 ingest vs live), write semantics (new dataset version vs mutation), Gemini API cost shape. Aesthetic direction TBD — possible Atatürk-revival hook.
+### ~~Squad data management UI with AI-assisted verification~~ ✅ Done
+Shipped as Squad Manager in `b2dca25`, `93f5496`, `38d6988`, and `51c000e`.
+See the 2026-05-03 Squad Manager entry in `docs/DECISIONS.md`.
 
 ## Refactor
 
