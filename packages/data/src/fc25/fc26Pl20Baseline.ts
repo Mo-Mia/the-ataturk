@@ -108,6 +108,11 @@ export interface Pl20FixtureMetrics {
   indirectFreeKicks: number;
   penalties: number;
   setPieceGoals: number;
+  saves: number;
+  cornersFromDeflectedShots: number;
+  cornersFromDefensiveClearances: number;
+  cornersFromSavedWide: number;
+  cornersFromBlockedDelivery: number;
 }
 
 export interface Pl20AggregateSummary {
@@ -166,6 +171,11 @@ interface RunMetrics {
   indirectFreeKicks: number;
   penalties: number;
   setPieceGoals: number;
+  saves: number;
+  cornersFromDeflectedShots: number;
+  cornersFromDefensiveClearances: number;
+  cornersFromSavedWide: number;
+  cornersFromBlockedDelivery: number;
   shotComposition: ShotCompositionMetrics;
 }
 
@@ -347,6 +357,8 @@ function metricsFor(seed: number, snapshot: MatchSnapshot): RunMetrics {
   const home = snapshot.finalSummary.statistics.home;
   const away = snapshot.finalSummary.statistics.away;
   const setPieces = snapshot.finalSummary.setPieces;
+  const events = snapshot.ticks.flatMap((tick) => tick.events);
+  const cornerEvents = events.filter((event) => event.type === "corner");
   return {
     seed,
     homeGoals: snapshot.finalSummary.finalScore.home,
@@ -370,6 +382,19 @@ function metricsFor(seed: number, snapshot: MatchSnapshot): RunMetrics {
       (setPieces?.home.indirectFreeKicks ?? 0) + (setPieces?.away.indirectFreeKicks ?? 0),
     penalties: (setPieces?.home.penalties ?? 0) + (setPieces?.away.penalties ?? 0),
     setPieceGoals: (setPieces?.home.setPieceGoals ?? 0) + (setPieces?.away.setPieceGoals ?? 0),
+    saves: events.filter((event) => event.type === "save").length,
+    cornersFromDeflectedShots: cornerEvents.filter(
+      (event) => stringDetail(event, "reason") === "deflected_shot"
+    ).length,
+    cornersFromDefensiveClearances: cornerEvents.filter(
+      (event) => stringDetail(event, "reason") === "defensive_clearance"
+    ).length,
+    cornersFromSavedWide: cornerEvents.filter(
+      (event) => stringDetail(event, "reason") === "saved_wide"
+    ).length,
+    cornersFromBlockedDelivery: cornerEvents.filter(
+      (event) => stringDetail(event, "reason") === "blocked_delivery"
+    ).length,
     shotComposition: shotCompositionFor(snapshot)
   };
 }
@@ -433,7 +458,14 @@ function metricsFrom(
     directFreeKicks: summariser(runs.map((run) => run.directFreeKicks)),
     indirectFreeKicks: summariser(runs.map((run) => run.indirectFreeKicks)),
     penalties: summariser(runs.map((run) => run.penalties)),
-    setPieceGoals: summariser(runs.map((run) => run.setPieceGoals))
+    setPieceGoals: summariser(runs.map((run) => run.setPieceGoals)),
+    saves: summariser(runs.map((run) => run.saves)),
+    cornersFromDeflectedShots: summariser(runs.map((run) => run.cornersFromDeflectedShots)),
+    cornersFromDefensiveClearances: summariser(
+      runs.map((run) => run.cornersFromDefensiveClearances)
+    ),
+    cornersFromSavedWide: summariser(runs.map((run) => run.cornersFromSavedWide)),
+    cornersFromBlockedDelivery: summariser(runs.map((run) => run.cornersFromBlockedDelivery))
   };
 }
 
@@ -462,7 +494,12 @@ function fixtureMetricsFrom(
     directFreeKicks: summarise("directFreeKicks"),
     indirectFreeKicks: summarise("indirectFreeKicks"),
     penalties: summarise("penalties"),
-    setPieceGoals: summarise("setPieceGoals")
+    setPieceGoals: summarise("setPieceGoals"),
+    saves: summarise("saves"),
+    cornersFromDeflectedShots: summarise("cornersFromDeflectedShots"),
+    cornersFromDefensiveClearances: summarise("cornersFromDefensiveClearances"),
+    cornersFromSavedWide: summarise("cornersFromSavedWide"),
+    cornersFromBlockedDelivery: summarise("cornersFromBlockedDelivery")
   };
 }
 

@@ -44,6 +44,13 @@ describe("FC26 PL20 baseline", () => {
       expect(report.synthesis.totalRuns).toBe(2);
       expect(report.sanity.pass).toBe(true);
       expect(report.aggregate.metrics.totalShots).toBeGreaterThanOrEqual(0);
+      expect(report.aggregate.metrics.saves).toBeGreaterThanOrEqual(0);
+      expect(
+        report.aggregate.metrics.cornersFromDeflectedShots +
+          report.aggregate.metrics.cornersFromDefensiveClearances +
+          report.aggregate.metrics.cornersFromSavedWide +
+          report.aggregate.metrics.cornersFromBlockedDelivery
+      ).toBeCloseTo(report.aggregate.metrics.corners);
     } finally {
       testDatabase.cleanup();
     }
