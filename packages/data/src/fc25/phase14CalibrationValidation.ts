@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-import { simulateMatch, type MatchConfigV2, type TeamTactics, type TeamV2 } from "@the-ataturk/match-engine";
+import { simulateMatch, type TeamTactics, type TeamV2 } from "@the-ataturk/match-engine";
 
 import { getDb, type SqliteDatabase } from "../db";
 import { resolveRepoPath } from "../paths";
