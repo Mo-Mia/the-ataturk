@@ -17,10 +17,9 @@ for (const row of report.characterisation) {
   );
 }
 for (const row of report.responsiveness) {
+  const effect = row.deltaPct === null ? "activation" : `${row.deltaPct.toFixed(2)}%`;
   console.log(
-    `${row.name}: ${row.deltaPct.toFixed(2)}% ${row.status} (${row.baselineAverage.toFixed(
-      3
-    )} -> ${row.variantAverage.toFixed(3)})`
+    `${row.name}: ${effect} ${row.status} (${row.baselineAverage.toFixed(3)} -> ${row.variantAverage.toFixed(3)})`
   );
 }
 console.log(

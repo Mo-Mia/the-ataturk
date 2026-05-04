@@ -37,7 +37,6 @@ const EXPECTED_COUNTS: Record<Fc25ClubId, number> = {
 };
 const HOME_CLUB: Fc25ClubId = "liverpool";
 const AWAY_CLUB: Fc25ClubId = "manchester-city";
-const SET_PIECE_AWAY_CLUB: Fc25ClubId = "aston-villa";
 const BASELINE_FORMATION: SupportedFormation = "4-3-3";
 const BASELINE_TACTICS: TeamTactics = {
   formation: BASELINE_FORMATION,
@@ -124,7 +123,7 @@ export interface ResponsivenessRow {
   variantLabel: string;
   baselineAverage: number;
   variantAverage: number;
-  deltaPct: number;
+  deltaPct: number | null;
   standardErrorPct: number;
   thresholdPct: number | null;
   status: "PASS" | "FAIL" | "DIAGNOSTIC";
@@ -323,7 +322,7 @@ export function classifyResponsiveness(rows: ResponsivenessRow[]): Classificatio
       return {
         metric: row.name,
         bucket: 1,
-        fc26Value: row.deltaPct,
+        fc26Value: row.deltaPct ?? row.variantAverage,
         phase8Value: row.phase8DeltaPct,
         rationale: "FC26 responsiveness passes the existing threshold.",
         recommendation: "No action."
@@ -333,7 +332,7 @@ export function classifyResponsiveness(rows: ResponsivenessRow[]): Classificatio
       return {
         metric: row.name,
         bucket: 2,
-        fc26Value: row.deltaPct,
+        fc26Value: row.deltaPct ?? row.variantAverage,
         phase8Value: row.phase8DeltaPct,
         rationale: "Diagnostic-only metric has no current pass/fail gate.",
         recommendation: "Document FC26 baseline; avoid adding a threshold without UAT need."
@@ -342,7 +341,7 @@ export function classifyResponsiveness(rows: ResponsivenessRow[]): Classificatio
     return {
       metric: row.name,
       bucket: 3,
-      fc26Value: row.deltaPct,
+      fc26Value: row.deltaPct ?? row.variantAverage,
       phase8Value: row.phase8DeltaPct,
       rationale: "FC26 responsiveness did not clear the existing threshold.",
       recommendation: `Surface for Mo/SA call; inspect ${row.metric} and related tactic or dynamics path before tuning.`
@@ -642,7 +641,7 @@ function compareScenario(options: {
   const variantValues = variant.map((run) => Number(run[options.metric]));
   const baselineAverage = average(baselineValues);
   const variantAverage = average(variantValues);
-  const deltaPct = percentageChange(variantAverage, baselineAverage);
+  const deltaPct = options.activation ? null : percentageChange(variantAverage, baselineAverage);
   const standardErrorPct = pairedDeltaStandardErrorPct(baselineValues, variantValues);
   const status = options.activation
     ? options.activation(variant)
@@ -651,10 +650,10 @@ function compareScenario(options: {
     : options.thresholdPct === null
       ? "DIAGNOSTIC"
       : options.name === "Fatigue impact"
-        ? deltaPct <= -options.thresholdPct
+        ? deltaPct! <= -options.thresholdPct
           ? "PASS"
           : "FAIL"
-        : Math.abs(deltaPct) >= options.thresholdPct
+        : Math.abs(deltaPct!) >= options.thresholdPct
           ? "PASS"
           : "FAIL";
   return {
