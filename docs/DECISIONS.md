@@ -4,6 +4,30 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-04 — FootSim Phase 15 outcome: modulation saturation diagnosed, alpha probe accepted
+
+Phase 14 A5 landed PL20 shot volume (`22.24` shots/match) but broke
+score-state shot impact (`-1.69%`). Phase 15 diagnosed the failure as
+sum-normalised carrier-action probability compression: `selectCarrierAction`
+samples post-modulation weights by `w_action / totalWeight`, so high baseline
+shoot weights consume modulation headroom even without a hard clamp.
+
+The generality result is important. Saturation applies to sum-normalised carrier
+actions such as shoot, pass, and dribble. Tackle attempts use direct probability
+multiplication by pressure, pressing, urgency, tackling, and stamina, so Phase
+14b foul tuning faces a simpler calibration problem.
+
+One bounded alpha probe was run and accepted: attacking-zone shoot weights were
+set to 85% of A5, `SCORE_STATE.action.shoot` moved `1.28 -> 1.85`, and
+`lateChaseShotIntent` moved `30 -> 42`; `maxUrgency` remains `1.4`. PL20 output:
+`21.35` shots/match and `1.93` goals/match, both in band. Score-state shot
+impact recovered to `+39.33%`, and all non-diagnostic responsiveness thresholds
+passed.
+
+Decision: resumed Phase 14b starts from alpha and proceeds to foul genesis
+tuning. Phase 8 retirement remains deferred until the full Phase 14b baseline is
+locked.
+
 ## 2026-05-04 — FootSim Phase 13.5 outcome: FC26 PL20 runtime ingestion and baseline
 
 Before Phase 14 tuning, the FC26 runtime dataset was broadened from the original

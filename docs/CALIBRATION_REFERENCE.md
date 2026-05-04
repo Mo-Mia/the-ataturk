@@ -1,6 +1,6 @@
 # Calibration Reference
 
-Last updated: 2026-05-04 10:30 SAST
+Last updated: 2026-05-04 17:21 SAST
 
 This is the living reference for FootSim calibration. Future sprints that add or
 change calibrated constants should update this document in the same commit.
@@ -22,6 +22,13 @@ auditable source for 2025/26-to-date and 2024/25 benchmark numbers. Phase 12
 does not yet retire the Phase 8 synthetic bands; it recommends Mo/SA discussion
 because FC26 real-squad shots, fouls, and corners are materially below real-PL
 benchmarks.
+
+Phase 15 modulation-headroom note: carrier actions are sampled by normalised
+post-modulation weight share, `w_action / totalWeight`. High baseline action
+weights can compress responsiveness headroom even without a hard clamp. Future
+action-selection tuning should report headroom for the affected levers before
+locking constants. Tackle attempts are different: they use direct probability
+multiplication and are not affected by carrier-action normalisation.
 
 ## How To Read This
 
@@ -77,7 +84,7 @@ and Ekitiké in. The 1000-seed paired result was `-22.10%`, paired SE `3.91pp`,
 
 | Constant group | Value summary | Location | Controls | Origin | Coverage | Sensitivity |
 | --- | --- | --- | --- | --- | --- | --- |
-| `ACTION_WEIGHTS` | Zone/pressure action matrix for pass, shoot, dribble, hold, clear | `probabilities.ts:39` | Foundational carrier decision rates | inherited | implicit via characterisation and scenario artefacts; Phase 8 adds sensitivity pattern | high |
+| `ACTION_WEIGHTS` | Zone/pressure action matrix for pass, shoot, dribble, hold, clear; alpha att shoot `0.5508/0.7956/1.1628`, mid shoot `0.004/0.012/0.024` | `probabilities.ts:39` | Foundational carrier decision rates | inherited, adjusted Phase 14 A5 / Phase 15 alpha | implicit via characterisation and scenario artefacts; Phase 8 adds sensitivity pattern | high |
 | `WIDE_CARRIER_ACTION_MODIFIERS` | Wide carriers dribble more in midfield/final third | `probabilities.ts:33` | Wide carrying vs static recycling | empirical from UAT Sessions 5-7 | implicit via carry/delivery UAT artefacts and responsiveness | medium |
 | `PASS_TARGET_WEIGHTS` | Wide support, cross/cutback, post-carry delivery/recycle weights | `probabilities.ts:22` | Receiver selection and wide delivery behaviour | empirical from UAT Sessions 4-7 | implicit via UAT artefacts; no focused unit test | high |
 | `TACTIC_MODIFIERS.mentality` | Defensive/balanced/attacking action multipliers | `probabilities.ts:57` | Mentality responsiveness | empirical from responsiveness testing | explicit via real-squad responsiveness | high |
@@ -91,15 +98,15 @@ and Ekitiké in. The 1000-seed paired result was `-22.10%`, paired SE `3.91pp`,
 | `SUCCESS_PROBABILITIES.passByZone` | def `1.02`, mid `0.94`, att `0.86` | `probabilities.ts:184` | Pass completion by pitch zone | inherited | implicit via characterisation; Phase 8 adds sensitivity pattern | high |
 | `pressureModifier` | low `1`, medium `0.9`, high `0.78` | `probabilities.ts:185` | Pressure effect on pass success | inherited | implicit via pressing responsiveness | high |
 | `dribbleBase` / `dribblePressureModifier` | base `0.82`, low/medium/high `0.95/0.75/0.55` | `probabilities.ts:186` | Dribble success | inherited | implicit via chance creation and turnovers | medium |
-| `shotOnTargetByZone` | def `0`, mid `0.32`, att `0.58` | `probabilities.ts:191` | Shot accuracy by zone | inherited | implicit via characterisation | high |
+| `shotOnTargetByZone` | def `0`, mid `0.224`, att `0.406` | `probabilities.ts:191` | Shot accuracy by zone | Phase 14 A5 / Phase 15 alpha | implicit via characterisation | high |
 | `shotPressureModifier` | low `1`, medium `0.86`, high `0.7` | `probabilities.ts:192` | Pressure effect on shot accuracy | inherited | implicit via characterisation | high |
-| `saveBase` | `0.405` | `probabilities.ts:193` | Goalkeeper save probability centre point | empirical Phase 5 | implicit via characterisation | high |
+| `saveBase` | `0.50625` | `probabilities.ts:193` | Goalkeeper save probability centre point | Phase 14 A5 / Phase 15 alpha | implicit via characterisation | high |
 | `tackleAttemptByPressure` | low/medium/high `0.01/0.02/0.034` | `probabilities.ts:194` | Tackle event frequency | inherited | implicit via fouls/cards characterisation | high |
 | `tackleSuccessBase` | `0.62` | `probabilities.ts:198` | Tackle success | inherited | implicit via possession/foul outputs | medium |
 | `foulOnTackleByPressure` | low/medium/high `0.13/0.16/0.21` | `probabilities.ts:199` | Foul frequency | inherited | implicit via characterisation | high |
 | `yellowOnFoul` / `redOnFoul` | `0.25` / `0.012` | `probabilities.ts:203` | Card frequency | empirical from discipline UAT + characterisation | explicit via forced second-yellow artefact, implicit via characterisation | high |
 | `failedPassOutOfPlay` / `clearanceOutOfPlay` | `0.055` / `0.14` | `probabilities.ts:205` | Restart and set-piece volume | empirical Phase 6 | implicit via set-piece baseline | medium |
-| `shotDistance` | close/box/edge/far/speculative thresholds and multipliers | `probabilities.ts:207` | Shot quality and save difficulty by distance | empirical Phases 3/6 | implicit via characterisation; side-switch tests protect direction | high |
+| `shotDistance` | close/box/edge/far/speculative thresholds and multipliers; speculative action weight `0.1968` | `probabilities.ts:207` | Shot quality and save difficulty by distance | empirical Phases 3/6, adjusted Phase 14 A5 | implicit via characterisation; side-switch tests protect direction | high |
 
 ## Weak Foot
 
@@ -136,7 +143,7 @@ and Ekitiké in. The 1000-seed paired result was `-22.10%`, paired SE `3.91pp`,
 | `levelLateBoost` | last30/15/5 `0.03/0.08/0.12` | `probabilities.ts:114` | Late tied-game urgency | intuitive Phase 5 | implicit via responsiveness | medium |
 | `deficitBoost` | one/two/three+ `0.12/0.22/0.3` | `probabilities.ts:119` | Trailing-team urgency | empirical Phase 5/6 | explicit via score-state tests | high |
 | `timeFactor` | early `0.25` to last5 `1.2` | `probabilities.ts:124` | Time weighting for urgency | intuitive Phase 5 | explicit via score-state tests | medium |
-| `action`, `pressing`, `passRisk`, `lateChaseShotIntent` | action multipliers and risk/shot intent | `probabilities.ts:130` | Applies urgency to behaviour | empirical Phase 6 | implicit via score-state shot-impact responsiveness | high |
+| `action`, `pressing`, `passRisk`, `lateChaseShotIntent` | action multipliers and risk/shot intent; shoot action `1.85`, late-chase `42` | `probabilities.ts:130` | Applies urgency to behaviour | empirical Phase 6, alpha adjustment Phase 15 | implicit via score-state shot-impact responsiveness | high |
 
 ## Chance Creation
 

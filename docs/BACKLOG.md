@@ -44,12 +44,23 @@ Squad Manager live verification is still configured only for the original five
 football-data.org team ids. Add mappings and tests before advertising
 verification for the other 15 clubs.
 
-### Phase 14 event-volume tuning sprint
-Use `docs/PHASE_13_INVESTIGATION_FINDINGS.md` and
-`docs/CALIBRATION_BASELINE_FC26_PL20.md` to tune with hypothesis: baseline
-carrier-action shot supply first, foul genesis second, then corner retest/tuning
-if still low relative to the new shot volume. Use paired seeds, the PL20 runtime
-dataset, and protect goals as the primary guardrail.
+### Phase 14b event-volume tuning: foul genesis, then corner retest
+Resume from the Phase 15 alpha configuration documented in
+`docs/PHASE_15_INVESTIGATION_FINDINGS.md`. Shots/goals and score-state
+responsiveness pass, but shots are low-band (`21.35`/match), so foul tuning must
+protect the shot floor. Foul tuning should use direct tackle-attempt/foul
+probabilities first; retest corners after shot and foul volume stabilise.
+
+### ~~Phase 14 Strand A shot-volume tune~~ ✅ Done / paused into Phase 15
+Phase 14 A5 moved shots/goals into band but exposed score-state modulation
+saturation. Phase 15 alpha resolved that saturation and hands Phase 14b a
+passing shot-volume baseline.
+
+### Monitor sum-normalised carrier-action headroom in future tuning
+Phase 15 showed high carrier-action baselines can compress mentality,
+score-state, tempo, or dribble modulation headroom because actions are sampled
+by normalised weight share. Future action-selection tuning should report
+headroom before committing constants.
 
 ### ~~Ingest complete FC26 Premier League dataset before Phase 14~~ ✅ Done
 Phase 13.5 imported all 20 English Premier League clubs from

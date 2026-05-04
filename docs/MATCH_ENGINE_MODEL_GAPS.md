@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-04 11:27 SAST
+Last updated: 2026-05-04 17:21 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -96,6 +96,14 @@ ordinary FC26 play. Fouls are low because emitted challenge volume is low, not
 because card conversion is the first problem. Corners are low in absolute terms
 but plausible relative to current shot volume, so they should be retested after
 shot supply moves.
+
+Phase 15 resolved the first Phase 14 tuning blocker. Phase 14 A5 put PL20
+shots/goals in band but compressed score-state shot impact. The diagnosed
+mechanism is sum-normalised carrier-action selection: high baseline shoot
+weights consume probability-budget headroom. The accepted alpha configuration
+keeps PL20 shots/goals in band (`21.35` shots, `1.93` goals) and restores
+score-state shot impact (`+39.33%`). Fouls and corners remain open Phase 14b
+tuning targets.
 
 FC26 also exposes richer data that is still deliberately unused by the engine:
 `position_ratings_json`, `work_rate`, body data, traits, and tags. These remain
