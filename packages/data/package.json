@@ -25,6 +25,7 @@
     "fc25:import": "tsx src/fc25/importer.ts",
     "fc25:manual-xi-investigation": "tsx src/fc25/manualXiImpactInvestigationCli.ts",
     "fc25:phase13-event-volume": "tsx src/fc25/phase13EventVolumeDiagnosticsCli.ts",
+    "fc25:phase14-validation": "tsx src/fc25/phase14CalibrationValidationCli.ts",
     "fc25:phase8-baseline": "tsx src/fc25/phase8BaselineVerifier.ts",
     "fc25:responsiveness": "tsx src/fc25/realSquadResponsivenessCli.ts",
     "migrate": "tsx src/migrate.ts",
