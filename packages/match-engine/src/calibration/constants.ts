@@ -14,10 +14,10 @@ export const GOAL_CELEBRATION_TICKS = 4;
 export const MAX_PLAYER_DELTA_PER_TICK = 60;
 
 export const CALIBRATION_TARGETS: CalibrationTargets = {
-  shotsTarget: [8, 12],
-  goalsTarget: [1, 3],
-  foulsTarget: [4, 8],
-  cardsTarget: [1, 3],
+  shotsTarget: [9.7, 15.1],
+  goalsTarget: [0.58, 2.17],
+  foulsTarget: [8.3, 13.3],
+  cardsTarget: [0.915, 2.935],
   maxSingleScoreShare: 0.4
 };
 
