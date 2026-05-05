@@ -4,6 +4,37 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-05 — FootSim Squad Manager Apply: low-risk only
+
+The Squad Manager has had review-only triage capability since the 2026-05-05
+PL20 expansion. Across three sampled clubs, triage captured 118 suggestions
+(70 low, 12 medium, 36 high). Low-risk suggestions are dominated by nationality
+corrections; medium-risk includes position changes, and high-risk includes
+academy player additions and removals.
+
+This sprint adds the apply mechanism for low-risk suggestions only. Apply
+produces a new FC25 dataset version per applied batch, preserving the
+dataset-versioning pattern. Source versions are never mutated. Audit metadata
+on the new version records source version, club, applied suggestion payloads,
+payload hash, actor, and timestamp.
+
+Risk-class enforcement is server-side. Even if UI code submits medium/high
+payloads to the low-risk route, the server rejects the request atomically. The
+old public `POST /api/ai/apply-suggestions` route was replaced after inventory
+found no non-UI local callers; the safe path is now
+`POST /api/admin/squad-manager/apply`.
+
+Validation case: Liverpool's 22 low-risk suggestions from the 2026-05-05
+triage sample were applied from source
+`fc25-20260504102445-4399cb2b-a504ee92`, creating inactive version
+`fc25-squad-manager-low-20260505114745-8c8ac582`. That version was then
+explicitly activated, and a Sim Runner spot-check confirmed deterministic
+loading and output.
+
+Out of scope and tracked in BACKLOG: medium-risk apply after formation work,
+high-risk additions/removals, cross-club batch apply, diff visualisation,
+cherry-pick rollback, and apply history.
+
 ## 2026-05-05 — FootSim PL20 Admin Expansion: Squad Manager mapped for all clubs
 
 Squad Manager football-data.org verification now covers all 20 active FC26

@@ -142,13 +142,16 @@ Stable page and entity selectors:
 | --- | --- | --- |
 | Page | `[data-uat="squad-manager-page"]` | `data-state` |
 | Dataset select | `[data-uat="squad-manager-dataset-select"]` | selected dataset version id |
+| Activate selected dataset | button text `Activate selected` | disabled when selected version is already active |
 | Home club select | `[data-uat="squad-manager-home-club-select"]` | selected club id |
 | Away club select | `[data-uat="squad-manager-away-club-select"]` | selected club id |
 | Focused club select | `[data-uat="squad-manager-focused-club-select"]` | selected club id |
 | Football-data status | `[data-uat="squad-manager-football-data-status"]` | `data-club-id`, `data-football-data-state`, `data-football-data-team-id`, `data-football-data-name` |
 | Review mode toggle | `[data-uat="squad-manager-review-mode-toggle"]` | checked state; review mode defaults on |
-| Apply button | `[data-uat="squad-manager-apply-button"]` | `data-review-mode`, `data-apply-available`; disabled while review mode is on |
+| Apply button | `[data-uat="squad-manager-apply-button"][data-risk-level]` | `data-review-mode`, `data-apply-available`; disabled while review mode is on |
 | Apply guard | `[data-uat="squad-manager-apply-guard"]` | `data-review-mode`, `data-apply-available` |
+| Apply confirmation modal | `[data-uat="squad-manager-apply-confirmation-modal"]` | present after clicking low-risk apply |
+| Apply result | `[data-uat="squad-manager-apply-result"]` | `data-state="success"|"error"` and `data-new-dataset-version-id` on success |
 | Board | `[data-uat="squad-manager-board"]` | contains squad lists and verification panel |
 | Squad list | `[data-uat="squad-manager-squad-list"]` | child player rows |
 | Squad player | `[data-uat="squad-manager-player"]` | `data-player-id`, `data-display-name`, `data-source-name`, `data-source-short-name` |
@@ -156,9 +159,11 @@ Stable page and entity selectors:
 Squad Manager shows friendly display names while preserving full source names
 as tooltips and data attributes for audit. Every active FC26 PL20 club now
 exposes a mapped football-data.org team id/name through the status row.
-Apply controls are guarded by default for review-only triage; UAT agents may
-verify, inspect, select, and clear suggestions without mutating the active
-dataset.
+Apply controls are guarded by default. Low-risk apply becomes available only
+after review mode is switched off and at least one low-risk suggestion is
+selected. Medium- and high-risk apply buttons remain visible but disabled for
+this sprint. UAT agents may verify, inspect, select, and clear suggestions
+without mutating the active dataset.
 
 ## Recommended UAT Flow
 

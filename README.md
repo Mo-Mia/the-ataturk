@@ -92,7 +92,8 @@ pnpm typecheck
 - `GET /api/ai/squad-manager/context`
 - `GET /api/ai/squad-manager/squad`
 - `POST /api/ai/verify-squad`
-- `POST /api/ai/apply-suggestions`
+- `POST /api/admin/squad-manager/apply`
+- `POST /api/admin/squad-manager/dataset-versions/:id/activate`
 - `POST /api/match/run` — SSE stream of second-half match ticks (`?speed=fast` for dev)
 - `GET /api/visualiser/artifacts`
 - `GET /api/visualiser/artifacts/:filename`

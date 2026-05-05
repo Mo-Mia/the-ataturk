@@ -77,6 +77,29 @@ verified the active FC26 PL20 dataset live through Squad Manager. Follow-up
 work should treat the generated suggestions as review material, not as already
 accepted data changes.
 
+### ~~Squad Manager low-risk apply mechanism~~ ✅ Done
+Low-risk `player_update` suggestions can now be applied per club into a new
+inactive FC25 dataset version with audit metadata. Activation remains explicit
+through the Squad Manager dataset selector. Liverpool's 22 low-risk suggestions
+from the 2026-05-05 triage sample validated the path.
+
+### Medium-risk Squad Manager apply path
+Apply position-change suggestions after formation-aware XI selection lands.
+Position changes are currently review-only because they become runtime-meaningful
+once the engine consumes formation-specific positions more deeply.
+
+### High-risk Squad Manager apply: player additions
+Design rating synthesis for academy/youth players that exist in football-data.org
+but not in the FC26 source CSV, then add an apply path for additions.
+
+### High-risk Squad Manager apply: player removals
+Design replay-history compatibility for snapshots and run artefacts that
+reference removed player ids, then add an apply path for removals.
+
+### Cross-club Squad Manager batch apply
+Apply suggestions for multiple clubs in one audited transaction once per-club
+low-risk apply has enough operating history.
+
 ### Future fidelity sprint: aerial-duel/header corner vocabulary
 Phase 17 closed the active corner-volume band without aerial-specific events.
 Future fidelity work can add defensive headers behind, aerial-duel deflections,
@@ -195,9 +218,26 @@ when Mo wants a fresh live-squad pull before the 24h TTL expires.
 Show player additions, removals, and attribute/profile changes between two FC25
 dataset versions before activating or after applying Squad Manager suggestions.
 
-### Suggestion rollback / version revert flow
-Add a safe admin action to reactivate a previous FC25 dataset version after an
-accepted Squad Manager apply created an unwanted active version.
+### ~~Dataset-version rollback through Squad Manager activation~~ ✅ Done
+Squad Manager can explicitly activate FC25 dataset versions, including versions
+created by low-risk apply. Re-activating an earlier FC25 version is the current
+rollback mechanism.
+
+### Cherry-pick rollback for applied suggestions
+Revert specific applied suggestions without rolling back the entire FC25 dataset
+version.
+
+### Apply history audit view
+Add a global UI view showing which Squad Manager suggestions were applied,
+when, by which actor, and into which dataset version.
+
+### Per-suggestion edit in apply confirmation
+Allow a suggestion payload to be adjusted before apply, instead of the current
+apply-as-is or reject choice.
+
+### Suggestion lifecycle automation
+Periodically re-triage against football-data.org and suppress suggestions that
+are already represented by an applied dataset version.
 
 ### Calibration revalidation harness for new dataset versions
 Run characterisation against a newly active FC25 dataset version and compare the

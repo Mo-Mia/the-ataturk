@@ -2,6 +2,11 @@
 
 Mode: review-only. No suggestions were applied and no dataset version was activated.
 
+Follow-up apply sprint note: Liverpool's 22 low-risk suggestions from this
+snapshot were applied later on 2026-05-05 via the low-risk-only apply mechanism,
+creating `fc25-squad-manager-low-20260505114745-8c8ac582`. This triage report
+remains the immutable review-only evidence for the original sample run.
+
 ## Dataset Mutation Check
 
 - Active before: fc25-20260504102445-4399cb2b-a504ee92
@@ -153,4 +158,3 @@ Mode: review-only. No suggestions were applied and no dataset version was activa
 - low / suggestions / player_update: update 239301 [nationality]
 - low / suggestions / player_update: update 238041 [name, nationality]
 - low / suggestions / player_update: update 77354 [name, nationality]
-
