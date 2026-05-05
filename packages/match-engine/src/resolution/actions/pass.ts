@@ -66,13 +66,18 @@ function blockedDeliveryCanBecomeCorner(
   carrier: MutablePlayer,
   context: ReturnType<typeof passContext>
 ): boolean {
-  if (!state.dynamics.setPieces || (context.passType !== "cross" && context.passType !== "cutback")) {
+  if (
+    !state.dynamics.setPieces ||
+    (context.passType !== "cross" && context.passType !== "cutback")
+  ) {
     return false;
   }
   if (zoneForState(state, carrier.teamId, carrier.position) !== "att") {
     return false;
   }
-  return state.rng.next() <= SET_PIECES.blockedDeliveryCornerByPressure[state.possession.pressureLevel];
+  return (
+    state.rng.next() <= SET_PIECES.blockedDeliveryCornerByPressure[state.possession.pressureLevel]
+  );
 }
 
 function selectPassTarget(state: MutableMatchState, carrier: MutablePlayer): MutablePlayer | null {

@@ -92,15 +92,19 @@ describe("carrier action selection", () => {
 
       performPass(state, carrier);
 
-      expect(
-        state.eventsThisTick.find((event) => event.type === "pass")?.detail
-      ).toMatchObject({ complete: false, passType: "cross" });
-      expect(
-        state.eventsThisTick.find((event) => event.type === "corner")?.detail
-      ).toMatchObject({ reason: "blocked_delivery", previousPossessor: carrier.id });
+      expect(state.eventsThisTick.find((event) => event.type === "pass")?.detail).toMatchObject({
+        complete: false,
+        passType: "cross"
+      });
+      expect(state.eventsThisTick.find((event) => event.type === "corner")?.detail).toMatchObject({
+        reason: "blocked_delivery",
+        previousPossessor: carrier.id
+      });
       expect(
         state.eventsThisTick.find((event) => event.type === "possession_change")?.detail
-      ).toEqual(expect.objectContaining({ cause: "restart_corner", previousPossessor: carrier.id }));
+      ).toEqual(
+        expect.objectContaining({ cause: "restart_corner", previousPossessor: carrier.id })
+      );
       expect(state.pendingSetPiece?.type).toBe("corner");
     } finally {
       SET_PIECES.blockedDeliveryCornerByPressure.low = original.low;
@@ -511,9 +515,10 @@ describe("carrier action selection", () => {
       performShot(state, shooter);
 
       expect(state.eventsThisTick.some((event) => event.type === "save")).toBe(true);
-      expect(
-        state.eventsThisTick.find((event) => event.type === "corner")?.detail
-      ).toMatchObject({ reason: "saved_wide", previousPossessor: keeper.id });
+      expect(state.eventsThisTick.find((event) => event.type === "corner")?.detail).toMatchObject({
+        reason: "saved_wide",
+        previousPossessor: keeper.id
+      });
       expect(
         state.eventsThisTick.find((event) => event.type === "possession_change")?.detail
       ).toEqual(expect.objectContaining({ cause: "restart_corner", previousPossessor: keeper.id }));

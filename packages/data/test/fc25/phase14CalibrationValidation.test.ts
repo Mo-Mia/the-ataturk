@@ -42,6 +42,13 @@ function metrics(overrides: Partial<Pl20FixtureMetrics> = {}): Pl20FixtureMetric
     indirectFreeKicks: 20,
     penalties: 0.2,
     setPieceGoals: 0.3,
+    saves: 2,
+    cornersFromDeflectedShots: 3,
+    cornersFromDefensiveClearances: 4,
+    cornersFromSavedWide: 1,
+    cornersFromBlockedDelivery: 2,
+    wideDeliveryPasses: 12,
+    failedWideDeliveryPasses: 5,
     ...overrides
   };
 }
