@@ -69,7 +69,11 @@ export function AdminSquadManagerPage() {
     onSuccess: (result) => {
       setVerification(result);
       setAcceptedIds(
-        new Set(allSuggestionsFrom(result).filter(isLowRisk).map((item) => item.suggestionId))
+        new Set(
+          allSuggestionsFrom(result)
+            .filter(isLowRisk)
+            .map((item) => item.suggestionId)
+        )
       );
       setInspectedSuggestion(null);
       setApplyResult(null);
@@ -359,18 +363,14 @@ export function AdminSquadManagerPage() {
       {applyResult ? (
         <p
           className={
-            applyResult.state === "success"
-              ? "squad-manager__apply-result"
-              : "squad-manager-error"
+            applyResult.state === "success" ? "squad-manager__apply-result" : "squad-manager-error"
           }
           data-uat="squad-manager-apply-result"
           data-state={applyResult.state}
           data-new-dataset-version-id={applyResult.newDatasetVersionId ?? ""}
         >
           {applyResult.message}{" "}
-          {applyResult.state === "success" ? (
-            <a href="/">View dashboard active dataset</a>
-          ) : null}
+          {applyResult.state === "success" ? <a href="/">View dashboard active dataset</a> : null}
         </p>
       ) : null}
 

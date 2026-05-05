@@ -4,6 +4,34 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-05 — FootSim UAT Research Agent: disposable by default
+
+The workbench now has an automated UAT capability via `pnpm uat:research`. The
+runner re-imports the PL20 FC26 CSV into a disposable temp database on every
+run, starts local Fastify/Vite instances on ephemeral ports, drives Playwright
+through dashboard, run, replay, compare, batch, and Squad Manager workflows,
+and writes evidence under `docs/UAT_REPORTS`.
+
+Evidence JSON is the auditable source of truth. The deterministic Markdown
+report is generated locally from that evidence, and Gemini interpretation is an
+optional second layer. Gemini context is bounded to the evidence JSON, scenario
+expectations, and calibration anchors; it has no repository access and no
+hidden state. `--no-ai` keeps the workflow Gemini-independent.
+
+Tactical contrast assertions are direction-only: same teams and same seed,
+change pressing/tempo, then assert the expected direction. Magnitude is retained
+as context, not a brittle threshold. The default batch size is 50; small local
+debug runs can use `--batch-size`.
+
+Squad Manager UAT uses a fixture by default but still exercises the full UI
+path: verify, triage, review-mode guard, review-mode-off, low-risk apply,
+audit capture, and explicit activation of the new disposable dataset version.
+Live external verification is opt-in via `--live-admin`.
+
+Reports and screenshots are committed under `docs/UAT_REPORTS` for v1. This is
+a deliberate reviewability trade-off and a future repo-growth vector; archiving
+or off-repo report storage is tracked in BACKLOG.
+
 ## 2026-05-05 — FootSim Squad Manager Apply: low-risk only
 
 The Squad Manager has had review-only triage capability since the 2026-05-05

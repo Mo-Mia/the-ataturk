@@ -285,8 +285,12 @@ function validateApplyInput(
   }
 }
 
-function normaliseLowRiskSuggestions(suggestions: SquadManagerSuggestion[]): SquadManagerSuggestion[] {
-  return [...suggestions].sort((left, right) => left.suggestionId.localeCompare(right.suggestionId));
+function normaliseLowRiskSuggestions(
+  suggestions: SquadManagerSuggestion[]
+): SquadManagerSuggestion[] {
+  return [...suggestions].sort((left, right) =>
+    left.suggestionId.localeCompare(right.suggestionId)
+  );
 }
 
 function validateLowRiskChanges(suggestion: LowRiskPlayerUpdate): void {
@@ -462,13 +466,15 @@ function applyPlayerUpdate(
   }
 
   params.push(nowIso, datasetVersionId, suggestion.playerId);
-  const result = db.prepare(
-    `
+  const result = db
+    .prepare(
+      `
       UPDATE fc25_players
       SET ${changes.join(", ")}, updated_at = ?
       WHERE dataset_version_id = ? AND id = ?
     `
-  ).run(...params);
+    )
+    .run(...params);
 
   if (result.changes !== 1) {
     throw new Error(`Player '${suggestion.playerId}' does not exist in '${datasetVersionId}'`);
@@ -481,9 +487,10 @@ function sourceShortNameFor(
   playerId: string
 ): string | null {
   const row = db
-    .prepare<[string, string], PlayerNameRow>(
-      "SELECT source_short_name FROM fc25_players WHERE dataset_version_id = ? AND id = ?"
-    )
+    .prepare<
+      [string, string],
+      PlayerNameRow
+    >("SELECT source_short_name FROM fc25_players WHERE dataset_version_id = ? AND id = ?")
     .get(datasetVersionId, playerId);
   return row?.source_short_name ?? null;
 }
@@ -493,9 +500,10 @@ function findExistingAppliedVersion(
   payloadHash: string
 ): { version: Fc25DatasetVersion; audit: SquadManagerApplyAudit } | null {
   const rows = db
-    .prepare<[], DatasetVersionRow>(
-      "SELECT * FROM fc25_dataset_versions ORDER BY created_at DESC, id"
-    )
+    .prepare<
+      [],
+      DatasetVersionRow
+    >("SELECT * FROM fc25_dataset_versions ORDER BY created_at DESC, id")
     .all();
 
   for (const row of rows) {

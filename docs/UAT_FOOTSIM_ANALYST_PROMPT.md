@@ -1,6 +1,6 @@
 # FootSim UAT Analyst Prompt
 
-> Paste this entire document into Gemini AI Studio as the system prompt when uploading a UAT recording. The phase-specific session script (e.g. `docs/UAT_FOOTSIM_PHASE_3.md`) lives alongside this file and tells the recorder what session to perform.
+> Paste this entire document into Gemini AI Studio as the system prompt when uploading a UAT recording. The automated UAT runner in `docs/UAT_RESEARCH_AGENT.md` uses the same evaluation framing but sends Gemini bounded structured evidence rather than repo access or hidden state.
 
 ---
 
@@ -55,7 +55,7 @@ issues wastes triage time:
 - **No extra time or penalties.** Matches end at 90:00 regardless of score.
 - **No in-match tactical changes.** Tactics are locked at kickoff.
 - **Only four formations supported.** 4-4-2, 4-3-1-2, 4-3-3, 4-2-3-1.
-- **Squad Manager live verification is mapped for only five Premier League clubs.** Match simulation uses the active FC26 PL20 runtime dataset, but football-data.org verification remains mapped to Arsenal, Manchester City, Manchester United, Liverpool, and Aston Villa.
+- **Squad Manager apply remains low-risk only.** Live verification is mapped for all 20 Premier League clubs, but only low-risk metadata updates are currently applicable. Medium-risk position changes and high-risk additions/removals remain review-only.
 - **No commentary.** Match output is stats and replay only.
 - **No live substitutions during replay.** Scheduled substitutions and AI Auto Subs exist, but live in-replay substitution control is deferred.
 - **No manual bench editor.** Manual starting XIs exist; bench selection is automatic.

@@ -97,7 +97,11 @@ export function NavigationStrip() {
 
   return (
     <header className="workbench-nav-shell" data-uat="workbench-navigation-shell">
-      <nav className="workbench-nav" aria-label="Workbench navigation" data-uat="workbench-navigation">
+      <nav
+        className="workbench-nav"
+        aria-label="Workbench navigation"
+        data-uat="workbench-navigation"
+      >
         <div className="workbench-nav__links">
           {NAV_ITEMS.map((item) =>
             item.id === "nav-link-compare" && compareDisabled ? (

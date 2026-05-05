@@ -77,14 +77,13 @@ describe("AdminSquadManagerPage", () => {
     await screen.findByText("Add New Forward");
     fireEvent.click(screen.getByLabelText("Review mode"));
     fireEvent.click(screen.getByRole("button", { name: "Apply low" }));
-    expect(screen.getByText(/will create a new inactive dataset version from fc25-base/)).not.toBeNull();
+    expect(
+      screen.getByText(/will create a new inactive dataset version from fc25-base/)
+    ).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
 
     await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/admin/squad-manager/apply",
-        expect.any(Object)
-      )
+      expect(fetchMock).toHaveBeenCalledWith("/api/admin/squad-manager/apply", expect.any(Object))
     );
     expect(await screen.findByText(/Created inactive dataset version fc25-next/)).not.toBeNull();
   });

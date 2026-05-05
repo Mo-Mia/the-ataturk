@@ -32,7 +32,9 @@ describe("DashboardPage", () => {
       within(datasetWidget).getByRole("link", { name: "Open Squad Manager" }).getAttribute("href")
     ).toBe("/admin/squad-manager");
     expect(
-      screen.getAllByRole("link", { name: /liverpool 2-1 manchester-city/ })[0]?.getAttribute("href")
+      screen
+        .getAllByRole("link", { name: /liverpool 2-1 manchester-city/ })[0]
+        ?.getAttribute("href")
     ).toBe("/visualise?artifact=artifact-1.json");
     expect(screen.getByRole("link", { name: "Open Batch" }).getAttribute("href")).toBe(
       "/visualise/batch/batch-1"
@@ -54,9 +56,11 @@ describe("DashboardPage", () => {
 
     renderDashboard();
 
-    const recentRun = (await screen.findAllByRole("link", {
-      name: /liverpool 2-1 manchester-city/
-    }))[0]!;
+    const recentRun = (
+      await screen.findAllByRole("link", {
+        name: /liverpool 2-1 manchester-city/
+      })
+    )[0]!;
     fireEvent.click(recentRun);
 
     expect(await screen.findByText("Replay opened")).toBeTruthy();
@@ -93,7 +97,9 @@ function mockDashboardFetch(options: { mode: "populated" | "empty" }) {
     const url = requestUrl(input);
     if (url === "/api/ai/squad-manager/context") {
       if (options.mode === "empty") {
-        return Promise.resolve(jsonResponse({ activeVersion: null, datasetVersions: [], clubs: [] }));
+        return Promise.resolve(
+          jsonResponse({ activeVersion: null, datasetVersions: [], clubs: [] })
+        );
       }
       return Promise.resolve(
         jsonResponse({
@@ -119,16 +125,20 @@ function mockDashboardFetch(options: { mode: "populated" | "empty" }) {
       const params = new URLSearchParams(url.split("?")[1]);
       return Promise.resolve(
         jsonResponse({
-          squad: params.get("clubId") === "liverpool" ? [{ id: "p1" }, { id: "p2" }] : [{ id: "p3" }]
+          squad:
+            params.get("clubId") === "liverpool" ? [{ id: "p1" }, { id: "p2" }] : [{ id: "p3" }]
         })
       );
     }
     if (url === "/api/match-engine/runs?page=1&limit=10") {
-      const runs = options.mode === "empty" ? [] : [run("run-1", 10, "batch-1"), run("run-2", 11, null)];
+      const runs =
+        options.mode === "empty" ? [] : [run("run-1", 10, "batch-1"), run("run-2", 11, null)];
       return Promise.resolve(jsonResponse({ runs, total: runs.length, page: 1, hasMore: false }));
     }
     if (url === "/api/match-engine/batches/batch-1/runs") {
-      return Promise.resolve(jsonResponse({ runs: [run("run-1", 10, "batch-1"), run("run-3", 12, "batch-1")] }));
+      return Promise.resolve(
+        jsonResponse({ runs: [run("run-1", 10, "batch-1"), run("run-3", 12, "batch-1")] })
+      );
     }
     if (url === "/api/health") {
       return Promise.resolve(jsonResponse({ status: "ok", timestamp: "2026-05-05T08:36:00.000Z" }));

@@ -222,7 +222,9 @@ function flattenSuggestions(
   ];
 }
 
-function riskCountsFor(suggestions: TriageSuggestionRecord[]): Record<SuggestionRiskBucket, number> {
+function riskCountsFor(
+  suggestions: TriageSuggestionRecord[]
+): Record<SuggestionRiskBucket, number> {
   const counts = emptyRiskCounts();
   for (const suggestion of suggestions) {
     counts[suggestion.risk] += 1;

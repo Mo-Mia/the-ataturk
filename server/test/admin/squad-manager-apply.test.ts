@@ -223,17 +223,23 @@ function createFc26Pl20ServerDatabase(prefix: string): TestDatabase {
 
 function firstLiverpoolPlayerId(db: ReturnType<typeof getDb>): string {
   return db
-    .prepare<[], { player_id: string }>(
-      "SELECT player_id FROM fc25_squads WHERE dataset_version_id = 'fc26-pl20-base' AND club_id = 'liverpool' ORDER BY sort_order LIMIT 1"
-    )
+    .prepare<
+      [],
+      { player_id: string }
+    >("SELECT player_id FROM fc25_squads WHERE dataset_version_id = 'fc26-pl20-base' AND club_id = 'liverpool' ORDER BY sort_order LIMIT 1")
     .get()!.player_id;
 }
 
-function nationalityFor(db: ReturnType<typeof getDb>, datasetVersionId: string, playerId: string): string {
+function nationalityFor(
+  db: ReturnType<typeof getDb>,
+  datasetVersionId: string,
+  playerId: string
+): string {
   return db
-    .prepare<[string, string], { nationality: string }>(
-      "SELECT nationality FROM fc25_players WHERE dataset_version_id = ? AND id = ?"
-    )
+    .prepare<
+      [string, string],
+      { nationality: string }
+    >("SELECT nationality FROM fc25_players WHERE dataset_version_id = ? AND id = ?")
     .get(datasetVersionId, playerId)!.nationality;
 }
 

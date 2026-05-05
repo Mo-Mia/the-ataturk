@@ -58,8 +58,8 @@ export function DashboardPage() {
           <p className="eyebrow">FootSim Workbench</p>
           <h1>Dashboard</h1>
           <p className="dashboard-note">
-            Read-only status for the active runtime dataset, recent simulations, calibration
-            anchor, and server health.
+            Read-only status for the active runtime dataset, recent simulations, calibration anchor,
+            and server health.
           </p>
         </div>
       </header>
@@ -80,11 +80,7 @@ export function DashboardPage() {
   );
 }
 
-function ActiveDatasetWidget({
-  dataset
-}: {
-  dataset: ReturnType<typeof useActiveDataset>;
-}) {
+function ActiveDatasetWidget({ dataset }: { dataset: ReturnType<typeof useActiveDataset> }) {
   const version = dataset.context?.activeVersion ?? null;
   const clubs = dataset.context?.clubs ?? [];
   const playerLabel = dataset.playerCount === null ? "Unavailable" : String(dataset.playerCount);
@@ -177,8 +173,7 @@ function RecentRunsWidget({ state, runs }: { state: LoadState; runs: PersistedMa
               data-artifact-id={run.artefactId}
             >
               <strong>
-                {run.homeClubId} {run.summary.score.home}-{run.summary.score.away}{" "}
-                {run.awayClubId}
+                {run.homeClubId} {run.summary.score.home}-{run.summary.score.away} {run.awayClubId}
               </strong>
               <span>Seed {run.seed}</span>
               <span>{formatDate(run.createdAt)}</span>
@@ -215,13 +210,18 @@ function LatestBatchWidget({
       <div className="dashboard-card__header">
         <h2>Latest Batch</h2>
         {batchId ? (
-          <Link className="dashboard-card__link" to={`/visualise/batch/${encodeURIComponent(batchId)}`}>
+          <Link
+            className="dashboard-card__link"
+            to={`/visualise/batch/${encodeURIComponent(batchId)}`}
+          >
             Open Batch
           </Link>
         ) : null}
       </div>
       {state === "loading" ? <p className="dashboard-muted">Loading batch...</p> : null}
-      {state === "error" ? <p className="error">{error ?? "Could not load latest batch."}</p> : null}
+      {state === "error" ? (
+        <p className="error">{error ?? "Could not load latest batch."}</p>
+      ) : null}
       {state === "empty" ? <p className="dashboard-empty">No recent batches.</p> : null}
       {summary ? (
         <dl className="dashboard-definition-list">
@@ -470,7 +470,10 @@ function useRecentRuns() {
 }
 
 function useLatestBatch(recentRuns: PersistedMatchRun[]) {
-  const batchId = useMemo(() => recentRuns.find((run) => run.batchId)?.batchId ?? null, [recentRuns]);
+  const batchId = useMemo(
+    () => recentRuns.find((run) => run.batchId)?.batchId ?? null,
+    [recentRuns]
+  );
   const [loadedBatchId, setLoadedBatchId] = useState<string | null>(null);
   const [state, setState] = useState<LoadState>("loading");
   const [runs, setRuns] = useState<PersistedMatchRun[]>([]);
@@ -490,7 +493,9 @@ function useLatestBatch(recentRuns: PersistedMatchRun[]) {
       setLoadedBatchId(batchId);
       setState("loading");
       try {
-        const response = await fetch(`/api/match-engine/batches/${encodeURIComponent(batchId)}/runs`);
+        const response = await fetch(
+          `/api/match-engine/batches/${encodeURIComponent(batchId)}/runs`
+        );
         if (!response.ok) {
           throw new Error(`Batch request failed with ${response.status}`);
         }

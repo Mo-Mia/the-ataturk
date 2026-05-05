@@ -133,7 +133,8 @@ describe("AI squad manager routes", () => {
     process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
     process.env.GEMINI_API_KEY = "gemini-key";
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const teamId = Number.parseInt(String(input).split("/").at(-1) ?? "", 10);
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const teamId = Number.parseInt(url.split("/").at(-1) ?? "", 10);
       const mapping = Object.values(FOOTBALL_DATA_TEAMS).find(
         (candidate) => candidate.footballDataTeamId === teamId
       );
@@ -180,7 +181,7 @@ describe("AI squad manager routes", () => {
     process.env.GEMINI_API_KEY = "gemini-key";
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
       jsonResponse({
-        id: FOOTBALL_DATA_TEAMS.liverpool!.footballDataTeamId,
+        id: FOOTBALL_DATA_TEAMS.liverpool.footballDataTeamId,
         name: "Liverpool FC",
         squad: [
           {
@@ -239,7 +240,6 @@ describe("AI squad manager routes", () => {
       });
       expect(cached.json<VerifySquadTestResponse>().cacheStatus).toBe("hit");
       expect(fetchMock).toHaveBeenCalledTimes(1);
-
     } finally {
       await app.close();
     }
@@ -546,7 +546,6 @@ describe("AI squad manager routes", () => {
       await app.close();
     }
   });
-
 });
 
 describe("football-data.org sliding-window rate gate", () => {

@@ -19,7 +19,9 @@ describe("ApplyDialog", () => {
       />
     );
 
-    expect(screen.getByText(/will create a new inactive dataset version from fc25-base/)).not.toBeNull();
+    expect(
+      screen.getByText(/will create a new inactive dataset version from fc25-base/)
+    ).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(onConfirm).toHaveBeenCalled();
   });

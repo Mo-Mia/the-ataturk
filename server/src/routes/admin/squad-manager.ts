@@ -29,29 +29,26 @@ interface ApplyBody {
 }
 
 export function registerSquadManagerAdminRoutes(app: FastifyInstance): void {
-  app.post<{ Body: unknown }>(
-    "/api/admin/squad-manager/apply",
-    (request, reply) => {
-      const parsed = parseApplyBody(request.body);
-      if ("error" in parsed) {
-        reply.code(400).send(parsed);
-        return;
-      }
-
-      try {
-        reply.send(
-          applyLowRiskSquadManagerSuggestions({
-            ...parsed,
-            actor: "squad-manager-ui"
-          })
-        );
-      } catch (error) {
-        reply.code(error instanceof SquadManagerApplyConflictError ? 409 : 400).send({
-          error: errorMessage(error)
-        });
-      }
+  app.post<{ Body: unknown }>("/api/admin/squad-manager/apply", (request, reply) => {
+    const parsed = parseApplyBody(request.body);
+    if ("error" in parsed) {
+      reply.code(400).send(parsed);
+      return;
     }
-  );
+
+    try {
+      reply.send(
+        applyLowRiskSquadManagerSuggestions({
+          ...parsed,
+          actor: "squad-manager-ui"
+        })
+      );
+    } catch (error) {
+      reply.code(error instanceof SquadManagerApplyConflictError ? 409 : 400).send({
+        error: errorMessage(error)
+      });
+    }
+  });
 
   app.post<{ Params: ActivateParams }>(
     "/api/admin/squad-manager/dataset-versions/:id/activate",
@@ -69,7 +66,9 @@ function parseApplyBody(body: unknown): ApplyBody | ErrorReply {
   if (!isRecord(body)) {
     return { error: "Request body must be an object" };
   }
-  if (!hasOnlyFields(body, ["clubId", "datasetVersionId", "riskLevel", "suggestions", "verifyFresh"])) {
+  if (
+    !hasOnlyFields(body, ["clubId", "datasetVersionId", "riskLevel", "suggestions", "verifyFresh"])
+  ) {
     return { error: "Request body contains unrecognised fields" };
   }
   if (!isFc25ClubId(body.clubId)) {

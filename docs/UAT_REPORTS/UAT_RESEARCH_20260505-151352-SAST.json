@@ -1,0 +1,139 @@
+{
+  "runId": "UAT_RESEARCH_20260505-151352-SAST",
+  "startedAt": "2026-05-05T13:13:52.907Z",
+  "finishedAt": "2026-05-05T13:14:03.020Z",
+  "options": {
+    "noAi": true,
+    "liveAdmin": false,
+    "keepTemp": false,
+    "batchSize": 2,
+    "outputDir": "docs/UAT_REPORTS"
+  },
+  "environment": {
+    "tempDir": "/tmp/the-ataturk-uat/research-20260505-151352-SAST-3536016-805924bd-5948-421e-861e-6b55eaa60a10",
+    "databasePath": "/tmp/the-ataturk-uat/research-20260505-151352-SAST-3536016-805924bd-5948-421e-861e-6b55eaa60a10/uat.sqlite",
+    "serverUrl": "http://127.0.0.1:38161",
+    "webUrl": "http://127.0.0.1:5174",
+    "fixtureSource": "/media/mo/Projects/Active_Dev_Projects/2026-the-ataturk/data/fc-25/FC26_20250921.csv",
+    "importedDatasetVersionId": "uat-fc26-pl20"
+  },
+  "scenarios": [
+    {
+      "id": "dashboard",
+      "title": "Dashboard Active Dataset",
+      "state": "pass",
+      "observations": [
+        "Active dataset selector reported uat-fc26-pl20.",
+        "PL20 fixture exposed 20 clubs and 547 players."
+      ],
+      "screenshots": [
+        "docs/UAT_REPORTS/UAT_RESEARCH_20260505-151352-SAST_assets/dashboard.png"
+      ]
+    },
+    {
+      "id": "replay",
+      "title": "Run And Replay",
+      "state": "pass",
+      "observations": [
+        "Created run 19a38e53-f2b6-40ba-81ba-0d801dddb1ce with seed 260501.",
+        "Replay loaded artefact match-engine-20260505131355-liv-mci-seed-260501-d5ccef84.json.",
+        "Score 2-1; shots 19-16; fouls 8-12."
+      ],
+      "screenshots": [
+        "docs/UAT_REPORTS/UAT_RESEARCH_20260505-151352-SAST_assets/replay.png"
+      ]
+    },
+    {
+      "id": "tactical-contrast",
+      "title": "Tactical Contrast",
+      "state": "pass",
+      "observations": [
+        "Compared same teams and seed 260502.",
+        "Low pressing/slow tempo fouls: 10.",
+        "High pressing/fast tempo fouls: 22.",
+        "Assertion is direction-only; magnitude is retained as context."
+      ],
+      "screenshots": []
+    },
+    {
+      "id": "formation-compare",
+      "title": "Formation Compare",
+      "state": "pass",
+      "observations": [
+        "Compared run 19a38e53-f2b6-40ba-81ba-0d801dddb1ce with run e11b3f5a-1167-4302-b4fa-699a9bfa3e56.",
+        "Home XI changed: yes.",
+        "Compare page loaded the line-up and summary surfaces."
+      ],
+      "screenshots": [
+        "docs/UAT_REPORTS/UAT_RESEARCH_20260505-151352-SAST_assets/compare.png"
+      ]
+    },
+    {
+      "id": "batch-distribution",
+      "title": "Batch Distribution",
+      "state": "pass",
+      "observations": [
+        "Created 2 runs in batch af0a41b2-b917-4589-a81c-4ce648707c19.",
+        "Mean goals: 1.00.",
+        "Mean shots: 20.50."
+      ],
+      "screenshots": [
+        "docs/UAT_REPORTS/UAT_RESEARCH_20260505-151352-SAST_assets/batch.png"
+      ]
+    },
+    {
+      "id": "admin-squad-manager",
+      "title": "Squad Manager Verify Apply Activate",
+      "state": "pass",
+      "observations": [
+        "Review mode defaulted on and guarded apply: yes.",
+        "Applied 2 low-risk fixture suggestions.",
+        "Created inactive dataset version fc25-squad-manager-low-20260505131402-2a8c6844.",
+        "Activated fc25-squad-manager-low-20260505131402-2a8c6844 via explicit UI action.",
+        "Audit actor squad-manager-ui; risk low."
+      ],
+      "screenshots": [
+        "docs/UAT_REPORTS/UAT_RESEARCH_20260505-151352-SAST_assets/squad-manager-review.png",
+        "docs/UAT_REPORTS/UAT_RESEARCH_20260505-151352-SAST_assets/squad-manager-apply-modal.png",
+        "docs/UAT_REPORTS/UAT_RESEARCH_20260505-151352-SAST_assets/squad-manager-applied.png"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "metric": "same-seed high pressing and fast tempo total fouls",
+      "expected": "increase",
+      "baseline": 10,
+      "variant": 22,
+      "delta": 12,
+      "percentChange": 120,
+      "state": "pass"
+    }
+  ],
+  "adminApply": {
+    "sourceDatasetVersionId": "uat-fc26-pl20",
+    "newDatasetVersionId": "fc25-squad-manager-low-20260505131402-2a8c6844",
+    "activatedDatasetVersionId": "fc25-squad-manager-low-20260505131402-2a8c6844",
+    "appliedSuggestionIds": [
+      "uat-low-name-212831",
+      "uat-low-nationality-203376"
+    ],
+    "auditActor": "squad-manager-ui",
+    "auditRiskLevel": "low"
+  },
+  "summary": {
+    "state": "pass",
+    "passed": 6,
+    "failed": 0,
+    "warnings": 0
+  },
+  "consoleIssues": [],
+  "createdRunIds": [
+    "19a38e53-f2b6-40ba-81ba-0d801dddb1ce",
+    "8bb70771-ff1b-4b56-936a-0617e24f8b74",
+    "b34f5aab-6269-401b-bd81-027f1ad3e947",
+    "e11b3f5a-1167-4302-b4fa-699a9bfa3e56",
+    "1cf5a248-cd2e-4575-a4cf-a4cd7d81312d",
+    "43d24efd-cdf4-4877-8d72-0ab281dfc823"
+  ]
+}

@@ -22,10 +22,7 @@ vi.mock("@google/genai", () => ({
 }));
 
 import { buildApp } from "../../src/app";
-import {
-  FOOTBALL_DATA_TEAMS,
-  resetAiRouteStateForTests
-} from "../../src/routes/ai";
+import { FOOTBALL_DATA_TEAMS, resetAiRouteStateForTests } from "../../src/routes/ai";
 import {
   classifySuggestionRisk,
   runSquadManagerTriageSample
@@ -106,7 +103,8 @@ describe("Squad Manager triage sample", () => {
     outputDir = await mkdtemp(join(tmpdir(), "squad-manager-triage-"));
 
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
-      const teamId = Number.parseInt(String(input).split("/").at(-1) ?? "", 10);
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const teamId = Number.parseInt(url.split("/").at(-1) ?? "", 10);
       const mapping = Object.values(FOOTBALL_DATA_TEAMS).find(
         (candidate) => candidate.footballDataTeamId === teamId
       );

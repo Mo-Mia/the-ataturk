@@ -10,6 +10,17 @@ actually worth doing — delete it.
 
 ## Workbench UI
 
+### UAT report archiving or off-repo storage
+The v1 UAT runner commits Markdown reports, evidence JSON, and screenshots under
+`docs/UAT_REPORTS` for reviewability. If report volume grows, move old reports
+to an archive location or object storage and keep only index/summary metadata in
+the repo.
+
+### UAT scenario expansion beyond the v1 research path
+Add targeted UAT scenarios once new workflows justify them: cross-batch
+analysis, manual XI/substitution editing, future medium/high Squad Manager
+apply paths, and Player Manager surfaces.
+
 ### Aesthetic theming pass across workbench pages
 Existing workbench pages intentionally remain visually heterogeneous after the
 dashboard/navigation sprint. A future pass can make the surfaces coherent once
