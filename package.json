@@ -15,6 +15,7 @@
   "scripts": {
     "db:reset": "pnpm --filter @the-ataturk/data reset",
     "dev": "pnpm --parallel --filter @the-ataturk/server --filter @the-ataturk/web dev",
+    "docs:archive-session-status": "tsx scripts/archiveSessionStatus.ts",
     "uat:research": "tsx scripts/uatResearch.ts",
     "test": "pnpm --filter @the-ataturk/engine test && pnpm --filter @the-ataturk/match-engine test && pnpm --filter @the-ataturk/tactics test && pnpm --filter @the-ataturk/data test && pnpm --filter @the-ataturk/server test && pnpm --filter @the-ataturk/web test",
     "lint": "eslint . --max-warnings=0 && prettier --check .",

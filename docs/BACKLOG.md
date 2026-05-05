@@ -8,6 +8,18 @@ Add new items at the top of the relevant section. If an item sits here
 for more than a few months without being addressed, it's probably not
 actually worth doing — delete it.
 
+## Documentation Hygiene
+
+### Session status archive automation
+`pnpm docs:archive-session-status` now archives session status files older than
+seven days. A future session-end workflow can run it automatically after writing
+the latest status file.
+
+### ~~Session status archival~~ ✅ Done
+Pre-2026-05-05 session status files were moved to
+`docs/archive/session_status/`, with a repeatable 7-day archival script added
+for future cleanup.
+
 ## Workbench UI
 
 ### UAT report archiving or off-repo storage

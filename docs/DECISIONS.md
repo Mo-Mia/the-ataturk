@@ -4,6 +4,32 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-05 — FootSim documentation cleanup batch from audit
+
+The 2026-05-05 documentation audit identified eight prioritised recommendations.
+This sprint executes five as a batch: session status archival, calibration
+constants annotation, calibration value table consolidation, JSDoc on public
+runtime APIs, and UAT report rotation policy.
+
+Audit recommendations 6-8 are deliberately deferred: orphaned Phase 15
+reference cleanup, deprecated package notices, and DECISIONS pagination.
+Plan-then-execute discipline is preserved because documentation cleanup has high
+scope-creep risk and the calibration annotation scope is substantial.
+
+## 2026-05-05 — Session status archive policy
+
+`SESSION_STATUS` files older than seven days are archived to
+`docs/archive/session_status/` via `pnpm docs:archive-session-status`. The
+script uses the date encoded in the filename, preserves filenames, and is
+idempotent.
+
+Initial cleanup archived pre-2026-05-05 session files while keeping same-day
+status files visible. Future cadence is manual; session-end automation is
+deferred to BACKLOG.
+
+Rationale: session status files accumulated quickly in `docs/`. Archive keeps
+recent context visible while preserving historical handoff records.
+
 ## 2026-05-05 — FootSim UAT Research Agent: disposable by default
 
 The workbench now has an automated UAT capability via `pnpm uat:research`. The
