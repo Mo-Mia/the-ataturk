@@ -5,6 +5,7 @@ import { performDribble } from "../../src/resolution/actions/dribble";
 import { performPass } from "../../src/resolution/actions/pass";
 import { performShot } from "../../src/resolution/actions/shot";
 import { shotDistanceContext } from "../../src/resolution/shotDistance";
+import { SET_PIECES } from "../../src/calibration/probabilities";
 import { buildInitState } from "../../src/state/initState";
 import { actionIsVulnerableForTest, runTick } from "../../src/ticks/runTick";
 import { createTestConfig } from "../helpers";
@@ -430,7 +431,8 @@ describe("carrier action selection", () => {
       player.hasBall = player.id === shooter.id;
     });
     state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
-    state.rng.next = () => 0;
+    const rolls = [0, 0, 1];
+    state.rng.next = () => rolls.shift() ?? 1;
 
     performShot(state, shooter);
 
@@ -440,5 +442,43 @@ describe("carrier action selection", () => {
     expect(
       state.eventsThisTick.find((event) => event.type === "possession_change")?.detail
     ).toEqual(expect.objectContaining({ cause: "goalkeeper_save", previousPossessor: shooter.id }));
+  });
+
+  it("can turn a saved shot wide for a corner without changing save probability", () => {
+    const state = buildInitState(createTestConfig(25));
+    const shooter = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "ST"
+    )!;
+    const keeper = state.players.find(
+      (player) => player.teamId === "away" && player.baseInput.position === "GK"
+    )!;
+    const original = { ...SET_PIECES.saveCornerByPressure };
+    try {
+      SET_PIECES.saveCornerByPressure.low = 1;
+      shooter.position = [340, 930];
+      keeper.baseInput.attributes.saving = 100;
+      state.players.forEach((player) => {
+        player.hasBall = player.id === shooter.id;
+      });
+      state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+      const rolls = [0, 0, 0];
+      state.rng.next = () => rolls.shift() ?? 0;
+
+      performShot(state, shooter);
+
+      expect(state.eventsThisTick.some((event) => event.type === "save")).toBe(true);
+      expect(
+        state.eventsThisTick.find((event) => event.type === "corner")?.detail
+      ).toMatchObject({ reason: "saved_wide", previousPossessor: keeper.id });
+      expect(
+        state.eventsThisTick.find((event) => event.type === "possession_change")?.detail
+      ).toEqual(expect.objectContaining({ cause: "restart_corner", previousPossessor: keeper.id }));
+      expect(state.pendingSetPiece?.type).toBe("corner");
+      expect(state.ball.carrierPlayerId).toBeNull();
+    } finally {
+      SET_PIECES.saveCornerByPressure.low = original.low;
+      SET_PIECES.saveCornerByPressure.medium = original.medium;
+      SET_PIECES.saveCornerByPressure.high = original.high;
+    }
   });
 });

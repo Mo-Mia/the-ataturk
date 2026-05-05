@@ -159,11 +159,15 @@ export const CHANCE_CREATION = {
 };
 
 export const SET_PIECES = {
-  shotDeflectionCornerByPressure: { low: 0.025, medium: 0.045, high: 0.07 } satisfies Record<
+  shotDeflectionCornerByPressure: { low: 0.0625, medium: 0.1125, high: 0.175 } satisfies Record<
     PressureLevel,
     number
   >,
-  defensiveClearanceCorner: 0.46,
+  defensiveClearanceCorner: 0.92,
+  saveCornerByPressure: { low: 0.16, medium: 0.24, high: 0.32 } satisfies Record<
+    PressureLevel,
+    number
+  >,
   directFreeKickMaxDistance: 330,
   freeKickDirectShotBase: 0.42,
   freeKickCrossBase: 0.62,

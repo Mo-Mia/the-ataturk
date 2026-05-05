@@ -92,11 +92,19 @@ export function performShot(
       return;
     }
 
+    const saveMargin = saveProbability - saveRoll;
+    const savedWide =
+      state.dynamics.setPieces &&
+      state.rng.next() <= SET_PIECES.saveCornerByPressure[state.possession.pressureLevel];
     emitEvent(state, "save", keeper.teamId, keeper.id, {
       shooterId: shooter.id,
-      quality: saveQualityFor(saveProbability - saveRoll),
-      result: saveResultFor(saveProbability - saveRoll)
+      quality: saveQualityFor(saveMargin),
+      result: savedWide ? "parried_safe" : saveResultFor(saveMargin)
     });
+    if (savedWide) {
+      awardCorner(state, shooter.teamId, shooter.position, "saved_wide", keeper.id);
+      return;
+    }
     givePossession(state, keeper, shooter.teamId, shooter.id);
     return;
   }
