@@ -1,3 +1,5 @@
+import { UAT_RESEARCH_SCENARIOS, type UatScenarioDefinition } from "./uatResearchScenarios";
+
 export interface UatResearchOptions {
   noAi: boolean;
   liveAdmin: boolean;
@@ -288,16 +290,23 @@ export function renderDeterministicReport(input: UatReportInput): string {
 }
 
 export function buildGeminiUatPrompt(evidenceJson: string): string {
+  const scenarioLines = (Object.values(UAT_RESEARCH_SCENARIOS) as UatScenarioDefinition[]).flatMap(
+    (scenario) => [
+      `- ${scenario.title} (${scenario.id}):`,
+      `  - Workflow: ${scenario.workflowSteps.join(" -> ")}`,
+      `  - Evidence schema: observations [${scenario.evidenceSchema.observations.join(", ")}]; screenshots [${scenario.evidenceSchema.screenshots.join(", ")}]`,
+      ...(scenario.expectedDirections ?? []).map(
+        (direction) => `  - Direction assertion: ${direction.metric} should ${direction.expected}`
+      )
+    ]
+  );
+
   return [
     "You are authoring a concise UAT research report for the FootSim workbench.",
     "Use only the structured evidence JSON below, the scenario expectations in this prompt, and the calibration anchors listed here. Do not infer repository state or hidden files.",
     "",
     "Scenario expectations:",
-    "- Dashboard should expose active PL20 dataset health and recent-run context.",
-    "- Run, replay, compare, and batch surfaces should load using stable data-uat selectors.",
-    "- Tactical contrast assertions are direction-only; magnitude is context, not a pass/fail threshold.",
-    "- Squad Manager admin flow must preserve review mode by default, then explicitly toggle review mode off before low-risk apply.",
-    "- Low-risk apply should create a new dataset version with audit metadata, and activation should be a separate explicit step.",
+    ...scenarioLines,
     "",
     "Calibration anchors:",
     "- Phase 14b pressing/tempo work expected more aggressive tactics to raise foul pressure directionally.",

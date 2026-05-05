@@ -71,6 +71,12 @@ The admin fixture includes low-risk `player_update` suggestions and
 review-only medium/high suggestions. This validates that the currently
 applicable path remains low-risk only.
 
+Scenario definitions live in `scripts/uatResearchScenarios.ts`. Each scenario
+declares its workflow steps, expected directions, evidence schema, and any
+simulation payloads as data; `scripts/uatResearch.ts` remains the Playwright
+executor. This keeps the current runner explicit while making scenarios
+parameterisable for future generation work.
+
 ## Gemini Context
 
 When AI interpretation is enabled, Gemini receives only:

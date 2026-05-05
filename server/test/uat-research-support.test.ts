@@ -7,6 +7,7 @@ import {
   isExpiredTempDir,
   parseUatResearchArgs
 } from "../../scripts/uatResearchSupport";
+import { UAT_RESEARCH_SCENARIOS, simulationPayload } from "../../scripts/uatResearchScenarios";
 
 describe("UAT research support", () => {
   it("parses safe default options", () => {
@@ -81,6 +82,46 @@ describe("UAT research support", () => {
     expect(
       fixture.verification.attributeWarnings.some((item) => item.type === "player_removal")
     ).toBe(true);
+  });
+
+  it("declares scenario workflow, evidence schema, and direction expectations as data", () => {
+    const scenarios = [
+      UAT_RESEARCH_SCENARIOS.dashboard,
+      UAT_RESEARCH_SCENARIOS.replay,
+      UAT_RESEARCH_SCENARIOS.tacticalContrast,
+      UAT_RESEARCH_SCENARIOS.formationCompare,
+      UAT_RESEARCH_SCENARIOS.batchDistribution,
+      UAT_RESEARCH_SCENARIOS.adminSquadManager
+    ];
+
+    expect(scenarios.map((scenario) => scenario.id)).toEqual([
+      "dashboard",
+      "replay",
+      "tactical-contrast",
+      "formation-compare",
+      "batch-distribution",
+      "admin-squad-manager"
+    ]);
+    for (const scenario of scenarios) {
+      expect(scenario.workflowSteps.length).toBeGreaterThan(0);
+      expect(scenario.evidenceSchema.observations.length).toBeGreaterThan(0);
+    }
+    expect(UAT_RESEARCH_SCENARIOS.tacticalContrast.expectedDirections).toEqual([
+      {
+        metric: "same-seed high pressing and fast tempo total fouls",
+        expected: "increase"
+      }
+    ]);
+  });
+
+  it("resolves declarative simulation payloads with default tactics and runtime batch size", () => {
+    expect(
+      simulationPayload(UAT_RESEARCH_SCENARIOS.batchDistribution.simulation, { batchSize: 5 })
+    ).toMatchObject({
+      home: { clubId: "liverpool", tactics: { formation: "4-3-3", pressing: "medium" } },
+      away: { clubId: "arsenal", tactics: { formation: "4-2-3-1", pressing: "medium" } },
+      batch: 5
+    });
   });
 
   it("formats SAST timestamps and expires temp dirs after the 24-hour startup TTL", () => {

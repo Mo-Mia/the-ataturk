@@ -21,6 +21,7 @@ import {
   type UatReportInput,
   type UatResearchOptions
 } from "./uatResearchSupport";
+import { UAT_RESEARCH_SCENARIOS, simulationPayload } from "./uatResearchScenarios";
 
 type ScenarioState = "pass" | "fail" | "warning";
 
@@ -81,15 +82,6 @@ const WEB_ROOT = path.join(REPO_ROOT, "apps/web");
 const FC26_CSV = path.join(REPO_ROOT, "data/fc-25/FC26_20250921.csv");
 const TEMP_ROOT = path.join(tmpdir(), "the-ataturk-uat");
 const IMPORTED_DATASET_VERSION_ID = "uat-fc26-pl20";
-
-const DEFAULT_TACTICS = {
-  formation: "4-4-2",
-  mentality: "balanced",
-  tempo: "normal",
-  pressing: "medium",
-  lineHeight: "normal",
-  width: "normal"
-};
 
 async function main(): Promise<void> {
   const options = parseUatResearchArgs(process.argv.slice(2));
@@ -267,6 +259,7 @@ async function runDashboardScenario(
   assetsDir: string,
   evidence: UatEvidence
 ): Promise<void> {
+  const scenario = UAT_RESEARCH_SCENARIOS.dashboard;
   await page.goto(`${webUrl}/`);
   await page.waitForSelector('[data-uat="dashboard-page"]');
   await page.waitForSelector('[data-uat="dashboard-widget-active-dataset"][data-state="ready"]');
@@ -282,8 +275,8 @@ async function runDashboardScenario(
   const screenshotPath = await screenshot(page, assetsDir, "dashboard");
 
   evidence.scenarios.push({
-    id: "dashboard",
-    title: "Dashboard Active Dataset",
+    id: scenario.id,
+    title: scenario.title,
     state: datasetId === IMPORTED_DATASET_VERSION_ID ? "pass" : "fail",
     observations: [
       `Active dataset selector reported ${datasetId ?? "missing"}.`,
@@ -299,16 +292,10 @@ async function runReplayScenario(
   assetsDir: string,
   evidence: UatEvidence
 ): Promise<SimRun> {
+  const scenario = UAT_RESEARCH_SCENARIOS.replay;
   await page.goto(`${webUrl}/visualise/run`);
   await page.waitForSelector('[data-uat="sim-runner-page"]');
-  const response = await simulate(page, {
-    home: { clubId: "liverpool", tactics: { ...DEFAULT_TACTICS, formation: "4-3-3" } },
-    away: { clubId: "manchester-city", tactics: { ...DEFAULT_TACTICS, formation: "4-3-3" } },
-    seed: 260501,
-    batch: 1,
-    duration: "full_90",
-    autoSubs: true
-  });
+  const response = await simulate(page, simulationPayload(scenario.simulation));
   const run = requireSingleRun(response, "baseline replay");
   evidence.createdRunIds.push(run.id);
 
@@ -317,8 +304,8 @@ async function runReplayScenario(
   const screenshotPath = await screenshot(page, assetsDir, "replay");
 
   evidence.scenarios.push({
-    id: "replay",
-    title: "Run And Replay",
+    id: scenario.id,
+    title: scenario.title,
     state: "pass",
     observations: [
       `Created run ${run.id} with seed ${run.seed}.`,
@@ -332,55 +319,34 @@ async function runReplayScenario(
 }
 
 async function runTacticalContrastScenario(page: Page, evidence: UatEvidence): Promise<void> {
+  const scenario = UAT_RESEARCH_SCENARIOS.tacticalContrast;
   const baseline = requireSingleRun(
-    await simulate(page, {
-      home: {
-        clubId: "liverpool",
-        tactics: { ...DEFAULT_TACTICS, pressing: "low", tempo: "slow" }
-      },
-      away: { clubId: "manchester-city", tactics: DEFAULT_TACTICS },
-      seed: 260502,
-      batch: 1,
-      duration: "full_90",
-      autoSubs: true
-    }),
+    await simulate(page, simulationPayload(scenario.baselineSimulation)),
     "tactical baseline"
   );
   const aggressive = requireSingleRun(
-    await simulate(page, {
-      home: {
-        clubId: "liverpool",
-        tactics: {
-          ...DEFAULT_TACTICS,
-          mentality: "attacking",
-          pressing: "high",
-          tempo: "fast",
-          lineHeight: "high"
-        }
-      },
-      away: { clubId: "manchester-city", tactics: DEFAULT_TACTICS },
-      seed: 260502,
-      batch: 1,
-      duration: "full_90",
-      autoSubs: true
-    }),
+    await simulate(page, simulationPayload(scenario.variantSimulation)),
     "tactical aggressive"
   );
   evidence.createdRunIds.push(baseline.id, aggressive.id);
 
   const baselineFouls = baseline.summary.fouls.home + baseline.summary.fouls.away;
   const aggressiveFouls = aggressive.summary.fouls.home + aggressive.summary.fouls.away;
+  const expectedDirection = scenario.expectedDirections?.[0];
+  if (!expectedDirection) {
+    throw new Error("Tactical contrast scenario is missing its expected direction");
+  }
   const assertion = directionAssertion({
-    metric: "same-seed high pressing and fast tempo total fouls",
-    expected: "increase",
+    metric: expectedDirection.metric,
+    expected: expectedDirection.expected,
     baseline: baselineFouls,
     variant: aggressiveFouls
   });
   evidence.assertions.push(assertion);
 
   evidence.scenarios.push({
-    id: "tactical-contrast",
-    title: "Tactical Contrast",
+    id: scenario.id,
+    title: scenario.title,
     state: assertion.state,
     observations: [
       `Compared same teams and seed ${baseline.seed}.`,
@@ -399,15 +365,9 @@ async function runFormationCompareScenario(
   evidence: UatEvidence,
   baseline: SimRun
 ): Promise<void> {
+  const scenario = UAT_RESEARCH_SCENARIOS.formationCompare;
   const alternate = requireSingleRun(
-    await simulate(page, {
-      home: { clubId: "liverpool", tactics: { ...DEFAULT_TACTICS, formation: "4-2-3-1" } },
-      away: { clubId: "manchester-city", tactics: { ...DEFAULT_TACTICS, formation: "4-4-2" } },
-      seed: 260503,
-      batch: 1,
-      duration: "full_90",
-      autoSubs: true
-    }),
+    await simulate(page, simulationPayload(scenario.alternateSimulation)),
     "formation alternate"
   );
   evidence.createdRunIds.push(alternate.id);
@@ -420,8 +380,8 @@ async function runFormationCompareScenario(
     alternate.summary.xi.home.map((player) => player.id).join(",");
 
   evidence.scenarios.push({
-    id: "formation-compare",
-    title: "Formation Compare",
+    id: scenario.id,
+    title: scenario.title,
     state: changedXi ? "pass" : "warning",
     observations: [
       `Compared run ${baseline.id} with run ${alternate.id}.`,
@@ -439,14 +399,8 @@ async function runBatchScenario(
   evidence: UatEvidence,
   batchSize: number
 ): Promise<void> {
-  const response = await simulate(page, {
-    home: { clubId: "liverpool", tactics: { ...DEFAULT_TACTICS, formation: "4-3-3" } },
-    away: { clubId: "arsenal", tactics: { ...DEFAULT_TACTICS, formation: "4-2-3-1" } },
-    seed: 260600,
-    batch: batchSize,
-    duration: "full_90",
-    autoSubs: true
-  });
+  const scenario = UAT_RESEARCH_SCENARIOS.batchDistribution;
+  const response = await simulate(page, simulationPayload(scenario.simulation, { batchSize }));
   if (response.errors.length > 0 || response.runs.length !== batchSize) {
     throw new Error(`Batch run returned ${response.runs.length}/${batchSize} runs`);
   }
@@ -466,8 +420,8 @@ async function runBatchScenario(
   const screenshotPath = await screenshot(page, assetsDir, "batch");
 
   evidence.scenarios.push({
-    id: "batch-distribution",
-    title: "Batch Distribution",
+    id: scenario.id,
+    title: scenario.title,
     state: "pass",
     observations: [
       `Created ${response.runs.length} runs in batch ${batchId}.`,
@@ -484,11 +438,21 @@ async function runAdminScenario(
   assetsDir: string,
   evidence: UatEvidence
 ): Promise<void> {
+  const scenario = UAT_RESEARCH_SCENARIOS.adminSquadManager;
   await page.goto(`${webUrl}/admin/squad-manager`);
   await page.waitForSelector('[data-uat="squad-manager-page"][data-state="ready"]');
-  await page.selectOption('[data-uat="squad-manager-home-club-select"]', "liverpool");
-  await page.selectOption('[data-uat="squad-manager-away-club-select"]', "manchester-city");
-  await page.selectOption('[data-uat="squad-manager-focused-club-select"]', "liverpool");
+  await page.selectOption(
+    '[data-uat="squad-manager-home-club-select"]',
+    scenario.selections.homeClubId
+  );
+  await page.selectOption(
+    '[data-uat="squad-manager-away-club-select"]',
+    scenario.selections.awayClubId
+  );
+  await page.selectOption(
+    '[data-uat="squad-manager-focused-club-select"]',
+    scenario.selections.focusedClubId
+  );
   const sourceDatasetVersionId =
     (await page.locator('[data-uat="squad-manager-dataset-select"]').inputValue()) ??
     IMPORTED_DATASET_VERSION_ID;
@@ -558,16 +522,18 @@ async function runAdminScenario(
     auditRiskLevel: applyBody.audit.riskLevel
   };
   evidence.scenarios.push({
-    id: "admin-squad-manager",
-    title: "Squad Manager Verify Apply Activate",
+    id: scenario.id,
+    title: scenario.title,
     state:
-      applyBody.audit.riskLevel === "low" &&
+      applyBody.audit.riskLevel === scenario.expectedApply.riskLevel &&
       applyBody.audit.sourceDatasetVersionId === sourceDatasetVersionId
         ? "pass"
         : "fail",
     observations: [
       `Review mode defaulted on and guarded apply: ${guarded ? "yes" : "no"}.`,
-      `Applied ${applyBody.audit.suggestionIds.length} low-risk fixture suggestions.`,
+      `Applied ${applyBody.audit.suggestionIds.length} low-risk ${
+        evidence.options.liveAdmin ? "live" : "fixture"
+      } suggestions.`,
       `Created inactive dataset version ${applyBody.newDatasetVersionId}.`,
       `Activated ${applyBody.newDatasetVersionId} via explicit UI action.`,
       `Audit actor ${applyBody.audit.actor}; risk ${applyBody.audit.riskLevel}.`
