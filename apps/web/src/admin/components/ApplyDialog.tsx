@@ -3,6 +3,7 @@ import type { SquadManagerSuggestion } from "../lib/api";
 interface ApplyDialogProps {
   open: boolean;
   baseVersionId: string;
+  clubName: string;
   acceptedSuggestions: SquadManagerSuggestion[];
   applying?: boolean;
   onCancel: () => void;
@@ -12,6 +13,7 @@ interface ApplyDialogProps {
 export function ApplyDialog({
   open,
   baseVersionId,
+  clubName,
   acceptedSuggestions,
   applying = false,
   onCancel,
@@ -22,11 +24,18 @@ export function ApplyDialog({
   }
 
   return (
-    <div className="apply-dialog" role="dialog" aria-modal="true" aria-labelledby="apply-title">
+    <div
+      className="apply-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="apply-title"
+      data-uat="squad-manager-apply-confirmation-modal"
+    >
       <div className="apply-dialog__panel">
-        <h2 id="apply-title">Apply accepted suggestions</h2>
+        <h2 id="apply-title">Apply low-risk suggestions</h2>
         <p>
-          Preview: {baseVersionId} via squad-manager · {acceptedSuggestions.length} accepted
+          {acceptedSuggestions.length} low-risk suggestions for {clubName} will create a new
+          inactive dataset version from {baseVersionId}.
         </p>
         <div className="apply-dialog__actions">
           <button type="button" onClick={onCancel}>

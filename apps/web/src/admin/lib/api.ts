@@ -354,12 +354,26 @@ export interface VerifySquadResponse {
 
 export interface ApplySquadSuggestionsResponse {
   newDatasetVersionId: string;
-  activated: boolean;
+  activated: false;
+  idempotent: boolean;
   summary: {
     applied: number;
     updated: number;
-    added: number;
-    removed: number;
+    added: 0;
+    removed: 0;
+  };
+  audit: {
+    kind: "squad-manager-apply";
+    schemaVersion: 1;
+    sourceDatasetVersionId: string;
+    clubId: string;
+    riskLevel: "low";
+    suggestionIds: string[];
+    suggestions: SquadManagerSuggestion[];
+    payloadHash: string;
+    appliedAt: string;
+    actor: string;
+    verifyFresh: boolean;
   };
 }
 
@@ -438,14 +452,24 @@ export function verifySquad(body: {
 
 export function applySquadSuggestions(body: {
   clubId: string;
-  baseDatasetVersionId: string;
+  datasetVersionId: string;
+  riskLevel: "low";
   suggestions: SquadManagerSuggestion[];
-  rationale?: string;
+  verifyFresh?: boolean;
 }): Promise<ApplySquadSuggestionsResponse> {
-  return requestJson<ApplySquadSuggestionsResponse>("/api/ai/apply-suggestions", {
+  return requestJson<ApplySquadSuggestionsResponse>("/api/admin/squad-manager/apply", {
     method: "POST",
     body: JSON.stringify(body)
   });
+}
+
+export function activateFc25DatasetVersion(id: string): Promise<Fc25DatasetVersion> {
+  return requestJson<Fc25DatasetVersion>(
+    `/api/admin/squad-manager/dataset-versions/${id}/activate`,
+    {
+      method: "POST"
+    }
+  );
 }
 
 export function listProfileVersions(): Promise<PlayerProfileVersionSummary[]> {

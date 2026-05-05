@@ -28,20 +28,38 @@ describe("AdminSquadManagerPage", () => {
       if (url === "/api/ai/verify-squad") {
         return Promise.resolve(jsonResponse(verification));
       }
-      if (url === "/api/ai/apply-suggestions") {
+      if (url === "/api/admin/squad-manager/apply") {
         const body: unknown = typeof init?.body === "string" ? JSON.parse(init.body) : null;
         expect(body).toMatchObject({
           clubId: "liverpool",
-          baseDatasetVersionId: "fc25-base",
-          suggestions: [verification.verification.missingPlayers[0]]
+          datasetVersionId: "fc25-base",
+          riskLevel: "low",
+          suggestions: [verification.verification.suggestions[0]]
         });
         return Promise.resolve(
           jsonResponse({
             newDatasetVersionId: "fc25-next",
-            activated: true,
-            summary: { applied: 1, updated: 0, added: 1, removed: 0 }
+            activated: false,
+            idempotent: false,
+            summary: { applied: 1, updated: 1, added: 0, removed: 0 },
+            audit: {
+              kind: "squad-manager-apply",
+              schemaVersion: 1,
+              sourceDatasetVersionId: "fc25-base",
+              clubId: "liverpool",
+              riskLevel: "low",
+              suggestionIds: ["sug-low-1"],
+              suggestions: [verification.verification.suggestions[0]],
+              payloadHash: "abc",
+              appliedAt: "2026-05-05T00:00:00.000Z",
+              actor: "squad-manager-ui",
+              verifyFresh: false
+            }
           })
         );
+      }
+      if (url === "/api/admin/squad-manager/dataset-versions/fc25-base/activate") {
+        return Promise.resolve(jsonResponse(version));
       }
       return Promise.reject(new Error(`Unexpected fetch ${url}`));
     });
@@ -57,15 +75,18 @@ describe("AdminSquadManagerPage", () => {
     expect(status?.dataset.footballDataName).toBe("Liverpool FC");
     fireEvent.click(screen.getByRole("button", { name: "Verify squad" }));
     await screen.findByText("Add New Forward");
-    fireEvent.click(screen.getByLabelText(/Add New Forward/));
     fireEvent.click(screen.getByLabelText("Review mode"));
-    fireEvent.click(screen.getByRole("button", { name: "Apply accepted" }));
-    expect(screen.getByText(/fc25-base via squad-manager/)).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Apply low" }));
+    expect(screen.getByText(/will create a new inactive dataset version from fc25-base/)).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
 
     await waitFor(() =>
-      expect(fetchMock).toHaveBeenCalledWith("/api/ai/apply-suggestions", expect.any(Object))
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/admin/squad-manager/apply",
+        expect.any(Object)
+      )
     );
+    expect(await screen.findByText(/Created inactive dataset version fc25-next/)).not.toBeNull();
   });
 
   it("defaults to review mode and guards apply until review mode is disabled", async () => {
@@ -86,7 +107,7 @@ describe("AdminSquadManagerPage", () => {
       if (url === "/api/ai/verify-squad") {
         return Promise.resolve(jsonResponse(verification));
       }
-      if (url === "/api/ai/apply-suggestions") {
+      if (url === "/api/admin/squad-manager/apply") {
         return Promise.reject(new Error("apply should stay guarded"));
       }
       return Promise.reject(new Error(`Unexpected fetch ${url}`));
@@ -99,34 +120,40 @@ describe("AdminSquadManagerPage", () => {
     const reviewToggle = document.querySelector<HTMLInputElement>(
       '[data-uat="squad-manager-review-mode-toggle"]'
     );
-    const applyButton = document.querySelector<HTMLButtonElement>(
-      '[data-uat="squad-manager-apply-button"]'
-    );
+    const lowApplyButton = () =>
+      document.querySelector<HTMLButtonElement>(
+        '[data-uat="squad-manager-apply-button"][data-risk-level="low"]'
+      );
     const applyGuard = document.querySelector<HTMLElement>(
       '[data-uat="squad-manager-apply-guard"]'
     );
 
     expect(reviewToggle?.checked).toBe(true);
-    expect(applyButton?.disabled).toBe(true);
-    expect(applyButton?.dataset.reviewMode).toBe("on");
-    expect(applyButton?.dataset.applyAvailable).toBe("false");
     expect(applyGuard?.dataset.reviewMode).toBe("on");
 
     fireEvent.click(screen.getByRole("button", { name: "Verify squad" }));
     await screen.findByText("Add New Forward");
-    fireEvent.click(screen.getByLabelText(/Add New Forward/));
 
-    expect(applyButton?.disabled).toBe(true);
-    expect(applyButton?.dataset.applyAvailable).toBe("false");
-    expect(screen.queryByText(/fc25-base via squad-manager/)).toBeNull();
-    expect(fetchMock).not.toHaveBeenCalledWith("/api/ai/apply-suggestions", expect.any(Object));
+    expect(lowApplyButton()?.disabled).toBe(true);
+    expect(lowApplyButton()?.dataset.reviewMode).toBe("on");
+    expect(lowApplyButton()?.dataset.applyAvailable).toBe("false");
+    expect(screen.queryByText(/will create a new inactive dataset version/)).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/api/admin/squad-manager/apply",
+      expect.any(Object)
+    );
 
     fireEvent.click(screen.getByLabelText("Review mode"));
 
     expect(reviewToggle?.checked).toBe(false);
-    expect(applyButton?.disabled).toBe(false);
-    expect(applyButton?.dataset.reviewMode).toBe("off");
-    expect(applyButton?.dataset.applyAvailable).toBe("true");
+    expect(lowApplyButton()?.disabled).toBe(false);
+    expect(lowApplyButton()?.dataset.reviewMode).toBe("off");
+    expect(lowApplyButton()?.dataset.applyAvailable).toBe("true");
+    expect(
+      document.querySelector<HTMLButtonElement>(
+        '[data-uat="squad-manager-apply-button"][data-risk-level="high"]'
+      )?.disabled
+    ).toBe(true);
   });
 
   it("exposes a mapped football-data.org status for newly supported PL20 clubs", async () => {
@@ -295,7 +322,17 @@ const verification = {
         }
       }
     ],
-    suggestions: [],
+    suggestions: [
+      {
+        suggestionId: "sug-low-1",
+        type: "player_update",
+        playerId: "salah",
+        changes: {
+          nationality: "Egypt"
+        },
+        rationale: "Low-risk nationality correction."
+      }
+    ],
     attributeWarnings: []
   }
 };

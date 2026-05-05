@@ -26,7 +26,16 @@ const result: VerifySquadResponse = {
         }
       }
     ],
-    suggestions: [],
+    suggestions: [
+      {
+        suggestionId: "sug-low",
+        type: "player_update",
+        playerId: "salah",
+        changes: {
+          nationality: "Egypt"
+        }
+      }
+    ],
     attributeWarnings: []
   }
 };
@@ -42,18 +51,20 @@ describe("VerificationPanel", () => {
         result={result}
         acceptedIds={new Set()}
         inspectedSuggestionId={null}
+        reviewMode={false}
         onToggle={onToggle}
         onToggleMany={vi.fn()}
         onInspect={onInspect}
+        onApplyRisk={vi.fn()}
         renderEditor={() => <p>Editor</p>}
       />
     );
 
-    fireEvent.click(screen.getByLabelText(/Add New Forward/));
-    fireEvent.click(screen.getByRole("button", { name: "Inspect" }));
+    fireEvent.click(screen.getByLabelText(/Update salah/));
+    fireEvent.click(screen.getAllByRole("button", { name: "Inspect" })[0]!);
 
-    expect(onToggle).toHaveBeenCalledWith("sug-1");
-    expect(onInspect).toHaveBeenCalledWith(result.verification.missingPlayers[0]);
+    expect(onToggle).toHaveBeenCalledWith("sug-low");
+    expect(onInspect).toHaveBeenCalledWith(result.verification.suggestions[0]);
   });
 
   it("selects and clears all suggestions in a section", () => {
@@ -63,31 +74,63 @@ describe("VerificationPanel", () => {
         result={result}
         acceptedIds={new Set()}
         inspectedSuggestionId={null}
+        reviewMode={false}
         onToggle={vi.fn()}
         onToggleMany={onToggleMany}
         onInspect={vi.fn()}
+        onApplyRisk={vi.fn()}
         renderEditor={() => <p>Editor</p>}
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
-    expect(onToggleMany).toHaveBeenCalledWith(["sug-1"], true);
+    fireEvent.click(screen.getAllByRole("button", { name: "Select all" })[0]!);
+    expect(onToggleMany).toHaveBeenCalledWith(["sug-low"], true);
 
     cleanup();
     render(
       <VerificationPanel
         result={result}
-        acceptedIds={new Set(["sug-1"])}
+        acceptedIds={new Set(["sug-low"])}
         inspectedSuggestionId={null}
+        reviewMode={false}
         onToggle={vi.fn()}
         onToggleMany={onToggleMany}
         onInspect={vi.fn()}
+        onApplyRisk={vi.fn()}
         renderEditor={() => <p>Editor</p>}
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-    expect(onToggleMany).toHaveBeenCalledWith(["sug-1"], false);
+    fireEvent.click(screen.getAllByRole("button", { name: "Clear" })[0]!);
+    expect(onToggleMany).toHaveBeenCalledWith(["sug-low"], false);
+  });
+
+  it("keeps medium and high apply controls review-only", () => {
+    const onApplyRisk = vi.fn();
+    render(
+      <VerificationPanel
+        result={result}
+        acceptedIds={new Set(["sug-low"])}
+        inspectedSuggestionId={null}
+        reviewMode={false}
+        onToggle={vi.fn()}
+        onToggleMany={vi.fn()}
+        onInspect={vi.fn()}
+        onApplyRisk={onApplyRisk}
+        renderEditor={() => <p>Editor</p>}
+      />
+    );
+
+    expect(
+      document.querySelector<HTMLButtonElement>(
+        '[data-uat="squad-manager-apply-button"][data-risk-level="low"]'
+      )?.disabled
+    ).toBe(false);
+    expect(
+      document.querySelector<HTMLButtonElement>(
+        '[data-uat="squad-manager-apply-button"][data-risk-level="high"]'
+      )?.disabled
+    ).toBe(true);
   });
 
   it("renders the inspected editor inline", () => {
@@ -96,9 +139,11 @@ describe("VerificationPanel", () => {
         result={result}
         acceptedIds={new Set()}
         inspectedSuggestionId="sug-1"
+        reviewMode={false}
         onToggle={vi.fn()}
         onToggleMany={vi.fn()}
         onInspect={vi.fn()}
+        onApplyRisk={vi.fn()}
         renderEditor={(suggestion) => <p>Editing {suggestion.suggestionId}</p>}
       />
     );

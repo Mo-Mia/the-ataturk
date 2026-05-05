@@ -12,13 +12,14 @@ describe("ApplyDialog", () => {
       <ApplyDialog
         open
         baseVersionId="fc25-base"
+        clubName="Liverpool"
         acceptedSuggestions={[]}
         onCancel={vi.fn()}
         onConfirm={onConfirm}
       />
     );
 
-    expect(screen.getByText(/fc25-base via squad-manager/)).not.toBeNull();
+    expect(screen.getByText(/will create a new inactive dataset version from fc25-base/)).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(onConfirm).toHaveBeenCalled();
   });

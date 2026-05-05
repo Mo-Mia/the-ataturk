@@ -23,7 +23,7 @@ describe("DashboardPage", () => {
       )
     );
     expect(screen.getAllByText("liverpool 2-1 manchester-city")).toHaveLength(2);
-    expect(screen.getByText("batch-1")).toBeTruthy();
+    expect(await screen.findByText("batch-1")).toBeTruthy();
     expect(screen.getByText("Phase 14b/17, real-PL anchored, FC26 PL20.")).toBeTruthy();
     expect(screen.getByText("ok")).toBeTruthy();
 

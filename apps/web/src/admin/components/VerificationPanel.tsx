@@ -2,29 +2,35 @@ import type { ReactNode } from "react";
 
 import type { SquadManagerSuggestion, VerifySquadResponse } from "../lib/api";
 
+export type SuggestionRiskLevel = "low" | "medium" | "high";
+
 interface VerificationPanelProps {
   result: VerifySquadResponse | null;
   acceptedIds: Set<string>;
   inspectedSuggestionId: string | null;
+  reviewMode: boolean;
   onToggle: (suggestionId: string) => void;
   onToggleMany: (suggestionIds: string[], shouldAccept: boolean) => void;
   onInspect: (suggestion: SquadManagerSuggestion | null) => void;
+  onApplyRisk: (riskLevel: SuggestionRiskLevel) => void;
   renderEditor: (suggestion: SquadManagerSuggestion) => ReactNode;
 }
 
 const SECTIONS = [
-  ["Missing players", "missingPlayers"],
-  ["Suggestions", "suggestions"],
-  ["Attribute warnings", "attributeWarnings"]
+  ["Low risk", "low", "Metadata-only updates that can be applied this sprint."],
+  ["Medium risk", "medium", "Position changes remain review-only this sprint."],
+  ["High risk", "high", "Additions and removals remain review-only this sprint."]
 ] as const;
 
 export function VerificationPanel({
   result,
   acceptedIds,
   inspectedSuggestionId,
+  reviewMode,
   onToggle,
   onToggleMany,
   onInspect,
+  onApplyRisk,
   renderEditor
 }: VerificationPanelProps) {
   if (!result) {
@@ -45,33 +51,60 @@ export function VerificationPanel({
           {result.apiQuotaRemaining.day}/day
         </p>
       </header>
-      {SECTIONS.map(([title, key]) => {
-        const suggestions = result.verification[key];
+      {SECTIONS.map(([title, riskLevel, description]) => {
+        const suggestions = suggestionsForRisk(result, riskLevel);
         const suggestionIds = suggestions.map((suggestion) => suggestion.suggestionId);
+        const selectable = riskLevel === "low";
         const allAccepted =
           suggestionIds.length > 0 &&
           suggestionIds.every((suggestionId) => acceptedIds.has(suggestionId));
+        const selectedCount = suggestionIds.filter((suggestionId) =>
+          acceptedIds.has(suggestionId)
+        ).length;
+        const applyEnabled = selectable && selectedCount > 0 && !reviewMode;
 
         return (
-          <details key={key} open>
+          <details key={riskLevel} open>
             <summary>
               {title} ({suggestions.length})
             </summary>
+            <p className="verification-panel__risk-note">{description}</p>
             {suggestions.length > 0 ? (
               <div className="verification-panel__section-actions">
                 <button
                   type="button"
                   onClick={() => onToggleMany(suggestionIds, true)}
-                  disabled={allAccepted}
+                  disabled={!selectable || allAccepted}
                 >
                   Select all
                 </button>
                 <button
                   type="button"
                   onClick={() => onToggleMany(suggestionIds, false)}
-                  disabled={!suggestionIds.some((suggestionId) => acceptedIds.has(suggestionId))}
+                  disabled={
+                    !selectable ||
+                    !suggestionIds.some((suggestionId) => acceptedIds.has(suggestionId))
+                  }
                 >
                   Clear
+                </button>
+                <button
+                  type="button"
+                  data-uat="squad-manager-apply-button"
+                  data-risk-level={riskLevel}
+                  data-review-mode={reviewMode ? "on" : "off"}
+                  data-apply-available={applyEnabled ? "true" : "false"}
+                  title={
+                    riskLevel === "low"
+                      ? reviewMode
+                        ? "Turn review mode off to apply low-risk suggestions."
+                        : "Apply selected low-risk suggestions."
+                      : "Review-only this sprint."
+                  }
+                  onClick={() => onApplyRisk(riskLevel)}
+                  disabled={!applyEnabled}
+                >
+                  Apply {riskLevel}
                 </button>
               </div>
             ) : null}
@@ -84,6 +117,7 @@ export function VerificationPanel({
                       <input
                         type="checkbox"
                         checked={acceptedIds.has(suggestion.suggestionId)}
+                        disabled={!selectable}
                         onChange={() => onToggle(suggestion.suggestionId)}
                       />
                       <span>{labelForSuggestion(suggestion)}</span>
@@ -108,6 +142,27 @@ export function VerificationPanel({
       })}
     </section>
   );
+}
+
+export function classifySuggestionRisk(suggestion: SquadManagerSuggestion): SuggestionRiskLevel {
+  if (suggestion.type === "player_addition" || suggestion.type === "player_removal") {
+    return "high";
+  }
+  if (suggestion.changes.position !== undefined) {
+    return "medium";
+  }
+  return "low";
+}
+
+function suggestionsForRisk(
+  result: VerifySquadResponse,
+  riskLevel: SuggestionRiskLevel
+): SquadManagerSuggestion[] {
+  return [
+    ...result.verification.missingPlayers,
+    ...result.verification.suggestions,
+    ...result.verification.attributeWarnings
+  ].filter((suggestion) => classifySuggestionRisk(suggestion) === riskLevel);
 }
 
 function labelForSuggestion(suggestion: SquadManagerSuggestion): string {
