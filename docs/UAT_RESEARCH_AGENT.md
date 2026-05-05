@@ -48,6 +48,10 @@ that run, but the next startup can still prune it once it is older than 24 hours
 Match-run artefacts created during UAT are deleted before shutdown. Reports and
 screenshots under `docs/UAT_REPORTS` are intentionally retained.
 
+Report rotation policy is defined, but not implemented yet: keep the 20 most
+recent reports or keep `docs/UAT_REPORTS/` under 25 MB, whichever threshold is
+hit first. Rotation implementation is deferred until the threshold approaches.
+
 ## Scenarios
 
 The v1 UAT pass covers:

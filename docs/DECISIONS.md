@@ -30,6 +30,20 @@ deferred to BACKLOG.
 Rationale: session status files accumulated quickly in `docs/`. Archive keeps
 recent context visible while preserving historical handoff records.
 
+## 2026-05-05 — UAT report rotation policy
+
+UAT reports in `docs/UAT_REPORTS/` are subject to future rotation when either
+threshold is exceeded: keep the 20 most recent reports, or keep the directory
+under 25 MB total. Whichever threshold is hit first triggers rotation.
+
+Implementation is deferred until the threshold approaches. The expected action
+is to archive older reports to `docs/archive/uat_reports/` or move them off-repo
+if report screenshots become too large for useful git history.
+
+Rationale: the UAT capability writes Markdown reports, evidence JSON, and
+screenshots per run. Current volume is acceptable, but committed UAT artefacts
+are a real long-term repo-growth vector.
+
 ## 2026-05-05 — FootSim UAT Research Agent: disposable by default
 
 The workbench now has an automated UAT capability via `pnpm uat:research`. The

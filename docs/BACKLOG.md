@@ -10,10 +10,49 @@ actually worth doing — delete it.
 
 ## Documentation Hygiene
 
+### Audit recommendation 8: DECISIONS pagination strategy
+`docs/DECISIONS.md` is still append-only and growing. Define a pagination or
+archive strategy in a future sprint without changing the current decision-log
+semantics.
+
+### Audit recommendation 7: deprecated package notices
+Add clear deprecation or legacy notices for `packages/engine/`,
+`packages/commentary/`, and `packages/tts/` if those packages remain outside
+the active FootSim path.
+
+### Audit recommendation 6: orphaned Phase 15 reference cleanup
+`docs/PHASE_15_INVESTIGATION_FINDINGS.md` exists and is valuable, but audit
+flagged it as under-referenced. Add the right cross-reference in a future
+documentation pass without broadening the current cleanup sprint.
+
+### UAT report rotation script implementation
+Policy is defined in DECISIONS: retain the 20 most recent reports or keep
+`docs/UAT_REPORTS/` under 25 MB, whichever threshold is hit first. Implement a
+rotation/archive script when the threshold approaches.
+
 ### Session status archive automation
 `pnpm docs:archive-session-status` now archives session status files older than
 seven days. A future session-end workflow can run it automatically after writing
 the latest status file.
+
+### ~~UAT report rotation policy~~ ✅ Done
+Policy is defined in DECISIONS with thresholds of 20 most recent reports or 25
+MB total. Implementation remains deferred until report volume approaches the
+threshold.
+
+### ~~JSDoc on public APIs~~ ✅ Done
+Public runtime APIs across match-engine, data, server route registration, and
+server workflow helpers now carry JSDoc.
+
+### ~~Calibration value table consolidation~~ ✅ Done
+`docs/CALIBRATION_BASELINE_PHASE_14.md` remains the canonical calibration value
+source. The UAT analyst prompt now references it instead of duplicating the
+active value table.
+
+### ~~Calibration constants documentation~~ ✅ Done
+`packages/match-engine/src/calibration/constants.ts` and `probabilities.ts` now
+carry purpose/source annotations for meaningful calibration constants and
+groups.
 
 ### ~~Session status archival~~ ✅ Done
 Pre-2026-05-05 session status files were moved to
@@ -21,6 +60,10 @@ Pre-2026-05-05 session status files were moved to
 for future cleanup.
 
 ## Workbench UI
+
+### Deeper Compare page UAT validation
+Current UAT validates Compare page loading and XI differences. Add a future
+scenario that exercises substitution display and summary-diff logic in detail.
 
 ### UAT report archiving or off-repo storage
 The v1 UAT runner commits Markdown reports, evidence JSON, and screenshots under
