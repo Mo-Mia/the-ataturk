@@ -34,15 +34,10 @@ Score each of the following dimensions:
 
 ## Calibration anchors
 
-These are the active Phase 14b/17 per-match calibration anchors, validated across the FC26 PL20 matrix against real-PL 2025/26 one-SD bands:
-
-| Metric | Target band | Current full-90 baseline |
-|---|---|---|
-| Total shots per match | 19.4-30.2 | 22.67 |
-| Total goals per match | 1.16-4.34 | 2.19 |
-| Total fouls per match | 16.6-26.6 | 17.47 |
-| Total cards per match | 1.83-5.87 | 5.10 |
-| Total corners per match | 6.7-13.2 | 7.01 |
+Use the active Phase 14b/17 calibration anchors in
+`docs/CALIBRATION_BASELINE_PHASE_14.md`. That baseline is the canonical source
+for target bands and current full-90 values validated across the FC26 PL20
+matrix against real-PL 2025/26 one-SD bands.
 
 A run that lands well outside these bands is worth inspecting. Variance across individual seeds is expected and **not** automatically a calibration concern.
 
