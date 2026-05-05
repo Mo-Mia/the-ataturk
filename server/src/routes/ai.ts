@@ -7,7 +7,6 @@ import { join } from "node:path";
 import { GoogleGenAI } from "@google/genai";
 import {
   FC25_CLUB_IDS,
-  applySquadManagerSuggestions,
   getActiveFc25DatasetVersion,
   getFc25DatasetVersion,
   listFc25Clubs,
@@ -108,13 +107,6 @@ interface VerifySquadBody {
   datasetVersionId?: string;
 }
 
-interface ApplySuggestionsBody {
-  clubId: Fc25ClubId;
-  baseDatasetVersionId: string;
-  suggestions: SquadManagerSuggestion[];
-  rationale?: string;
-}
-
 interface FootballDataSquadMember {
   id: number;
   name: string;
@@ -134,14 +126,6 @@ interface FootballDataTeamResponse {
 interface CachedTeam {
   fetchedAt: number;
   response: FootballDataTeamResponse;
-}
-
-interface IssuedSuggestion {
-  clubId: Fc25ClubId;
-  datasetVersionId: string;
-  type: SquadManagerSuggestion["type"];
-  playerId?: string;
-  livePlayerId?: number;
 }
 
 interface RateLimitConfig {
@@ -172,7 +156,6 @@ interface ErrorReply {
 }
 
 const footballDataCache = new Map<Fc25ClubId, CachedTeam>();
-const issuedSuggestions = new Map<string, IssuedSuggestion>();
 const rateLimitGate = createSlidingWindowRateLimitGate({
   minuteLimit: envInteger("FOOTBALL_DATA_RATE_LIMIT_MINUTE", 10),
   dayLimit: envInteger("FOOTBALL_DATA_RATE_LIMIT_DAY", 100),
@@ -238,8 +221,6 @@ export function registerAiRoutes(app: FastifyInstance): void {
         localSquad,
         liveSquad: teamResult.team.squad
       });
-      rememberIssuedSuggestions(parsed.clubId, datasetVersionId, verification);
-
       reply.send({
         verification,
         cacheStatus: teamResult.cacheStatus,
@@ -265,27 +246,6 @@ export function registerAiRoutes(app: FastifyInstance): void {
       reply.code(500).send({ error: errorMessage(error) });
     }
   });
-
-  app.post<{ Body: unknown }>("/api/ai/apply-suggestions", (request, reply) => {
-    const parsed = parseApplySuggestionsBody(request.body);
-    if ("error" in parsed) {
-      reply.code(400).send(parsed);
-      return;
-    }
-
-    try {
-      validateIssuedSuggestions(parsed);
-      const result = applySquadManagerSuggestions({
-        clubId: parsed.clubId,
-        baseDatasetVersionId: parsed.baseDatasetVersionId,
-        suggestions: parsed.suggestions,
-        ...(parsed.rationale === undefined ? {} : { rationale: parsed.rationale })
-      });
-      reply.send(result);
-    } catch (error) {
-      reply.code(400).send({ error: errorMessage(error) });
-    }
-  });
 }
 
 export function setGeminiCurlFallbackRunnerForTests(
@@ -302,7 +262,6 @@ export function setFootballDataCurlFallbackRunnerForTests(
 
 export function resetAiRouteStateForTests(): void {
   footballDataCache.clear();
-  issuedSuggestions.clear();
   footballDataCurlFallbackRunner = runFootballDataCurlFallback;
   geminiCurlFallbackRunner = runGeminiCurlFallback;
   rateLimitGate.reset();
@@ -899,50 +858,6 @@ function normaliseSuggestionType(
   return undefined;
 }
 
-function rememberIssuedSuggestions(
-  clubId: Fc25ClubId,
-  datasetVersionId: string,
-  verification: GeminiVerification
-): void {
-  for (const suggestion of [
-    ...verification.missingPlayers,
-    ...verification.suggestions,
-    ...verification.attributeWarnings
-  ]) {
-    issuedSuggestions.set(suggestion.suggestionId, {
-      clubId,
-      datasetVersionId,
-      type: suggestion.type,
-      ...(suggestion.type === "player_addition"
-        ? { livePlayerId: suggestion.livePlayer.id }
-        : { playerId: suggestion.playerId })
-    });
-  }
-}
-
-function validateIssuedSuggestions(body: ApplySuggestionsBody): void {
-  for (const suggestion of body.suggestions) {
-    const issued = issuedSuggestions.get(suggestion.suggestionId);
-    if (!issued) {
-      throw new Error(`Suggestion '${suggestion.suggestionId}' was not issued by this server`);
-    }
-    if (
-      issued.clubId !== body.clubId ||
-      issued.datasetVersionId !== body.baseDatasetVersionId ||
-      issued.type !== suggestion.type
-    ) {
-      throw new Error(`Suggestion '${suggestion.suggestionId}' does not match its issued context`);
-    }
-    if (suggestion.type === "player_addition") {
-      if (issued.livePlayerId !== suggestion.livePlayer.id) {
-        throw new Error(`Suggestion '${suggestion.suggestionId}' live player does not match`);
-      }
-    } else if (issued.playerId !== suggestion.playerId) {
-      throw new Error(`Suggestion '${suggestion.suggestionId}' player does not match`);
-    }
-  }
-}
-
 function parseFootballDataTeamResponse(value: unknown): FootballDataTeamResponse {
   if (!isRecord(value) || typeof value.id !== "number" || typeof value.name !== "string") {
     throw new Error("football-data.org team response is malformed");
@@ -987,27 +902,6 @@ function parseVerifySquadBody(body: unknown): VerifySquadBody | ErrorReply {
   return {
     clubId: body.clubId,
     ...(body.datasetVersionId === undefined ? {} : { datasetVersionId: body.datasetVersionId })
-  };
-}
-
-function parseApplySuggestionsBody(body: unknown): ApplySuggestionsBody | ErrorReply {
-  if (!isRecord(body)) {
-    return { error: "Request body must be an object" };
-  }
-  if (!isFc25ClubId(body.clubId)) {
-    return { error: "clubId must be a supported FC25 club id" };
-  }
-  if (typeof body.baseDatasetVersionId !== "string") {
-    return { error: "baseDatasetVersionId is required" };
-  }
-  if (!Array.isArray(body.suggestions)) {
-    return { error: "suggestions must be an array" };
-  }
-  return {
-    clubId: body.clubId,
-    baseDatasetVersionId: body.baseDatasetVersionId,
-    suggestions: body.suggestions as SquadManagerSuggestion[],
-    ...(typeof body.rationale === "string" ? { rationale: body.rationale } : {})
   };
 }
 

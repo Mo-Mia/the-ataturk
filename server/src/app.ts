@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import { registerAiRoutes } from "./routes/ai";
 import { registerAttributeAdminRoutes } from "./routes/admin/attributes";
 import { registerProfileAdminRoutes } from "./routes/admin/profiles";
+import { registerSquadManagerAdminRoutes } from "./routes/admin/squad-manager";
 import { registerDataRoutes } from "./routes/data";
 import { registerHealthRoute } from "./routes/health";
 import { registerMatchEngineRoutes } from "./routes/match-engine";
@@ -22,6 +23,7 @@ export function buildApp() {
   registerAiRoutes(app);
   registerAttributeAdminRoutes(app);
   registerProfileAdminRoutes(app);
+  registerSquadManagerAdminRoutes(app);
   registerHealthRoute(app);
   registerSmokeMatchRoute(app);
   registerMatchEngineRoutes(app);

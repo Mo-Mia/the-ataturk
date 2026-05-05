@@ -1,4 +1,4 @@
-import { FC25_CLUB_IDS, getDb, importFc25Dataset } from "@the-ataturk/data";
+import { FC25_CLUB_IDS, importFc25Dataset } from "@the-ataturk/data";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const genAiMocks = vi.hoisted(() => ({
@@ -174,7 +174,7 @@ describe("AI squad manager routes", () => {
     }
   }, 15_000);
 
-  it("verifies a squad, generates suggestion ids, caches live team responses, and applies issued suggestions", async () => {
+  it("verifies a squad, generates suggestion ids, and caches live team responses", async () => {
     testDatabase = createFc25ServerDatabase("ai-squad-manager");
     process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
     process.env.GEMINI_API_KEY = "gemini-key";
@@ -240,27 +240,6 @@ describe("AI squad manager routes", () => {
       expect(cached.json<VerifySquadTestResponse>().cacheStatus).toBe("hit");
       expect(fetchMock).toHaveBeenCalledTimes(1);
 
-      const apply = await app.inject({
-        method: "POST",
-        url: "/api/ai/apply-suggestions",
-        payload: {
-          clubId: "liverpool",
-          baseDatasetVersionId: "fc25-base",
-          suggestions: [missingPlayer!],
-          rationale: "Accepted from test"
-        }
-      });
-
-      expect(apply.statusCode).toBe(200);
-      expect(apply.json()).toMatchObject({ activated: true, summary: { applied: 1, added: 1 } });
-      expect(
-        getDb(testDatabase.path)
-          .prepare<
-            [],
-            { count: number }
-          >("SELECT COUNT(*) AS count FROM fc25_players WHERE id = 'fd-999001'")
-          .get()?.count
-      ).toBe(1);
     } finally {
       await app.close();
     }
@@ -568,44 +547,6 @@ describe("AI squad manager routes", () => {
     }
   });
 
-  it("rejects apply requests with unissued suggestion ids", async () => {
-    testDatabase = createFc25ServerDatabase("ai-squad-manager-forgery");
-    const app = buildApp();
-
-    try {
-      const response = await app.inject({
-        method: "POST",
-        url: "/api/ai/apply-suggestions",
-        payload: {
-          clubId: "liverpool",
-          baseDatasetVersionId: "fc25-base",
-          suggestions: [
-            {
-              suggestionId: "sug-forged",
-              type: "player_addition",
-              livePlayer: {
-                id: 999001,
-                name: "New Forward",
-                position: "Forward",
-                nationality: "England"
-              },
-              proposed: {
-                name: "New Forward",
-                position: "ST",
-                nationality: "England",
-                age: 26
-              }
-            }
-          ]
-        }
-      });
-
-      expect(response.statusCode).toBe(400);
-      expect(response.json<ErrorResponse>().error).toContain("was not issued by this server");
-    } finally {
-      await app.close();
-    }
-  });
 });
 
 describe("football-data.org sliding-window rate gate", () => {
