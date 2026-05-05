@@ -23,6 +23,7 @@ import {
   FC25_SOURCE_FILE_DEFAULT,
   type Fc25ClubUniverse
 } from "./constants";
+import { displayNameForFc25Player } from "./displayNames";
 import { parseFc25PlayersCsv, type Fc25CsvFormat } from "./parser";
 
 const STARTER_COUNT = 11;
@@ -68,6 +69,9 @@ interface Fc25PlayerDbRow {
   fc25_player_id: string;
   name: string;
   short_name: string;
+  source_name: string | null;
+  source_short_name: string | null;
+  display_name: string | null;
   overall: number;
   rank: number;
   position: Fc25Position;
@@ -402,7 +406,8 @@ function insertSelectedRows(
   const insertPlayer = db.prepare(
     `
       INSERT INTO fc25_players (
-        dataset_version_id, id, fc25_player_id, name, short_name, overall, rank, position,
+        dataset_version_id, id, fc25_player_id, name, short_name, source_name,
+        source_short_name, display_name, overall, rank, position,
         alternative_positions, age, nationality, height_cm, weight_kg, preferred_foot,
         weak_foot_rating, skill_moves_rating, source_url, play_style,
         acceleration, sprint_speed, finishing, shot_power, long_shots, positioning,
@@ -418,7 +423,8 @@ function insertSelectedRows(
         created_at, updated_at
       )
       VALUES (
-        @datasetVersionId, @id, @fc25PlayerId, @name, @shortName, @overall, @rank, @position,
+        @datasetVersionId, @id, @fc25PlayerId, @name, @shortName, @sourceName,
+        @sourceShortName, @displayName, @overall, @rank, @position,
         @alternativePositions, @age, @nationality, @heightCm, @weightKg, @preferredFoot,
         @weakFootRating, @skillMovesRating, @sourceUrl, @playStyle,
         @acceleration, @sprintSpeed, @finishing, @shotPower, @longShots, @positioning,
@@ -481,6 +487,13 @@ function playerInsertParams(datasetVersionId: string, row: Fc25ParsedPlayerRow, 
     fc25PlayerId: row.fc25PlayerId,
     name: row.name,
     shortName: player.shortName,
+    sourceName: row.name,
+    sourceShortName: row.sourceShortName,
+    displayName: displayNameForFc25Player({
+      id: row.fc25PlayerId,
+      sourceName: row.name,
+      sourceShortName: row.sourceShortName
+    }),
     overall: row.overall,
     rank: row.rank,
     position: row.position,
@@ -607,6 +620,9 @@ function mapPlayerRowToV2(row: Fc25PlayerDbRow): Fc25SquadPlayer {
     id: row.id,
     name: row.name,
     shortName: row.short_name,
+    displayName: row.display_name ?? row.source_short_name ?? row.short_name,
+    sourceName: row.source_name ?? row.name,
+    sourceShortName: row.source_short_name,
     ...(row.shirt_number === null ? {} : { squadNumber: row.shirt_number }),
     position: row.position,
     height: row.height_cm,

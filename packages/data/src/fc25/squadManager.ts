@@ -8,6 +8,7 @@ import type {
   Fc25Position,
   Fc25SquadPlayer
 } from "../types";
+import { displayNameForFc25Player } from "./displayNames";
 import { getActiveFc25DatasetVersion, loadFc25Squad } from "./importer";
 
 export type SquadManagerSuggestion =
@@ -288,7 +289,8 @@ function copyVersionRows(
   db.prepare(
     `
       INSERT INTO fc25_players (
-        dataset_version_id, id, fc25_player_id, name, short_name, overall, rank, position,
+        dataset_version_id, id, fc25_player_id, name, short_name, source_name,
+        source_short_name, display_name, overall, rank, position,
         alternative_positions, age, nationality, height_cm, weight_kg, preferred_foot,
         weak_foot_rating, skill_moves_rating, source_url, play_style,
         acceleration, sprint_speed, finishing, shot_power, long_shots, positioning,
@@ -304,7 +306,8 @@ function copyVersionRows(
         created_at, updated_at
       )
       SELECT
-        ?, id, fc25_player_id, name, short_name, overall, rank, position,
+        ?, id, fc25_player_id, name, short_name, source_name,
+        source_short_name, display_name, overall, rank, position,
         alternative_positions, age, nationality, height_cm, weight_kg, preferred_foot,
         weak_foot_rating, skill_moves_rating, source_url, play_style,
         acceleration, sprint_speed, finishing, shot_power, long_shots, positioning,
@@ -347,8 +350,19 @@ function applyPlayerUpdate(
   const params: Array<string | number> = [];
 
   if (suggestion.changes.name !== undefined) {
-    changes.push("name = ?", "short_name = ?");
-    params.push(suggestion.changes.name, shortNameFor(suggestion.changes.name));
+    const sourceName = suggestion.changes.name;
+    const shortName = shortNameFor(sourceName);
+    changes.push("name = ?", "short_name = ?", "source_name = ?", "display_name = ?");
+    params.push(
+      sourceName,
+      shortName,
+      sourceName,
+      displayNameForFc25Player({
+        id: suggestion.playerId,
+        sourceName,
+        sourceShortName: null
+      })
+    );
   }
   if (suggestion.changes.position !== undefined) {
     changes.push("position = ?");
@@ -396,7 +410,8 @@ function applyPlayerAddition(
   db.prepare(
     `
       INSERT INTO fc25_players (
-        dataset_version_id, id, fc25_player_id, name, short_name, overall, rank, position,
+        dataset_version_id, id, fc25_player_id, name, short_name, source_name,
+        source_short_name, display_name, overall, rank, position,
         alternative_positions, age, nationality, height_cm, weight_kg, preferred_foot,
         weak_foot_rating, skill_moves_rating, source_url, play_style,
         acceleration, sprint_speed, finishing, shot_power, long_shots, positioning,
@@ -412,7 +427,8 @@ function applyPlayerAddition(
         created_at, updated_at
       )
       VALUES (
-        @datasetVersionId, @id, @fc25PlayerId, @name, @shortName, @overall, @rank, @position,
+        @datasetVersionId, @id, @fc25PlayerId, @name, @shortName, @sourceName,
+        NULL, @displayName, @overall, @rank, @position,
         '[]', @age, @nationality, @heightCm, @weightKg, @preferredFoot,
         @weakFootRating, @skillMovesRating, @sourceUrl, NULL,
         @acceleration, @sprintSpeed, @finishing, @shotPower, @longShots, @positioning,
@@ -434,6 +450,12 @@ function applyPlayerAddition(
     fc25PlayerId: playerId,
     name: suggestion.proposed.name,
     shortName: shortNameFor(suggestion.proposed.name),
+    sourceName: suggestion.proposed.name,
+    displayName: displayNameForFc25Player({
+      id: playerId,
+      sourceName: suggestion.proposed.name,
+      sourceShortName: null
+    }),
     overall,
     rank: template.rank,
     position: suggestion.proposed.position,

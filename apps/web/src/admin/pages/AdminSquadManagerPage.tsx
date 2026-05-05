@@ -147,7 +147,11 @@ export function AdminSquadManagerPage() {
   const clubs = contextQuery.data?.clubs ?? [];
 
   return (
-    <section className="squad-manager">
+    <section
+      className="squad-manager"
+      data-uat="squad-manager-page"
+      data-state={contextQuery.isLoading ? "loading" : "ready"}
+    >
       <header className="squad-manager__masthead">
         <div>
           <p>FootSim Admin</p>
@@ -166,6 +170,7 @@ export function AdminSquadManagerPage() {
         <label>
           Dataset
           <select
+            data-uat="squad-manager-dataset-select"
             value={datasetVersionId}
             onChange={(event) => setDatasetVersionId(event.target.value)}
           >
@@ -178,7 +183,11 @@ export function AdminSquadManagerPage() {
         </label>
         <label>
           Home club
-          <select value={homeClubId} onChange={(event) => setHomeClubId(event.target.value)}>
+          <select
+            data-uat="squad-manager-home-club-select"
+            value={homeClubId}
+            onChange={(event) => setHomeClubId(event.target.value)}
+          >
             {clubs.map((club) => (
               <option key={club.id} value={club.id}>
                 {club.name}
@@ -188,7 +197,11 @@ export function AdminSquadManagerPage() {
         </label>
         <label>
           Away club
-          <select value={awayClubId} onChange={(event) => setAwayClubId(event.target.value)}>
+          <select
+            data-uat="squad-manager-away-club-select"
+            value={awayClubId}
+            onChange={(event) => setAwayClubId(event.target.value)}
+          >
             {clubs.map((club) => (
               <option key={club.id} value={club.id}>
                 {club.name}
@@ -198,7 +211,11 @@ export function AdminSquadManagerPage() {
         </label>
         <label>
           Verify
-          <select value={focusedClubId} onChange={(event) => setFocusedClubId(event.target.value)}>
+          <select
+            data-uat="squad-manager-focused-club-select"
+            value={focusedClubId}
+            onChange={(event) => setFocusedClubId(event.target.value)}
+          >
             {[homeClubId, awayClubId].map((clubId) => {
               const club = clubs.find((item) => item.id === clubId);
               return (
@@ -227,7 +244,7 @@ export function AdminSquadManagerPage() {
         </p>
       ) : null}
 
-      <div className="squad-manager__board">
+      <div className="squad-manager__board" data-uat="squad-manager-board">
         <SquadList title="Home squad" squad={homeSquadQuery.data?.squad ?? []} />
         <div className="squad-manager__centre">
           <VerificationPanel

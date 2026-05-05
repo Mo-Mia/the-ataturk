@@ -5,6 +5,7 @@ import {
   FC25_FOOTSIM_CLUBS,
   FC25_SOURCE_TEAM_NAMES,
   Fc25ParseError,
+  displayNameForFc25Player,
   parseFc25PlayersCsv,
   parseFc25PlayerRecord,
   parseFc26PlayerRecord
@@ -98,6 +99,7 @@ describe("FC25 CSV parser", () => {
     expect(wirtz).toMatchObject({
       fc25PlayerId: "256630",
       name: "Florian Wirtz",
+      sourceShortName: "F. Wirtz",
       overall: 89,
       position: "AM",
       sourcePosition: "CAM",
@@ -134,6 +136,51 @@ describe("FC25 CSV parser", () => {
     expect(parseFc25PlayersCsv(csv)).toHaveLength(1);
     expect(parseFc25PlayersCsv(csv, { format: "fc26" })[0]?.name).toBe("Florian Wirtz");
     expect(() => parseFc25PlayersCsv(csv, { format: "fc25" })).toThrow(Fc25ParseError);
+  });
+
+  it("derives stable FC26 display names without mutating source names", () => {
+    expect(
+      displayNameForFc25Player({
+        id: "209331",
+        sourceName: "Mohamed Salah Hamed Ghalyمحمد صلاح",
+        sourceShortName: "M. Salah"
+      })
+    ).toBe("Mohamed Salah");
+    expect(
+      displayNameForFc25Player({
+        id: "231866",
+        sourceName: "Rodrigo Hernández Cascante",
+        sourceShortName: "Rodri"
+      })
+    ).toBe("Rodri");
+    expect(
+      displayNameForFc25Player({
+        id: "203376",
+        sourceName: "Virgil van Dijk",
+        sourceShortName: "V. van Dijk"
+      })
+    ).toBe("Virgil van Dijk");
+    expect(
+      displayNameForFc25Player({
+        id: "240638",
+        sourceName: "Tijjani Martinus Jan Reijnders Lekatompessy",
+        sourceShortName: "T. Reijnders"
+      })
+    ).toBe("Tijjani Reijnders");
+    expect(
+      displayNameForFc25Player({
+        id: "256675",
+        sourceName: "Omar Khaled Mohamed Marmoush",
+        sourceShortName: "O. Marmoush"
+      })
+    ).toBe("Omar Marmoush");
+    expect(
+      displayNameForFc25Player({
+        id: "230621",
+        sourceName: "Gianluigi Donnarumma",
+        sourceShortName: "G. Donnarumma"
+      })
+    ).toBe("Gianluigi Donnarumma");
   });
 });
 

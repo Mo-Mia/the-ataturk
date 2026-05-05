@@ -12,6 +12,8 @@ export interface RunLineupPlayer {
   id: string;
   name: string;
   shortName: string;
+  displayName?: string;
+  sourceName?: string;
   position: Position;
   squadNumber?: number;
 }
@@ -92,4 +94,13 @@ export interface SimError {
 export interface SimResponse {
   runs: PersistedMatchRun[];
   errors: SimError[];
+}
+
+export function playerDisplayName(player: {
+  displayName?: string;
+  shortName?: string;
+  name?: string;
+  id: string;
+}): string {
+  return player.displayName ?? player.shortName ?? player.name ?? player.id;
 }

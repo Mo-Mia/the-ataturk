@@ -9,6 +9,7 @@ import type {
   SimError,
   SimResponse
 } from "./runTypes";
+import { playerDisplayName } from "./runTypes";
 
 interface Fc25Club {
   id: string;
@@ -22,6 +23,9 @@ interface SquadPlayer {
   id: string;
   name: string;
   shortName: string;
+  displayName?: string;
+  sourceName?: string;
+  sourceShortName?: string | null;
   squadNumber?: number;
   overall: number;
   position: string;
@@ -317,7 +321,7 @@ export function SimRunnerPage() {
   }
 
   return (
-    <main className="sim-runner-shell">
+    <main className="sim-runner-shell" data-uat="sim-runner-page" data-state={status}>
       <header className="sim-runner-header">
         <div>
           <p className="eyebrow">Match Visualiser</p>
@@ -334,7 +338,11 @@ export function SimRunnerPage() {
         <p className="sim-runner-empty">No active FC25 dataset found. Import FC25 data first.</p>
       ) : null}
 
-      <section className="sim-runner-grid" aria-label="Simulation setup">
+      <section
+        className="sim-runner-grid"
+        aria-label="Simulation setup"
+        data-uat="sim-runner-setup"
+      >
         <TeamPanel
           title="Home"
           clubs={clubs}
@@ -361,7 +369,11 @@ export function SimRunnerPage() {
         />
       </section>
 
-      <section className="sim-runner-controls" aria-label="Run controls">
+      <section
+        className="sim-runner-controls"
+        aria-label="Run controls"
+        data-uat="sim-runner-controls"
+      >
         <label>
           Match duration
           <select
@@ -420,7 +432,11 @@ export function SimRunnerPage() {
         </section>
       ) : null}
 
-      <section className="sim-runner-history" aria-label="Run history">
+      <section
+        className="sim-runner-history"
+        aria-label="Run history"
+        data-uat="sim-runner-history"
+      >
         <h2>Run history</h2>
         <RunHistoryFilters
           clubs={clubs}
@@ -453,7 +469,13 @@ export function SimRunnerPage() {
               <tbody>
                 {history.map((run) => (
                   <Fragment key={run.id}>
-                    <tr key={run.id}>
+                    <tr
+                      key={run.id}
+                      data-uat="sim-runner-run-row"
+                      data-run-id={run.id}
+                      data-artifact-id={run.artefactId}
+                      data-batch-id={run.batchId ?? ""}
+                    >
                       <td>{run.seed}</td>
                       <td>{durationLabel(run.summary.duration)}</td>
                       <td>
@@ -617,7 +639,7 @@ function LineupColumn({
       <ol>
         {players.map((player) => (
           <li key={player.id}>
-            {player.position} · {player.shortName}
+            {player.position} · {playerDisplayName(player)}
           </li>
         ))}
       </ol>
@@ -747,7 +769,13 @@ function TeamPanel({
   onScheduledSubsChange: (substitutions: ScheduledSubState[]) => void;
 }) {
   return (
-    <section className="sim-runner-panel" aria-label={`${title} team setup`}>
+    <section
+      className="sim-runner-panel"
+      aria-label={`${title} team setup`}
+      data-uat="sim-runner-team-panel"
+      data-team-side={title.toLowerCase()}
+      data-club-id={clubId}
+    >
       <h2>{title}</h2>
       <label>
         Club
@@ -812,7 +840,7 @@ function ScheduledSubsPanel({
   }
 
   return (
-    <section className="scheduled-subs" aria-label={title}>
+    <section className="scheduled-subs" aria-label={title} data-uat="sim-runner-scheduled-subs">
       <div className="squad-picker-header">
         <div>
           <h3>{title}</h3>
@@ -852,7 +880,7 @@ function ScheduledSubsPanel({
                   <option value="">Select starter</option>
                   {starters.map((player) => (
                     <option key={player.id} value={player.id}>
-                      {player.shortName} ({player.sourcePosition})
+                      {playerDisplayName(player)} ({player.sourcePosition})
                     </option>
                   ))}
                 </select>
@@ -868,7 +896,7 @@ function ScheduledSubsPanel({
                   <option value="">Select bench player</option>
                   {bench.map((player) => (
                     <option key={player.id} value={player.id}>
-                      {player.shortName} ({player.sourcePosition})
+                      {playerDisplayName(player)} ({player.sourcePosition})
                     </option>
                   ))}
                 </select>
@@ -950,7 +978,7 @@ function SquadPicker({
   }
 
   return (
-    <section className="squad-picker" aria-label={title}>
+    <section className="squad-picker" aria-label={title} data-uat="sim-runner-squad-picker">
       <div className="squad-picker-header">
         <div>
           <h3>{title}</h3>
@@ -973,13 +1001,20 @@ function SquadPicker({
       {!validation.valid ? <p className="error">{validation.message}</p> : null}
       <div className="squad-picker-list">
         {selection.squad.map((player) => (
-          <label key={player.id} className="squad-picker-row">
+          <label
+            key={player.id}
+            className="squad-picker-row"
+            data-uat="sim-runner-squad-player"
+            data-player-id={player.id}
+            data-display-name={playerDisplayName(player)}
+            data-source-name={player.sourceName ?? player.name}
+          >
             <input
               type="checkbox"
               checked={selected.has(player.id)}
               onChange={() => togglePlayer(player.id)}
             />
-            <span>{player.shortName}</span>
+            <span>{playerDisplayName(player)}</span>
             <span>{player.sourcePosition}</span>
             <span>{player.overall}</span>
           </label>

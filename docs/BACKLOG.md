@@ -71,6 +71,12 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
+### PL20 Admin Expansion
+Add football-data.org mappings for all 20 FC26 Premier League clubs, expand
+verification coverage around those mappings, and build Squad Manager confidence
+across the full PL20 dataset. This is the next intended sprint after UAT/player
+display-name readiness; do not bundle it into the current sprint.
+
 ### Future fidelity sprint: aerial-duel/header corner vocabulary
 Phase 17 closed the active corner-volume band without aerial-specific events.
 Future fidelity work can add defensive headers behind, aerial-duel deflections,
@@ -107,12 +113,6 @@ real-PL band. See `docs/CALIBRATION_BASELINE_PHASE_14.md`.
 Phase 14b/17 validation passed event-volume, responsiveness, manual XI, and
 side-switch gates. Phase 8 is retired as active anchor and preserved as
 historical reference.
-
-### Add football-data.org mappings for all 20 FC26 Premier League clubs
-Match-engine browsing and simulation now support the active PL20 dataset, but
-Squad Manager live verification is still configured only for the original five
-football-data.org team ids. Add mappings and tests before advertising
-verification for the other 15 clubs.
 
 ### ~~Phase 14b foul genesis tuning~~ ✅ Done / corner work paused
 B1 foul tuning landed in `c2ef557`. Shots, goals, fouls, and cards are in band.

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 
 import type { PersistedMatchRun } from "./runTypes";
+import { playerDisplayName } from "./runTypes";
 
 interface BatchRunsResponse {
   runs: PersistedMatchRun[];
@@ -86,7 +87,7 @@ export function BatchDistributionPage() {
 
   if (status === "loading") {
     return (
-      <main className="batch-shell">
+      <main className="batch-shell" data-uat="batch-page" data-state="loading">
         <p>Loading batch...</p>
       </main>
     );
@@ -94,14 +95,14 @@ export function BatchDistributionPage() {
 
   if (status === "error") {
     return (
-      <main className="batch-shell">
+      <main className="batch-shell" data-uat="batch-page" data-state="error">
         <p className="error">{error ?? "Batch not found"}</p>
       </main>
     );
   }
 
   return (
-    <main className="batch-shell">
+    <main className="batch-shell" data-uat="batch-page" data-state="ready" data-batch-id={batchId}>
       <header className="batch-header">
         <div>
           <p className="eyebrow">Match Visualiser</p>
@@ -127,7 +128,7 @@ export function BatchDistributionPage() {
         </div>
       </header>
 
-      <section className="batch-meta" aria-label="Batch metadata">
+      <section className="batch-meta" aria-label="Batch metadata" data-uat="batch-metadata">
         <strong>Home tactics</strong>
         <span>{metadata.homeTactics}</span>
         <strong>Away tactics</strong>
@@ -136,14 +137,18 @@ export function BatchDistributionPage() {
         <span>{metadata.duration}</span>
       </section>
 
-      <section className="batch-lineup" aria-label="Batch line-up">
+      <section className="batch-lineup" aria-label="Batch line-up" data-uat="batch-lineup">
         <h2>Batch XI</h2>
         <BatchLineup run={runs[0]} />
         <BatchSubstitutions runs={runs} />
         <BatchSetPieces runs={runs} />
       </section>
 
-      <section className="batch-summary" aria-label="Batch summary statistics">
+      <section
+        className="batch-summary"
+        aria-label="Batch summary statistics"
+        data-uat="batch-summary"
+      >
         <h2>Summary statistics</h2>
         <table>
           <thead>
@@ -158,7 +163,7 @@ export function BatchDistributionPage() {
             {METRICS.map((metric) => {
               const summary = summarise(runs.map(metric.value));
               return (
-                <tr key={metric.id}>
+                <tr key={metric.id} data-uat="batch-summary-row" data-metric={metric.id}>
                   <td>{metric.label}</td>
                   <td>{summary.mean}</td>
                   <td>{summary.median}</td>
@@ -170,7 +175,7 @@ export function BatchDistributionPage() {
         </table>
       </section>
 
-      <section className="batch-grid" aria-label="Batch histograms">
+      <section className="batch-grid" aria-label="Batch histograms" data-uat="batch-histograms">
         {METRICS.map((metric) => (
           <HistogramCard
             key={metric.id}
@@ -238,7 +243,12 @@ function HistogramCard({
   const buckets = useMemo(() => buildBuckets(runs, metric), [metric, runs]);
 
   return (
-    <article className="batch-card" aria-label={`${metric.label} histogram`}>
+    <article
+      className="batch-card"
+      aria-label={`${metric.label} histogram`}
+      data-uat="batch-histogram"
+      data-metric={metric.id}
+    >
       <h2>{metric.label}</h2>
       <BarChart
         width={340}
@@ -319,11 +329,15 @@ function BatchLineup({ run }: { run: PersistedMatchRun | undefined }) {
     <div className="lineup-summary">
       <div>
         <strong>Home</strong>
-        <p>{xi.home.map((player) => `${player.position} ${player.shortName}`).join(", ")}</p>
+        <p>
+          {xi.home.map((player) => `${player.position} ${playerDisplayName(player)}`).join(", ")}
+        </p>
       </div>
       <div>
         <strong>Away</strong>
-        <p>{xi.away.map((player) => `${player.position} ${player.shortName}`).join(", ")}</p>
+        <p>
+          {xi.away.map((player) => `${player.position} ${playerDisplayName(player)}`).join(", ")}
+        </p>
       </div>
     </div>
   );

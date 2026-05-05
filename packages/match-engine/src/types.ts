@@ -115,6 +115,8 @@ export interface PlayerInput {
   id: string;
   name: string;
   shortName: string;
+  displayName?: string;
+  sourceName?: string;
   squadNumber?: number;
   position: Position;
   attributes: PlayerAttributes;
@@ -130,6 +132,8 @@ export interface PlayerInputV2 {
   id: string;
   name: string;
   shortName: string;
+  displayName?: string;
+  sourceName?: string;
   squadNumber?: number;
   position: Position;
   height?: number;
@@ -266,6 +270,8 @@ export interface SnapshotRosterPlayer {
   id: string;
   name: string;
   shortName: string;
+  displayName?: string;
+  sourceName?: string;
   squadNumber?: number;
   position: Position;
   height?: number;

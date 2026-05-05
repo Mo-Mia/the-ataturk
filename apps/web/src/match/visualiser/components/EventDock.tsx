@@ -305,17 +305,23 @@ function possessionText(value: unknown): string {
 }
 
 function playerName(snapshot: MatchSnapshot, team: TeamId, playerId: string): string {
-  return (
-    snapshot.meta.rosters[team].find((player) => player.id === playerId)?.shortName ?? playerId
-  );
+  const player = snapshot.meta.rosters[team].find((candidate) => candidate.id === playerId);
+  return player ? rosterDisplayName(player) : playerId;
 }
 
 function playerNameById(snapshot: MatchSnapshot, playerId: string): string {
-  return (
-    snapshot.meta.rosters.home.find((player) => player.id === playerId)?.shortName ??
-    snapshot.meta.rosters.away.find((player) => player.id === playerId)?.shortName ??
-    playerId
-  );
+  const player =
+    snapshot.meta.rosters.home.find((candidate) => candidate.id === playerId) ??
+    snapshot.meta.rosters.away.find((candidate) => candidate.id === playerId);
+  return player ? rosterDisplayName(player) : playerId;
+}
+
+function rosterDisplayName(player: {
+  displayName?: string;
+  shortName: string;
+  name: string;
+}): string {
+  return player.displayName ?? player.shortName ?? player.name;
 }
 
 function teamName(snapshot: MatchSnapshot, team: TeamId): string {

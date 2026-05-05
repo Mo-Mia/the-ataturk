@@ -598,6 +598,8 @@ function lineupPlayer(player: TeamV2["players"][number]): MatchRunLineupPlayer {
     id: player.id,
     name: player.name,
     shortName: player.shortName,
+    ...(player.displayName === undefined ? {} : { displayName: player.displayName }),
+    ...(player.sourceName === undefined ? {} : { sourceName: player.sourceName }),
     position: player.position,
     ...(player.squadNumber === undefined ? {} : { squadNumber: player.squadNumber })
   };
@@ -608,6 +610,9 @@ function squadPlayerResponse(player: Fc25SquadPlayer) {
     id: player.id,
     name: player.name,
     shortName: player.shortName,
+    displayName: player.displayName,
+    sourceName: player.sourceName,
+    sourceShortName: player.sourceShortName,
     squadNumber: player.squadNumber,
     overall: player.overall,
     position: player.position,

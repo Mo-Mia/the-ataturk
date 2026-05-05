@@ -1,6 +1,7 @@
 export * from "./adapter";
 export * from "./chanceCreationIsolatedInvestigation";
 export * from "./constants";
+export * from "./displayNames";
 export * from "./fc26CalibrationBaseline";
 export * from "./fc26MultiMatchupCalibration";
 export * from "./fc26Pl20Baseline";
@@ -11,5 +12,6 @@ export * from "./phase13EventVolumeDiagnostics";
 export * from "./phase14CalibrationValidation";
 export * from "./phase15ModulationDiagnostics";
 export * from "./realSquadResponsiveness";
+export * from "./repairDisplayNames";
 export * from "./selectStartingXI";
 export * from "./squadManager";

@@ -9,7 +9,8 @@ import {
   importFc25Dataset,
   listFc25Clubs,
   loadFc25Squad,
-  parseFc25ImportCliArgs
+  parseFc25ImportCliArgs,
+  repairFc25DisplayNames
 } from "../../src/fc25";
 import { migrate } from "../../src/migrate";
 import { createTestDatabase, type TestDatabase } from "../test-db";
@@ -163,6 +164,9 @@ describe("FC25 importer", () => {
       sourcePosition: "RB"
     });
     expect(liverpool.find((player) => player.name === "Florian Wirtz")).toMatchObject({
+      displayName: "Florian Wirtz",
+      sourceName: "Florian Wirtz",
+      sourceShortName: "F. Wirtz",
       squadNumber: 7,
       sourcePosition: "AM"
     });
@@ -182,19 +186,66 @@ describe("FC25 importer", () => {
     const db = new Database(testDatabase.path);
     try {
       const row = db
-        .prepare<[], { value_eur: number; work_rate: string; position_ratings_json: string }>(
-          "SELECT value_eur, work_rate, position_ratings_json FROM fc25_players WHERE dataset_version_id = 'fc26-test-v1' AND id = '256630'"
+        .prepare<
+          [],
+          {
+            value_eur: number;
+            work_rate: string;
+            position_ratings_json: string;
+            source_name: string;
+            source_short_name: string;
+            display_name: string;
+          }
+        >(
+          "SELECT value_eur, work_rate, position_ratings_json, source_name, source_short_name, display_name FROM fc25_players WHERE dataset_version_id = 'fc26-test-v1' AND id = '256630'"
         )
         .get();
 
       expect(row).toMatchObject({
         value_eur: 132000000,
-        work_rate: "High/Med"
+        work_rate: "High/Med",
+        source_name: "Florian Wirtz",
+        source_short_name: "F. Wirtz",
+        display_name: "Florian Wirtz"
       });
       expect(row?.position_ratings_json).toContain("\"cam\":89");
     } finally {
       db.close();
     }
+  });
+
+  it("repairs display fields from the active dataset source file idempotently", () => {
+    testDatabase = createMigratedDatabase("fc26-display-repair");
+    const csvPath = writeTempCsv("fc26-display-repair.csv", fc26FullSquadCsv());
+    importFc25Dataset({
+      databasePath: testDatabase.path,
+      csvPath,
+      format: "fc26",
+      datasetVersionId: "fc26-display-repair-v1"
+    });
+
+    const db = new Database(testDatabase.path);
+    try {
+      db.prepare(
+        "UPDATE fc25_players SET source_name = NULL, source_short_name = NULL, display_name = NULL WHERE dataset_version_id = 'fc26-display-repair-v1'"
+      ).run();
+    } finally {
+      db.close();
+    }
+
+    const first = repairFc25DisplayNames({
+      databasePath: testDatabase.path,
+      datasetVersionId: "fc26-display-repair-v1",
+      format: "fc26"
+    });
+    const second = repairFc25DisplayNames({
+      databasePath: testDatabase.path,
+      datasetVersionId: "fc26-display-repair-v1",
+      format: "fc26"
+    });
+
+    expect(first).toMatchObject({ matchedPlayers: 128, updatedPlayers: 128 });
+    expect(second).toMatchObject({ matchedPlayers: 128, updatedPlayers: 0 });
   });
 
   it("imports the English Premier League 20-club FC26 universe on request", () => {
@@ -318,6 +369,7 @@ function fc26FullSquadCsv(): string {
     }),
     fc26Record({
       player_id: "256630",
+      short_name: "F. Wirtz",
       long_name: "Florian Wirtz",
       player_positions: "CAM",
       overall: "89",

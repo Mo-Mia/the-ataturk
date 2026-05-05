@@ -285,6 +285,9 @@ export interface Fc25SquadPlayer {
   id: string;
   name: string;
   shortName: string;
+  displayName: string;
+  sourceName: string;
+  sourceShortName: string | null;
   squadNumber?: number;
   position: Fc25Position;
   age?: number;

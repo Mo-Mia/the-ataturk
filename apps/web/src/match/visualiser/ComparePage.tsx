@@ -12,6 +12,7 @@ import {
 } from "./components/HeatmapPanel";
 import { StatsPanel, statsForReplay } from "./components/StatsPanel";
 import type { MatchRunListResponse, PersistedMatchRun } from "./runTypes";
+import { playerDisplayName } from "./runTypes";
 
 interface LoadedRun {
   run: PersistedMatchRun;
@@ -128,7 +129,7 @@ export function ComparePage() {
   }
 
   return (
-    <main className="compare-shell">
+    <main className="compare-shell" data-uat="compare-page" data-state={status}>
       <header className="compare-header">
         <div>
           <p className="eyebrow">Match Visualiser</p>
@@ -140,7 +141,11 @@ export function ComparePage() {
         </a>
       </header>
 
-      <section className="compare-picker" aria-label="Run comparison picker">
+      <section
+        className="compare-picker"
+        aria-label="Run comparison picker"
+        data-uat="compare-picker"
+      >
         <RunSelect label="Run A" runs={runs} value={runAId} onChange={(id) => setRun("a", id)} />
         <RunSelect label="Run B" runs={runs} value={runBId} onChange={(id) => setRun("b", id)} />
       </section>
@@ -186,7 +191,11 @@ function SubstitutionComparison({
   runB: PersistedMatchRun;
 }) {
   return (
-    <section className="compare-lineups" aria-label="Substitution comparison">
+    <section
+      className="compare-lineups"
+      aria-label="Substitution comparison"
+      data-uat="compare-substitutions"
+    >
       <SubstitutionBlock title="Run A substitutions" run={runA} />
       <SubstitutionBlock title="Run B substitutions" run={runB} />
       <SetPieceBlock title="Run A set pieces" run={runA} />
@@ -231,7 +240,11 @@ function LineupComparison({ runA, runB }: { runA: PersistedMatchRun; runB: Persi
   const xiB = runB.summary.xi;
   if (!xiA || !xiB) {
     return (
-      <section className="compare-lineups" aria-label="Line-up comparison">
+      <section
+        className="compare-lineups"
+        aria-label="Line-up comparison"
+        data-uat="compare-lineups"
+      >
         XI not recorded for one or both runs.
       </section>
     );
@@ -239,14 +252,18 @@ function LineupComparison({ runA, runB }: { runA: PersistedMatchRun; runB: Persi
 
   if (sameLineup(xiA.home, xiB.home) && sameLineup(xiA.away, xiB.away)) {
     return (
-      <section className="compare-lineups" aria-label="Line-up comparison">
+      <section
+        className="compare-lineups"
+        aria-label="Line-up comparison"
+        data-uat="compare-lineups"
+      >
         Same XI
       </section>
     );
   }
 
   return (
-    <section className="compare-lineups" aria-label="Line-up comparison">
+    <section className="compare-lineups" aria-label="Line-up comparison" data-uat="compare-lineups">
       <LineupBlock title="Run A home" players={xiA.home} />
       <LineupBlock title="Run B home" players={xiB.home} />
       <LineupBlock title="Run A away" players={xiA.away} />
@@ -263,9 +280,9 @@ function LineupBlock({
   players: NonNullable<PersistedMatchRun["summary"]["xi"]>["home"];
 }) {
   return (
-    <div>
+    <div data-uat="compare-lineup-block">
       <strong>{title}</strong>
-      <p>{players.map((player) => `${player.position} ${player.shortName}`).join(", ")}</p>
+      <p>{players.map((player) => `${player.position} ${playerDisplayName(player)}`).join(", ")}</p>
     </div>
   );
 }
@@ -295,7 +312,11 @@ function RunSelect({
   return (
     <label>
       {label}
-      <select value={value} onChange={(event) => onChange(event.currentTarget.value)}>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
+        data-uat="compare-run-select"
+      >
         <option value="">Select run</option>
         {runs.map((run) => (
           <option key={run.id} value={run.id}>
@@ -317,7 +338,7 @@ function SummaryDiff({ runA, runB }: { runA: LoadedRun; runB: LoadedRun }) {
   const bAttack = attackingThirdPct(runB.snapshot);
 
   return (
-    <section className="compare-summary" aria-label="Summary difference">
+    <section className="compare-summary" aria-label="Summary difference" data-uat="compare-summary">
       <strong>
         Run A: {aFinal.score.home}-{aFinal.score.away}, {aShots} shots.
       </strong>
@@ -345,7 +366,12 @@ function RunColumn({
   const events = loaded.snapshot.ticks.flatMap((snapshotTick) => snapshotTick.events);
 
   return (
-    <article className="compare-column" aria-label={title}>
+    <article
+      className="compare-column"
+      aria-label={title}
+      data-uat="compare-run-column"
+      data-run-id={loaded.run.id}
+    >
       <header className="compare-column-header">
         <h2>{title}</h2>
         <p>

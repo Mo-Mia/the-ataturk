@@ -154,7 +154,12 @@ export function VisualiserPage() {
     snapshot && currentTick ? recentGoalEvent(snapshot.ticks, tickIndex, currentTick) : null;
 
   return (
-    <main style={styles.page}>
+    <main
+      style={styles.page}
+      data-uat="snapshot-replay-page"
+      data-state={snapshot ? "ready" : "empty"}
+      data-artifact-id={selectedArtifact}
+    >
       <header style={styles.topBar}>
         <div style={styles.brandBlock}>
           <div>
@@ -169,6 +174,7 @@ export function VisualiserPage() {
           <div style={styles.sourceControls}>
             <select
               aria-label="Snapshot artifact"
+              data-uat="snapshot-artifact-select"
               value={selectedArtifact}
               disabled={artifactLoading}
               onChange={(event) => void handleArtifact(event.currentTarget.value)}
@@ -197,6 +203,7 @@ export function VisualiserPage() {
         <div style={styles.toolbarControls}>
           <button
             type="button"
+            data-uat="snapshot-play-toggle"
             onClick={() => setPlaying((value) => !value)}
             disabled={!snapshot}
             style={styles.button}
@@ -205,6 +212,7 @@ export function VisualiserPage() {
           </button>
           <input
             aria-label="Replay timeline"
+            data-uat="snapshot-timeline"
             type="range"
             min={0}
             max={snapshot ? snapshot.ticks.length - 1 : 0}
@@ -232,6 +240,7 @@ export function VisualiserPage() {
           <div style={styles.segmentedControl} aria-label="Visualiser view mode">
             <button
               type="button"
+              data-uat="snapshot-view-replay"
               onClick={() => {
                 setViewMode("replay");
                 setInspectorTab("stats");
@@ -242,6 +251,7 @@ export function VisualiserPage() {
             </button>
             <button
               type="button"
+              data-uat="snapshot-view-heatmap"
               onClick={() => {
                 setViewMode("heatmap");
                 setInspectorTab("heatmap");
@@ -253,6 +263,7 @@ export function VisualiserPage() {
           </div>
           <select
             aria-label="Heatmap subject"
+            data-uat="snapshot-heatmap-subject"
             value={heatmapSubject}
             disabled={!snapshot || viewMode !== "heatmap"}
             onChange={(event) => setHeatmapSubject(parseHeatmapSubject(event.currentTarget.value))}
@@ -270,6 +281,7 @@ export function VisualiserPage() {
           </select>
           <select
             aria-label="Heatmap possession filter"
+            data-uat="snapshot-heatmap-filter"
             value={heatmapFilter}
             disabled={!snapshot || viewMode !== "heatmap" || heatmapSubject !== "ball"}
             onChange={(event) => setHeatmapFilter(parseHeatmapFilter(event.currentTarget.value))}
@@ -281,6 +293,7 @@ export function VisualiserPage() {
           </select>
           <select
             aria-label="Heatmap player"
+            data-uat="snapshot-heatmap-player"
             value={selectedPlayerId}
             disabled={!snapshot || viewMode !== "heatmap" || heatmapSubject !== "player_relative"}
             onChange={(event) => setSelectedPlayerId(event.currentTarget.value)}
@@ -297,7 +310,11 @@ export function VisualiserPage() {
 
       {error || artifactError ? <div style={styles.errorBar}>{error ?? artifactError}</div> : null}
 
-      <section style={styles.workbench} aria-label="Snapshot replay visualiser">
+      <section
+        style={styles.workbench}
+        aria-label="Snapshot replay visualiser"
+        data-uat="snapshot-workbench"
+      >
         <div
           style={styles.stage}
           onDragOver={(event) => event.preventDefault()}
@@ -513,7 +530,7 @@ function PlayerDiagnostics({
     <div style={styles.playerPanel}>
       <div style={styles.diagnosticGrid}>
         <span>Player</span>
-        <strong>{rosterPlayer.shortName}</strong>
+        <strong>{rosterDisplayName(rosterPlayer)}</strong>
         <span>Position</span>
         <strong>{rosterPlayer.position}</strong>
         <span>On pitch</span>
@@ -579,9 +596,8 @@ function formatClock(tick: MatchTick): string {
 }
 
 function playerName(snapshot: MatchSnapshot, team: TeamId, playerId: string): string {
-  return (
-    snapshot.meta.rosters[team].find((player) => player.id === playerId)?.shortName ?? playerId
-  );
+  const player = snapshot.meta.rosters[team].find((candidate) => candidate.id === playerId);
+  return player ? rosterDisplayName(player) : playerId;
 }
 
 function rosterPlayerById(snapshot: MatchSnapshot, playerId: string) {
@@ -596,13 +612,21 @@ function rosterOptions(snapshot: MatchSnapshot): Array<{ id: string; label: stri
   return [
     ...snapshot.meta.rosters.home.map((player) => ({
       id: player.id,
-      label: `${snapshot.meta.homeTeam.shortName} ${player.shortName}`
+      label: `${snapshot.meta.homeTeam.shortName} ${rosterDisplayName(player)}`
     })),
     ...snapshot.meta.rosters.away.map((player) => ({
       id: player.id,
-      label: `${snapshot.meta.awayTeam.shortName} ${player.shortName}`
+      label: `${snapshot.meta.awayTeam.shortName} ${rosterDisplayName(player)}`
     }))
   ];
+}
+
+function rosterDisplayName(player: {
+  displayName?: string;
+  shortName: string;
+  name: string;
+}): string {
+  return player.displayName ?? player.shortName ?? player.name;
 }
 
 function firstRosterPlayerId(snapshot: MatchSnapshot): string {

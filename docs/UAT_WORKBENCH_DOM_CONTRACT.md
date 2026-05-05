@@ -9,11 +9,11 @@ classes. CSS classes are presentational unless listed here.
 | Route | Purpose | Stable entry selector |
 | --- | --- | --- |
 | `/` | Dashboard | `[data-uat="dashboard-page"]` |
-| `/visualise/run` | Sim Runner | `#nav-link-sim-runner` |
-| `/visualise` | Snapshot Replay | `#nav-link-snapshot-replay` |
-| `/visualise/compare` | Compare | `#nav-link-compare` |
-| `/visualise/batch/:batchId` | Batch distribution | `#nav-link-latest-batch[data-batch-id]` |
-| `/admin/squad-manager` | Admin Squad Manager | `#nav-link-squad-manager` |
+| `/visualise/run` | Sim Runner | `[data-uat="sim-runner-page"]` |
+| `/visualise` | Snapshot Replay | `[data-uat="snapshot-replay-page"]` |
+| `/visualise/compare` | Compare | `[data-uat="compare-page"]` |
+| `/visualise/batch/:batchId` | Batch distribution | `[data-uat="batch-page"][data-batch-id]` |
+| `/admin/squad-manager` | Admin Squad Manager | `[data-uat="squad-manager-page"]` |
 | `/smoke-test` | Legacy smoke test | dashboard System Status link |
 
 ## Navigation
@@ -61,6 +61,96 @@ Use these value selectors when validating dashboard numbers:
 Dashboard charts or compact summaries must duplicate their key values as text
 or data attributes. Agents should not infer numeric values from SVG/canvas
 geometry.
+
+## Sim Runner
+
+Stable page and entity selectors:
+
+| Entity | Selector | Entity attributes |
+| --- | --- | --- |
+| Page | `[data-uat="sim-runner-page"]` | `data-state` |
+| Setup grid | `[data-uat="sim-runner-setup"]` | none |
+| Run controls | `[data-uat="sim-runner-controls"]` | none |
+| Team panel | `[data-uat="sim-runner-team-panel"]` | `data-team-side`, `data-club-id` |
+| Squad picker | `[data-uat="sim-runner-squad-picker"]` | child player rows |
+| Squad player | `[data-uat="sim-runner-squad-player"]` | `data-player-id`, `data-display-name`, `data-source-name` |
+| Scheduled substitutions | `[data-uat="sim-runner-scheduled-subs"]` | player names rendered as text |
+| Run history | `[data-uat="sim-runner-history"]` | child run rows |
+| Run row | `[data-uat="sim-runner-run-row"]` | `data-run-id`, `data-artifact-id`, `data-batch-id` |
+
+Player labels prefer `displayName`, then `shortName`, then `name`. Full FC
+source names remain extractable through `data-source-name` where player rows
+are rendered.
+
+## Snapshot Replay
+
+Stable page and control selectors:
+
+| Entity | Selector | Entity attributes |
+| --- | --- | --- |
+| Page | `[data-uat="snapshot-replay-page"]` | `data-state`, `data-artifact-id` |
+| Artifact select | `[data-uat="snapshot-artifact-select"]` | selected artifact filename |
+| Play toggle | `[data-uat="snapshot-play-toggle"]` | button text |
+| Timeline | `[data-uat="snapshot-timeline"]` | range `value`, `min`, `max` |
+| Replay view | `[data-uat="snapshot-view-replay"]` | none |
+| Heatmap view | `[data-uat="snapshot-view-heatmap"]` | none |
+| Heatmap subject | `[data-uat="snapshot-heatmap-subject"]` | selected subject |
+| Heatmap filter | `[data-uat="snapshot-heatmap-filter"]` | selected filter |
+| Heatmap player | `[data-uat="snapshot-heatmap-player"]` | selected player id |
+| Workbench | `[data-uat="snapshot-workbench"]` | contains pitch/inspector content |
+
+Replay player option labels use snapshot roster `displayName` when present.
+Older artefacts may only expose `shortName`; agents should accept either.
+
+## Compare
+
+Stable page and entity selectors:
+
+| Entity | Selector | Entity attributes |
+| --- | --- | --- |
+| Page | `[data-uat="compare-page"]` | `data-state` |
+| Picker | `[data-uat="compare-picker"]` | child run selects |
+| Run select | `[data-uat="compare-run-select"]` | selected run id |
+| Summary | `[data-uat="compare-summary"]` | key diff values as text |
+| Lineups | `[data-uat="compare-lineups"]` | line-up text uses display names |
+| Lineup block | `[data-uat="compare-lineup-block"]` | player ids are in persisted run JSON |
+| Substitutions | `[data-uat="compare-substitutions"]` | substitution counts as text |
+| Run column | `[data-uat="compare-run-column"]` | `data-run-id` |
+
+## Batch Distribution
+
+Stable page and entity selectors:
+
+| Entity | Selector | Entity attributes |
+| --- | --- | --- |
+| Page | `[data-uat="batch-page"]` | `data-state`, `data-batch-id` |
+| Metadata | `[data-uat="batch-metadata"]` | matchup/tactics/duration as text |
+| Batch XI | `[data-uat="batch-lineup"]` | player labels as text |
+| Summary table | `[data-uat="batch-summary"]` | child summary rows |
+| Summary row | `[data-uat="batch-summary-row"]` | `data-metric` |
+| Histograms | `[data-uat="batch-histograms"]` | child histograms |
+| Histogram | `[data-uat="batch-histogram"]` | `data-metric` |
+
+Histogram key values are duplicated in the summary table. Agents should use the
+table for extraction and treat charts as navigation affordances only.
+
+## Squad Manager
+
+Stable page and entity selectors:
+
+| Entity | Selector | Entity attributes |
+| --- | --- | --- |
+| Page | `[data-uat="squad-manager-page"]` | `data-state` |
+| Dataset select | `[data-uat="squad-manager-dataset-select"]` | selected dataset version id |
+| Home club select | `[data-uat="squad-manager-home-club-select"]` | selected club id |
+| Away club select | `[data-uat="squad-manager-away-club-select"]` | selected club id |
+| Focused club select | `[data-uat="squad-manager-focused-club-select"]` | selected club id |
+| Board | `[data-uat="squad-manager-board"]` | contains squad lists and verification panel |
+| Squad list | `[data-uat="squad-manager-squad-list"]` | child player rows |
+| Squad player | `[data-uat="squad-manager-player"]` | `data-player-id`, `data-display-name`, `data-source-name`, `data-source-short-name` |
+
+Squad Manager shows friendly display names while preserving full source names
+as tooltips and data attributes for audit.
 
 ## Recommended UAT Flow
 

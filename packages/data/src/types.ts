@@ -461,6 +461,7 @@ export interface Fc25ParsedPlayerRow {
   rank: number;
   fc25PlayerId: string;
   name: string;
+  sourceShortName: string | null;
   overall: number;
   position: Fc25Position;
   sourcePosition: Fc25SourcePosition;
@@ -485,6 +486,9 @@ export interface Fc25ParsedPlayerRow {
 }
 
 export interface Fc25SquadPlayer extends PlayerInputV2 {
+  displayName: string;
+  sourceName: string;
+  sourceShortName: string | null;
   overall: number;
   sourcePosition: Fc25Position;
   alternativePositions: Fc25Position[];
@@ -494,6 +498,8 @@ export interface MatchRunLineupPlayer {
   id: string;
   name: string;
   shortName: string;
+  displayName?: string;
+  sourceName?: string;
   position: EnginePosition;
   squadNumber?: number;
 }

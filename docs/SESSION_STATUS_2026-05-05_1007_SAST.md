@@ -49,6 +49,17 @@ observability and wayfinding, with future aesthetic coherence tracked in
 The active runtime dataset remains FC26 PL20:
 `fc25-20260504102445-4399cb2b-a504ee92`.
 
+Runtime DB checkpoint after the UAT/display-name readiness sprint:
+
+- Active FC26 PL20 dataset `fc25-20260504102445-4399cb2b-a504ee92`
+  has `source_name`, `source_short_name`, and `display_name` repaired from
+  `data/fc-25/FC26_20250921.csv`.
+- The display-name repair command is idempotent: the second repair pass matched
+  547 players and updated 0 rows.
+- Historical match artefacts are intentionally unchanged; only newly generated
+  runs include improved display-name metadata in persisted XI/bench summaries
+  and snapshot rosters.
+
 The dashboard engine-character card surfaces the locked Phase 14b/17 values:
 
 - Shots: `22.67` in `[19.4, 30.2]`
@@ -67,3 +78,12 @@ The logical next-step conversation should choose between:
 - Data/admin expansion: football-data.org mappings for all 20 PL clubs.
 - Calibration/fidelity continuation: aerial/byline/goal-line corner texture,
   position ratings, work-rate, or tighter real-PL bands.
+
+## Next After This
+
+**PL20 Admin Expansion** should be the following sprint after the UAT/display-name
+readiness pass. Scope: add football-data.org mappings for all 20 FC26 Premier
+League clubs, verify route/API coverage for the expanded mappings, and build
+confidence that Squad Manager verification works across the full PL20 dataset.
+Do not fold club mapping implementation into the current UAT/display-name
+sprint.

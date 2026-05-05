@@ -29,7 +29,8 @@ describe("data migrations", () => {
       "004_match_runs.sql",
       "005_match_runs_side_switch_version.sql",
       "006_fc25_dataset_version_description.sql",
-      "007_fc26_player_metadata.sql"
+      "007_fc26_player_metadata.sql",
+      "008_fc25_player_display_names.sql"
     ]);
     expect(firstRun.skipped).toEqual([]);
     expect(secondRun.applied).toEqual([]);
@@ -40,7 +41,8 @@ describe("data migrations", () => {
       "004_match_runs.sql",
       "005_match_runs_side_switch_version.sql",
       "006_fc25_dataset_version_description.sql",
-      "007_fc26_player_metadata.sql"
+      "007_fc26_player_metadata.sql",
+      "008_fc25_player_display_names.sql"
     ]);
 
     const db = new Database(testDatabase.path);
@@ -49,7 +51,7 @@ describe("data migrations", () => {
         .prepare<[], CountRow>("SELECT COUNT(*) AS count FROM _migrations")
         .get();
 
-      expect(row?.count).toBe(7);
+      expect(row?.count).toBe(8);
 
       const tableRows = db
         .prepare<[], { name: string }>(

@@ -28,6 +28,7 @@
     "fc25:phase14-validation": "tsx src/fc25/phase14CalibrationValidationCli.ts",
     "fc25:phase15-modulation": "tsx src/fc25/phase15ModulationDiagnosticsCli.ts",
     "fc25:phase8-baseline": "tsx src/fc25/phase8BaselineVerifier.ts",
+    "fc25:repair-display-names": "tsx src/fc25/repairDisplayNames.ts",
     "fc25:responsiveness": "tsx src/fc25/realSquadResponsivenessCli.ts",
     "migrate": "tsx src/migrate.ts",
     "reset": "tsx src/reset.ts",

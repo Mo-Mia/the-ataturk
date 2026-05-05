@@ -131,6 +131,8 @@ function rosterPlayer(player: PlayerInput | PlayerInputV2): SnapshotRosterPlayer
     id: player.id,
     name: player.name,
     shortName: player.shortName,
+    ...(player.displayName === undefined ? {} : { displayName: player.displayName }),
+    ...(player.sourceName === undefined ? {} : { sourceName: player.sourceName }),
     ...(player.squadNumber === undefined ? {} : { squadNumber: player.squadNumber }),
     position: player.position
   };

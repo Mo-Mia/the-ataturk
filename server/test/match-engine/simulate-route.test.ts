@@ -99,6 +99,10 @@ describe("match-engine simulation routes", () => {
       expect(body.runs[0]?.summary.duration).toBe("full_90");
       expect(body.runs[0]?.summary.sideSwitchVersion).toBe(1);
       expect(body.runs[0]?.summary.xi.home).toHaveLength(11);
+      expect(body.runs[0]?.summary.xi.home.find((player) => player.id === "209331")).toMatchObject({
+        displayName: "Mohamed Salah",
+        sourceName: "Mohamed Salah"
+      });
       expect(body.runs[0]?.summary.bench.home).toHaveLength(7);
       expect(body.runs[0]?.summary.xiSelection.home.mode).toBe("auto");
       expect(body.runs[0]?.summary.xi.home.map((player) => player.position)).toEqual([
@@ -261,8 +265,15 @@ describe("match-engine simulation routes", () => {
         clubId: string;
         formation: string;
         roles: string[];
-        squad: Array<{ id: string; overall: number; sourcePosition: string }>;
-        autoXi: Array<{ id: string; position: string }>;
+        squad: Array<{
+          id: string;
+          overall: number;
+          sourcePosition: string;
+          displayName: string;
+          sourceName: string;
+          sourceShortName: string | null;
+        }>;
+        autoXi: Array<{ id: string; position: string; displayName?: string; sourceName?: string }>;
         bench: Array<{ id: string }>;
       }>();
 
@@ -283,7 +294,16 @@ describe("match-engine simulation routes", () => {
         "RW"
       ]);
       expect(body.squad.length).toBeGreaterThanOrEqual(22);
+      expect(body.squad.find((player) => player.id === "209331")).toMatchObject({
+        displayName: "Mohamed Salah",
+        sourceName: "Mohamed Salah",
+        sourceShortName: null
+      });
       expect(body.autoXi).toHaveLength(11);
+      expect(body.autoXi.find((player) => player.id === "209331")).toMatchObject({
+        displayName: "Mohamed Salah",
+        sourceName: "Mohamed Salah"
+      });
       expect(body.bench).toHaveLength(7);
     } finally {
       await app.close();
