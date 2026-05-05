@@ -113,6 +113,8 @@ export interface Pl20FixtureMetrics {
   cornersFromDefensiveClearances: number;
   cornersFromSavedWide: number;
   cornersFromBlockedDelivery: number;
+  wideDeliveryPasses: number;
+  failedWideDeliveryPasses: number;
 }
 
 export interface Pl20AggregateSummary {
@@ -176,6 +178,8 @@ interface RunMetrics {
   cornersFromDefensiveClearances: number;
   cornersFromSavedWide: number;
   cornersFromBlockedDelivery: number;
+  wideDeliveryPasses: number;
+  failedWideDeliveryPasses: number;
   shotComposition: ShotCompositionMetrics;
 }
 
@@ -359,6 +363,8 @@ function metricsFor(seed: number, snapshot: MatchSnapshot): RunMetrics {
   const setPieces = snapshot.finalSummary.setPieces;
   const events = snapshot.ticks.flatMap((tick) => tick.events);
   const cornerEvents = events.filter((event) => event.type === "corner");
+  const passEvents = events.filter((event) => event.type === "pass");
+  const wideDeliveryPasses = passEvents.filter(isWideDeliveryPass);
   return {
     seed,
     homeGoals: snapshot.finalSummary.finalScore.home,
@@ -394,6 +400,10 @@ function metricsFor(seed: number, snapshot: MatchSnapshot): RunMetrics {
     ).length,
     cornersFromBlockedDelivery: cornerEvents.filter(
       (event) => stringDetail(event, "reason") === "blocked_delivery"
+    ).length,
+    wideDeliveryPasses: wideDeliveryPasses.length,
+    failedWideDeliveryPasses: wideDeliveryPasses.filter(
+      (event) => booleanDetail(event, "complete") === false
     ).length,
     shotComposition: shotCompositionFor(snapshot)
   };
@@ -465,7 +475,9 @@ function metricsFrom(
       runs.map((run) => run.cornersFromDefensiveClearances)
     ),
     cornersFromSavedWide: summariser(runs.map((run) => run.cornersFromSavedWide)),
-    cornersFromBlockedDelivery: summariser(runs.map((run) => run.cornersFromBlockedDelivery))
+    cornersFromBlockedDelivery: summariser(runs.map((run) => run.cornersFromBlockedDelivery)),
+    wideDeliveryPasses: summariser(runs.map((run) => run.wideDeliveryPasses)),
+    failedWideDeliveryPasses: summariser(runs.map((run) => run.failedWideDeliveryPasses))
   };
 }
 
@@ -499,7 +511,9 @@ function fixtureMetricsFrom(
     cornersFromDeflectedShots: summarise("cornersFromDeflectedShots"),
     cornersFromDefensiveClearances: summarise("cornersFromDefensiveClearances"),
     cornersFromSavedWide: summarise("cornersFromSavedWide"),
-    cornersFromBlockedDelivery: summarise("cornersFromBlockedDelivery")
+    cornersFromBlockedDelivery: summarise("cornersFromBlockedDelivery"),
+    wideDeliveryPasses: summarise("wideDeliveryPasses"),
+    failedWideDeliveryPasses: summarise("failedWideDeliveryPasses")
   };
 }
 
@@ -562,6 +576,16 @@ function coarseDistanceBand(event: SemanticEvent): "close" | "medium" | "long" {
 function stringDetail(event: SemanticEvent, key: string): string | null {
   const value = event.detail?.[key];
   return typeof value === "string" ? value : null;
+}
+
+function booleanDetail(event: SemanticEvent, key: string): boolean | null {
+  const value = event.detail?.[key];
+  return typeof value === "boolean" ? value : null;
+}
+
+function isWideDeliveryPass(event: SemanticEvent): boolean {
+  const passType = stringDetail(event, "passType");
+  return passType === "cross" || passType === "cutback";
 }
 
 function detailObject(event: SemanticEvent, key: string): Record<string, unknown> | null {

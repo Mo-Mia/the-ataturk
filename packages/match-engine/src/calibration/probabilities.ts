@@ -168,6 +168,10 @@ export const SET_PIECES = {
     PressureLevel,
     number
   >,
+  blockedDeliveryCornerByPressure: { low: 0.18, medium: 0.27, high: 0.36 } satisfies Record<
+    PressureLevel,
+    number
+  >,
   directFreeKickMaxDistance: 330,
   freeKickDirectShotBase: 0.42,
   freeKickCrossBase: 0.62,

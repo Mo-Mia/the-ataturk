@@ -65,6 +65,50 @@ describe("carrier action selection", () => {
     expect(state.ball.inFlight).toBe(true);
   });
 
+  it("can turn a failed wide delivery into a corner", () => {
+    const state = buildInitState(createTestConfig(16));
+    const carrier = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "RW"
+    )!;
+    const target = state.players.find(
+      (player) => player.teamId === "home" && player.baseInput.position === "ST"
+    )!;
+    const original = { ...SET_PIECES.blockedDeliveryCornerByPressure };
+    try {
+      SET_PIECES.blockedDeliveryCornerByPressure.low = 1;
+      state.players.forEach((player) => {
+        player.hasBall = player.id === carrier.id;
+        if (player.teamId === "home" && player.id !== carrier.id && player.id !== target.id) {
+          player.onPitch = false;
+        }
+      });
+      carrier.position = [70, 900];
+      carrier.baseInput.attributes.passing = 0;
+      target.position = [340, 950];
+      state.possession = { teamId: "home", zone: "att", pressureLevel: "low" };
+      const rolls = [1, 0];
+      state.rng.next = () => rolls.shift() ?? 0;
+      state.rng.int = () => 0;
+
+      performPass(state, carrier);
+
+      expect(
+        state.eventsThisTick.find((event) => event.type === "pass")?.detail
+      ).toMatchObject({ complete: false, passType: "cross" });
+      expect(
+        state.eventsThisTick.find((event) => event.type === "corner")?.detail
+      ).toMatchObject({ reason: "blocked_delivery", previousPossessor: carrier.id });
+      expect(
+        state.eventsThisTick.find((event) => event.type === "possession_change")?.detail
+      ).toEqual(expect.objectContaining({ cause: "restart_corner", previousPossessor: carrier.id }));
+      expect(state.pendingSetPiece?.type).toBe("corner");
+    } finally {
+      SET_PIECES.blockedDeliveryCornerByPressure.low = original.low;
+      SET_PIECES.blockedDeliveryCornerByPressure.medium = original.medium;
+      SET_PIECES.blockedDeliveryCornerByPressure.high = original.high;
+    }
+  });
+
   it("emits rich selective pass events for progressive passes", () => {
     const state = buildInitState(createTestConfig(16));
     const carrier = state.players.find((player) => player.hasBall)!;

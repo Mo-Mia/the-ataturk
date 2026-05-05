@@ -77,7 +77,7 @@ export function awardCorner(
   state: MutableMatchState,
   teamId: TeamId,
   position: Coordinate2D,
-  reason: "deflected_shot" | "defensive_clearance" | "saved_wide",
+  reason: "deflected_shot" | "defensive_clearance" | "saved_wide" | "blocked_delivery",
   previousPossessor?: string
 ): void {
   const cornerX = position[0] < PITCH_WIDTH / 2 ? 0 : PITCH_WIDTH;

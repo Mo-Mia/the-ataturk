@@ -51,6 +51,9 @@ describe("FC26 PL20 baseline", () => {
           report.aggregate.metrics.cornersFromSavedWide +
           report.aggregate.metrics.cornersFromBlockedDelivery
       ).toBeCloseTo(report.aggregate.metrics.corners);
+      expect(report.aggregate.metrics.wideDeliveryPasses).toBeGreaterThanOrEqual(
+        report.aggregate.metrics.failedWideDeliveryPasses
+      );
     } finally {
       testDatabase.cleanup();
     }

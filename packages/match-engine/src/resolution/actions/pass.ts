@@ -1,6 +1,7 @@
 import {
   PASS_TARGET_WEIGHTS,
   SCORE_STATE,
+  SET_PIECES,
   SUCCESS_PROBABILITIES
 } from "../../calibration/probabilities";
 import { PITCH_LENGTH, PITCH_WIDTH } from "../../calibration/constants";
@@ -15,7 +16,7 @@ import { flankSide, isWideCarrier, isWideChannelX, isWidePosition } from "../../
 import { zoneForPositionWithDirection } from "../../zones/pitchZones";
 import { emitPossessionChange } from "../pressure";
 import { maybeCreateChanceFromPass } from "../chanceCreation";
-import { awardThrowIn } from "../setPieces";
+import { awardCorner, awardThrowIn } from "../setPieces";
 import { shotDistanceContextForDirection } from "../shotDistance";
 
 export function performPass(state: MutableMatchState, carrier: MutablePlayer): void {
@@ -38,8 +39,16 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer): v
     return;
   }
 
+  const context = passContext(state, carrier, target, false);
+  if (blockedDeliveryCanBecomeCorner(state, carrier, context)) {
+    emitPassEvent(state, carrier, target, context);
+    carrier.lastWideCarryTick = null;
+    awardCorner(state, carrier.teamId, carrier.position, "blocked_delivery", carrier.id);
+    return;
+  }
+
   if (state.rng.next() <= SUCCESS_PROBABILITIES.failedPassOutOfPlay) {
-    emitPassEvent(state, carrier, target, passContext(state, carrier, target, false));
+    emitPassEvent(state, carrier, target, context);
     carrier.lastWideCarryTick = null;
     awardThrowIn(state, carrier.teamId, carrier.position, "failed_pass", carrier.id);
     return;
@@ -47,9 +56,23 @@ export function performPass(state: MutableMatchState, carrier: MutablePlayer): v
 
   const interceptor = nearestOpponent(state, target);
   if (interceptor) {
-    emitPassEvent(state, carrier, target, passContext(state, carrier, target, false));
+    emitPassEvent(state, carrier, target, context);
     completeTurnover(state, carrier, interceptor);
   }
+}
+
+function blockedDeliveryCanBecomeCorner(
+  state: MutableMatchState,
+  carrier: MutablePlayer,
+  context: ReturnType<typeof passContext>
+): boolean {
+  if (!state.dynamics.setPieces || (context.passType !== "cross" && context.passType !== "cutback")) {
+    return false;
+  }
+  if (zoneForState(state, carrier.teamId, carrier.position) !== "att") {
+    return false;
+  }
+  return state.rng.next() <= SET_PIECES.blockedDeliveryCornerByPressure[state.possession.pressureLevel];
 }
 
 function selectPassTarget(state: MutableMatchState, carrier: MutablePlayer): MutablePlayer | null {
