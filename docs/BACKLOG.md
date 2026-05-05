@@ -38,13 +38,26 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
-### Phase 17 corner-generation pathway implementation
-Phase 16 found Phase 14b corner tuning saturates around `6.52` corners/match
-because `defensiveClearanceCorner` is effectively capped once it reaches `1.0`.
-Implement new corner-eligible pathways instead of raising the same probability:
-start with goalkeeper save/parry-wide corners, then blocked wide-delivery
-corners if the PL20 floor is still missed. See
-`docs/PHASE_16_INVESTIGATION_FINDINGS.md`.
+### Future fidelity sprint: aerial-duel/header corner vocabulary
+Phase 17 closed the active corner-volume band without aerial-specific events.
+Future fidelity work can add defensive headers behind, aerial-duel deflections,
+and headed clearances to improve corner texture.
+
+### Future fidelity sprint: byline tackle/duel behind pathway
+Phase 17 did not add near-byline tackles or dribbles deflected behind. This is
+no longer a calibration blocker, but it remains a realistic corner source.
+
+### Future fidelity sprint: goal-line emergency block pathway
+Rare but salient. Add only when the engine has richer goalmouth scramble or
+emergency-clearance vocabulary.
+
+### Calibration tightening sprint to 0.5 SD of real PL
+Phase 14b/17 locks the engine inside one-SD real-PL bands. A future sprint can
+decide whether tighter 0.5-SD bands are worth the tuning cost.
+
+### Real-PL benchmark refresh after 2025/26 season completes
+Refresh the 2025/26 Football-Data.co.uk benchmark after the season completes
+and decide whether Phase 14b/17 bands need documentation-only updates.
 
 ### Investigate score-state lever-authority decay under realistic event volume
 Phase 14b's B1 foul economy reduced score-state shot impact from Phase 15's
@@ -52,11 +65,15 @@ Phase 14b's B1 foul economy reduced score-state shot impact from Phase 15's
 responsiveness policy should check whether mentality, pressing, and tempo show
 similar authority changes after realistic event-volume tuning.
 
-### Phase 14b baseline lock and Phase 8 retirement after corner pathway work
-B1 foul tuning is committed, but C5 corner constants remain uncommitted and
-Phase 14b is not yet a lockable baseline because corners remain slightly below
-band. Resume baseline lock after Phase 17 either lands corners in band or Mo/SA
-explicitly accept a known-low corner baseline.
+### ~~Phase 17 corner-generation pathway implementation~~ ✅ Done
+Phase 17 added save/parry-wide and blocked wide-delivery corner pathways. Final
+PL20 validation landed corners at `7.01` per match inside the `[6.7, 13.2]`
+real-PL band. See `docs/CALIBRATION_BASELINE_PHASE_14.md`.
+
+### ~~Phase 14b baseline lock and Phase 8 retirement after corner pathway work~~ ✅ Done
+Phase 14b/17 validation passed event-volume, responsiveness, manual XI, and
+side-switch gates. Phase 8 is retired as active anchor and preserved as
+historical reference.
 
 ### Add football-data.org mappings for all 20 FC26 Premier League clubs
 Match-engine browsing and simulation now support the active PL20 dataset, but
@@ -91,10 +108,9 @@ Phase 13 resolved the Phase 12 Mo/SA call into a tuning recommendation: tune low
 event volume before any pure real-PL rebasing sprint. See
 `docs/PHASE_13_INVESTIGATION_FINDINGS.md`.
 
-### Rebase calibration docs/tests to real-PL bands after the event-volume call
-If Mo/SA accept the Phase 12 evidence without tuning, update calibration tests,
-UAT guidance, and docs to use real-PL-anchored bands for real-squad FC26 checks.
-If tuning is chosen, do this after the tuning sprint lands.
+### ~~Rebase calibration docs/tests to real-PL bands after the event-volume call~~ ✅ Done
+Phase 14b/17 rebased `CALIBRATION_TARGETS` to real-PL half-match equivalents
+and locked `docs/CALIBRATION_BASELINE_PHASE_14.md` as the active baseline.
 
 ### Refresh real-PL benchmark source periodically
 Phase 12 uses 2025/26-to-date as primary and 2024/25 complete as cross-check.

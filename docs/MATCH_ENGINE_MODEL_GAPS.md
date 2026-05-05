@@ -1,6 +1,6 @@
 # Match Engine Model Gaps
 
-Last updated: 2026-05-04 23:23 SAST
+Last updated: 2026-05-05 08:36 SAST
 
 Purpose: keep the pre-integration engine review honest. This document lists what
 the standalone match engine currently models, what it does not model yet, and
@@ -105,15 +105,12 @@ keeps PL20 shots/goals in band (`21.35` shots, `1.93` goals) and restores
 score-state shot impact (`+39.33%`). Fouls and corners remain open Phase 14b
 tuning targets.
 
-Phase 16 diagnosed the remaining corner issue. Existing engine vocabulary can
-award corners only from deflected missed shots and defensive clearances.
-Phase 14b C4/C5 saturated `defensiveClearanceCorner` at an effective certainty
-on the eligible-clearance branch and still produced only `6.52` corners/match
-against the real-PL floor of `6.7`. Missing real-football pathways include
-keeper saves/parries wide, blocked wide deliveries, byline tackle deflections,
-defensive headers behind, and emergency goal-line blocks. This is now an event
-vocabulary gap rather than a simple probability-tuning gap; see
-`docs/PHASE_16_INVESTIGATION_FINDINGS.md`.
+Phase 17 closed the primary event-volume gap. Phase 14b/17 validation produced
+`22.67` shots, `2.19` goals, `17.47` fouls, `5.10` cards, and `7.01` corners
+per match across the PL20 matrix, all inside the real-PL one-SD bands. The
+corner gap was closed by adding save/parry-wide and blocked wide-delivery
+corner pathways after Phase 16 showed defensive-clearance probability tuning
+had saturated. See `docs/CALIBRATION_BASELINE_PHASE_14.md`.
 
 FC26 also exposes richer data that is still deliberately unused by the engine:
 `position_ratings_json`, `work_rate`, body data, traits, and tags. These remain
@@ -144,13 +141,12 @@ agency, public API shape, or obvious UAT realism.
   different end in the second half. This is intentional and matches real match
   convention. Ball heatmaps stay raw; team-attacking-territory diagnostics are
   direction-aware.
-- **Real-squad vs synthetic calibration gates**: Phase 11 showed FC26 real-squad
-  event volume can fall below the old synthetic target bands while
-  responsiveness still passes. This is a calibration-policy question before it
-  is an engine-tuning question.
-- **Corner-generation pathway gap**: Phase 16 shows realistic corner volume
-  needs more corner-eligible events, not higher probabilities on the saturated
-  defensive-clearance branch.
+- **Real-squad vs synthetic calibration gates**: resolved by Phase 14b/17 for
+  active calibration. Phase 8 remains historical; real-PL FC26 PL20 bands are
+  the active anchor.
+- **Residual corner fidelity**: primary corner volume is now in band, but
+  aerial-header-behind, byline tackle/duel-behind, and emergency goal-line block
+  pathways remain fidelity candidates rather than calibration blockers.
 
 ## Deferred Unless UAT Finds A Blocker
 

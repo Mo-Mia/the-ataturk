@@ -1,27 +1,22 @@
 # Calibration Reference
 
-Last updated: 2026-05-04 23:23 SAST
+Last updated: 2026-05-05 08:36 SAST
 
 This is the living reference for FootSim calibration. Future sprints that add or
 change calibrated constants should update this document in the same commit.
 
-Phase 8 documents the historical FC25/synthetic calibration state. Phase 12
-adds real-PL benchmark evidence but does not tune constants or execute rebasing.
+Phase 14b/17 is the active calibration anchor. Phase 8 documents the historical
+FC25/synthetic calibration state and is no longer the active gate for new
+engine tuning.
 
 Dataset-version note: calibration constants are dataset-agnostic, but baselines
-are dataset-specific. The locked Phase 8 calibration baseline and the
-responsiveness figures referenced there were established against FC25/synthetic
-inputs. FC26 is now the active data version for workbench and Squad Manager use;
-Phase 11 measured that current runtime state separately in
-`docs/CALIBRATION_BASELINE_FC26.md`; Phase 12 measured the broader
-multi-matchup FC26 matrix in
-`docs/CALIBRATION_BASELINE_FC26_MULTI_MATCHUP.md`.
+are dataset-specific. FC26 PL20 is now the active runtime data path. The active
+locked baseline is `docs/CALIBRATION_BASELINE_PHASE_14.md`; Phase 8 remains a
+historical FC25/synthetic reference.
 
-Real-PL reference note: `docs/CALIBRATION_REFERENCE_REAL_PL.md` is now the
-auditable source for 2025/26-to-date and 2024/25 benchmark numbers. Phase 12
-does not yet retire the Phase 8 synthetic bands; it recommends Mo/SA discussion
-because FC26 real-squad shots, fouls, and corners are materially below real-PL
-benchmarks.
+Real-PL reference note: `docs/CALIBRATION_REFERENCE_REAL_PL.md` is the auditable
+source for 2025/26-to-date and 2024/25 benchmark numbers. Phase 14b/17 rebases
+the active calibration gates to the 2025/26 real-PL one-SD bands.
 
 Phase 15 modulation-headroom note: carrier actions are sampled by normalised
 post-modulation weight share, `w_action / totalWeight`. High baseline action
@@ -36,6 +31,11 @@ effectively saturated. Phase 14b C4/C5 reached that ceiling and still produced
 `6.52` corners/match, below the real-PL floor. Future corner work should add
 corner-eligible pathways, such as save/parry-wide and blocked wide-delivery
 branches, rather than raising this probability again.
+
+Phase 17 corner-pathway note: save/parry-wide and blocked wide-delivery branches
+landed and closed the active corner band at `7.01` corners/match. Remaining
+corner work is fidelity-oriented, not required for the active real-PL one-SD
+calibration gate.
 
 ## How To Read This
 
@@ -81,10 +81,10 @@ and Ekitiké in. The 1000-seed paired result was `-22.10%`, paired SE `3.91pp`,
 
 | Constant | Value | Location | Controls | Origin | Coverage | Sensitivity |
 | --- | --- | --- | --- | --- | --- | --- |
-| `CALIBRATION_TARGETS.shotsTarget` | `[8, 12]` per second half | `packages/match-engine/src/calibration/constants.ts:16` | Second-half shot-volume pass band | inherited | explicit via `characterise` | high |
-| `goalsTarget` | `[1, 3]` | `constants.ts:18` | Second-half goal pass band | inherited | explicit via `characterise` | high |
-| `foulsTarget` | `[4, 8]` | `constants.ts:19` | Second-half foul pass band | inherited | explicit via `characterise` | high |
-| `cardsTarget` | `[1, 3]` | `constants.ts:20` | Second-half card pass band | inherited | explicit via `characterise` | high |
+| `CALIBRATION_TARGETS.shotsTarget` | `[9.7, 15.1]` per half-match equivalent | `packages/match-engine/src/calibration/constants.ts:16` | Shot-volume pass band, doubled by full-90 checks | empirical Phase 14b/17, real-PL one-SD band | explicit via `characterise` and Phase 14 validation | high |
+| `goalsTarget` | `[0.58, 2.17]` | `constants.ts:18` | Goal pass band | empirical Phase 14b/17, real-PL one-SD band | explicit via `characterise` and Phase 14 validation | high |
+| `foulsTarget` | `[8.3, 13.3]` | `constants.ts:19` | Foul pass band | empirical Phase 14b/17, real-PL one-SD band | explicit via `characterise` and Phase 14 validation | high |
+| `cardsTarget` | `[0.915, 2.935]` | `constants.ts:20` | Card pass band | empirical Phase 14b/17, real-PL one-SD band | explicit via `characterise` and Phase 14 validation | high |
 | `maxSingleScoreShare` | `0.4` | `constants.ts:21` | Degenerate final-score distribution guard | inherited | explicit via `characterise` | medium |
 
 ## Action Selection
@@ -170,14 +170,16 @@ contexts into one threshold.
 
 | Constant group | Value summary | Location | Controls | Origin | Coverage | Sensitivity |
 | --- | --- | --- | --- | --- | --- | --- |
-| `SET_PIECES.shotDeflectionCornerByPressure` | low/medium/high `0.025/0.045/0.07` | `probabilities.ts:162` | Corners from blocked/deflected shots | empirical Phase 6 | implicit via set-piece baseline | medium |
-| `defensiveClearanceCorner` | `0.46`; Phase 14b C4/C5 showed effective saturation once tuned above `1.0` | `probabilities.ts:166` | Corners from defensive clearances | empirical Phase 6; saturation diagnosed Phase 16 | implicit via set-piece baseline | high |
-| `directFreeKickMaxDistance` | `330` | `probabilities.ts:167` | Direct FK range | intuitive Phase 6 | implicit via set-piece baseline | medium |
-| `freeKickDirectShotBase` / `freeKickCrossBase` | `0.42` / `0.62` | `probabilities.ts:168` | FK resolution choice | intuitive Phase 6 | implicit via set-piece tests | medium |
-| `penaltyFromFoulByDistanceBand` | close/box/edge `1/0.75/0.28` | `probabilities.ts:170` | Penalty frequency from attacking fouls | empirical Phase 6 | implicit via set-piece baseline | high |
-| `cornerShotBase`, `cornerGoalBase` | `0.13`, `0.03` | `probabilities.ts:177` | Corner shot/goal conversion | empirical Phase 6 | explicit via set-piece tests; Phase 8 adds sensitivity | high |
-| `directFreeKickGoalBase` | `0.065` | `probabilities.ts:179` | Direct FK conversion | intuitive Phase 6 | implicit via set-piece baseline | medium |
-| `penaltyGoalBase` | `0.78` | `probabilities.ts:180` | Penalty conversion | empirical Phase 6 | implicit via set-piece baseline | high |
+| `SET_PIECES.shotDeflectionCornerByPressure` | low/medium/high `0.0625/0.1125/0.175` | `probabilities.ts:162` | Corners from blocked/deflected missed shots | empirical Phase 14b/17 | implicit via set-piece baseline | medium |
+| `defensiveClearanceCorner` | `0.92`; do not raise above `1.0` because the pathway saturates | `probabilities.ts:166` | Corners from defensive clearances | empirical Phase 14b, saturation diagnosed Phase 16 | implicit via set-piece baseline | high |
+| `saveCornerByPressure` | low/medium/high `0.16/0.24/0.32` | `probabilities.ts:167` | Saved/parried shots directed wide for corners | empirical Phase 17 | explicit via save-wide unit test; implicit via baseline | medium |
+| `blockedDeliveryCornerByPressure` | low/medium/high `0.18/0.27/0.36` | `probabilities.ts:171` | Failed attacking-third crosses/cutbacks blocked behind for corners | empirical Phase 17 | explicit via blocked-delivery unit test; implicit via baseline | medium |
+| `directFreeKickMaxDistance` | `330` | `probabilities.ts:175` | Direct FK range | intuitive Phase 6 | implicit via set-piece baseline | medium |
+| `freeKickDirectShotBase` / `freeKickCrossBase` | `0.42` / `0.62` | `probabilities.ts:176` | FK resolution choice | intuitive Phase 6 | implicit via set-piece tests | medium |
+| `penaltyFromFoulByDistanceBand` | close/box/edge `1/0.75/0.28` | `probabilities.ts:178` | Penalty frequency from attacking fouls | empirical Phase 6 | implicit via set-piece baseline | high |
+| `cornerShotBase`, `cornerGoalBase` | `0.13`, `0.03` | `probabilities.ts:185` | Corner shot/goal conversion | empirical Phase 6 | explicit via set-piece tests; Phase 8 adds sensitivity | high |
+| `directFreeKickGoalBase` | `0.065` | `probabilities.ts:187` | Direct FK conversion | intuitive Phase 6 | implicit via set-piece baseline | medium |
+| `penaltyGoalBase` | `0.78` | `probabilities.ts:188` | Penalty conversion | empirical Phase 6 | implicit via set-piece baseline | high |
 
 ### Locality Issue
 

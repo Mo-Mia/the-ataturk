@@ -1,13 +1,17 @@
 # Calibration Baseline — Phase 8
 
-Last updated: 2026-05-04 10:30 SAST
+Last updated: 2026-05-05 08:36 SAST
+
+**RETIRED AS ACTIVE ANCHOR.** This remains the historical FC25/synthetic
+calibration reference. The active calibration baseline is now Phase 14b/17 in
+`docs/CALIBRATION_BASELINE_PHASE_14.md`.
 
 ## Purpose
 
 This document locks the historical FC25/Phase 8 FootSim calibration baseline
-after Phase 9's manual-XI investigation. It is the source of truth for Phase 8
-consolidation work: documentation and tests may assert against these numbers,
-but this sprint does not tune engine behaviour.
+after Phase 9's manual-XI investigation. These numbers are preserved for audit
+and comparison only; new calibration gates should use the active Phase 14b/17
+baseline unless a sprint explicitly asks to reproduce the historical FC25 state.
 
 Dataset-version anchor: this baseline is tied to the FC25 dataset version active
 when Phase 8 and Phase 9 ran. The repo now has FC26 active intentionally. Future
@@ -17,9 +21,10 @@ a separate baseline, not assumed equivalent to these FC25 numbers.
 Phase 11 created a single-matchup FC26-active baseline in
 `docs/CALIBRATION_BASELINE_FC26.md`. Phase 12 created the representative
 multi-matchup FC26 baseline in
-`docs/CALIBRATION_BASELINE_FC26_MULTI_MATCHUP.md`. Do not overwrite the Phase 8
-numbers with FC26 results; use the documents side by side until a future
-rebasing or tuning sprint explicitly changes calibration policy.
+`docs/CALIBRATION_BASELINE_FC26_MULTI_MATCHUP.md`. Phase 14b/17 then tuned and
+locked the active FC26 PL20 baseline in
+`docs/CALIBRATION_BASELINE_PHASE_14.md`. Do not overwrite the Phase 8 numbers
+with FC26 results.
 
 Two precision tiers are used:
 

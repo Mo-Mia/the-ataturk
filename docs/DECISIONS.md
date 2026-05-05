@@ -4,6 +4,35 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-05 — FootSim Phase 17 outcome: corner pathways landed, Phase 14b locked
+
+Phase 17 completed the Phase 14b event-volume tuning arc. Save/parry-wide
+corners were added first as a low-risk branch after successful saves. The
+approved three-probe grid showed the pathway worked but save supply was low
+(`~1.49` saves/match), so even P3 contributed only `0.40` corners/match and
+landed at `6.62` corners/match, below the `6.7` real-PL floor.
+
+The conditional second pathway then added blocked wide-delivery corners by
+reclassifying some failed attacking-third crosses/cutbacks before they become
+throw-ins or interceptions. C1 landed `6.88` corners/match; C2
+(`blockedDeliveryCornerByPressure = 0.18/0.27/0.36`) landed `7.01` and was
+accepted.
+
+Final Phase 14b/17 validation passed: `22.67` shots, `2.19` goals, `17.47`
+fouls, `5.10` cards, and `7.01` corners per match across the PL20 matrix. Full
+responsiveness passed, including score-state shot impact at `+15.76%` against
+the Phase 14b `+10%` gate, manual XI at `-31.84%` with 1000 paired seeds, and
+the 200-seed side-switch spot check.
+
+Decision: Phase 14b/17 is the active calibration baseline. Phase 8 synthetic
+targets are retired as the active anchor and preserved as historical FC25
+reference. `CALIBRATION_TARGETS` now stores real-PL half-match equivalents while
+preserving `maxSingleScoreShare = 0.4`.
+
+Out of scope and tracked in BACKLOG: chance-creation tuning, finer 0.5-SD
+calibration, aerial/byline/goal-line corner fidelity, work-rate consumption,
+position-ratings consumption, and narrative/commentary work.
+
 ## 2026-05-04 — FootSim Phase 16 outcome: corner-generation pathway gap diagnosed
 
 Phase 14b's corner tuning saturated just below the real-PL floor. C4
