@@ -61,6 +61,10 @@ for future cleanup.
 
 ## Workbench UI
 
+### Self-improving UAT experiment — multi-cycle autonomous loop
+Prerequisites: UAT report quality assessment, scenario generalisation, and
+constraint definition. This is a learning/R&D direction, not core product.
+
 ### Deeper Compare page UAT validation
 Current UAT validates Compare page loading and XI differences. Add a future
 scenario that exercises substitution display and summary-diff logic in detail.
