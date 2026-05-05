@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "characterise": "tsx src/match/characterise.ts",
-    "football-data:verify-pl20": "tsx src/scripts/verifyPl20FootballData.ts"
+    "football-data:verify-pl20": "tsx src/scripts/verifyPl20FootballData.ts",
+    "football-data:triage-sample": "tsx src/scripts/triageSquadManagerSample.ts"
   },
   "dependencies": {
     "@google/genai": "^1.50.1",

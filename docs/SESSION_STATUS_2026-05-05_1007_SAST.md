@@ -100,3 +100,20 @@ The logical next-step conversation should choose between:
 all 20 FC26 Premier League clubs, verified route/API coverage for the expanded
 mappings, and proved Squad Manager verification works across the full PL20
 dataset.
+
+**Squad Manager Suggestion Triage Sprint** is complete in review-only mode.
+The reusable command is
+`pnpm --filter @the-ataturk/server football-data:triage-sample`; it sampled
+`liverpool`, `sunderland`, and `manchester-united` against active dataset
+`fc25-20260504102445-4399cb2b-a504ee92`.
+
+Report snapshot:
+
+- `docs/SQUAD_MANAGER_TRIAGE_PL20_SAMPLE_2026-05-05.md`
+- `docs/SQUAD_MANAGER_TRIAGE_PL20_SAMPLE_2026-05-05.json`
+
+Live result: `3/3` sampled clubs succeeded, `118` total suggestions were
+captured, with risk counts `70` low, `12` medium, and `36` high. The active
+dataset id remained `fc25-20260504102445-4399cb2b-a504ee92`, dataset-version
+count remained `3`, no suggestions were applied, and no dataset version was
+created or activated.

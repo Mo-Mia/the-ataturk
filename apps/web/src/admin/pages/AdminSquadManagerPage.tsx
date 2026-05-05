@@ -29,6 +29,7 @@ export function AdminSquadManagerPage() {
     null
   );
   const [applyOpen, setApplyOpen] = useState(false);
+  const [reviewMode, setReviewMode] = useState(true);
 
   const contextQuery = useQuery({
     queryKey: queryKeys.squadManagerContext,
@@ -85,6 +86,7 @@ export function AdminSquadManagerPage() {
   const acceptedSuggestions = allSuggestions.filter((suggestion) =>
     acceptedIds.has(suggestion.suggestionId)
   );
+  const applyAvailable = acceptedSuggestions.length > 0 && !reviewMode;
   const focusedSquad =
     focusedClubId === homeClubId
       ? (homeSquadQuery.data?.squad ?? [])
@@ -123,6 +125,9 @@ export function AdminSquadManagerPage() {
   }
 
   function applyAccepted(): void {
+    if (reviewMode) {
+      return;
+    }
     applyMutation.mutate({
       clubId: focusedClubId,
       baseDatasetVersionId: datasetVersionId,
@@ -130,6 +135,12 @@ export function AdminSquadManagerPage() {
       rationale: "Accepted via Squad Manager admin UI"
     });
   }
+
+  useEffect(() => {
+    if (reviewMode) {
+      setApplyOpen(false);
+    }
+  }, [reviewMode]);
 
   function inspectSuggestion(suggestion: SquadManagerSuggestion | null): void {
     setInspectedSuggestion(suggestion);
@@ -244,6 +255,16 @@ export function AdminSquadManagerPage() {
           : "Not mapped"}
       </p>
 
+      <label className="squad-manager__review-mode">
+        Review mode
+        <input
+          type="checkbox"
+          data-uat="squad-manager-review-mode-toggle"
+          checked={reviewMode}
+          onChange={(event) => setReviewMode(event.target.checked)}
+        />
+      </label>
+
       {contextQuery.error || homeSquadQuery.error || awaySquadQuery.error ? (
         <p className="squad-manager-error">Could not load squad-manager data.</p>
       ) : null}
@@ -279,11 +300,24 @@ export function AdminSquadManagerPage() {
           />
           <button
             type="button"
+            data-uat="squad-manager-apply-button"
+            data-review-mode={reviewMode ? "on" : "off"}
+            data-apply-available={applyAvailable ? "true" : "false"}
             onClick={() => setApplyOpen(true)}
-            disabled={acceptedSuggestions.length === 0}
+            disabled={!applyAvailable}
           >
             Apply accepted
           </button>
+          <p
+            className="squad-manager__apply-guard"
+            data-uat="squad-manager-apply-guard"
+            data-review-mode={reviewMode ? "on" : "off"}
+            data-apply-available={applyAvailable ? "true" : "false"}
+          >
+            {reviewMode
+              ? "Review mode is on; apply is guarded."
+              : "Review mode is off; selected suggestions can be applied."}
+          </p>
         </div>
         <SquadList title="Away squad" squad={awaySquadQuery.data?.squad ?? []} />
       </div>

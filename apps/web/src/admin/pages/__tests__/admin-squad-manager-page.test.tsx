@@ -58,6 +58,7 @@ describe("AdminSquadManagerPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Verify squad" }));
     await screen.findByText("Add New Forward");
     fireEvent.click(screen.getByLabelText(/Add New Forward/));
+    fireEvent.click(screen.getByLabelText("Review mode"));
     fireEvent.click(screen.getByRole("button", { name: "Apply accepted" }));
     expect(screen.getByText(/fc25-base via squad-manager/)).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
@@ -65,6 +66,67 @@ describe("AdminSquadManagerPage", () => {
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/api/ai/apply-suggestions", expect.any(Object))
     );
+  });
+
+  it("defaults to review mode and guards apply until review mode is disabled", async () => {
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = requestUrl(input);
+      if (url === "/api/ai/squad-manager/context") {
+        return Promise.resolve(
+          jsonResponse({
+            activeVersion: version,
+            datasetVersions: [version],
+            clubs
+          })
+        );
+      }
+      if (url.startsWith("/api/ai/squad-manager/squad")) {
+        return Promise.resolve(jsonResponse({ squad }));
+      }
+      if (url === "/api/ai/verify-squad") {
+        return Promise.resolve(jsonResponse(verification));
+      }
+      if (url === "/api/ai/apply-suggestions") {
+        return Promise.reject(new Error("apply should stay guarded"));
+      }
+      return Promise.reject(new Error(`Unexpected fetch ${url}`));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Mohamed Salah").length).toBeGreaterThan(0));
+    const reviewToggle = document.querySelector<HTMLInputElement>(
+      '[data-uat="squad-manager-review-mode-toggle"]'
+    );
+    const applyButton = document.querySelector<HTMLButtonElement>(
+      '[data-uat="squad-manager-apply-button"]'
+    );
+    const applyGuard = document.querySelector<HTMLElement>(
+      '[data-uat="squad-manager-apply-guard"]'
+    );
+
+    expect(reviewToggle?.checked).toBe(true);
+    expect(applyButton?.disabled).toBe(true);
+    expect(applyButton?.dataset.reviewMode).toBe("on");
+    expect(applyButton?.dataset.applyAvailable).toBe("false");
+    expect(applyGuard?.dataset.reviewMode).toBe("on");
+
+    fireEvent.click(screen.getByRole("button", { name: "Verify squad" }));
+    await screen.findByText("Add New Forward");
+    fireEvent.click(screen.getByLabelText(/Add New Forward/));
+
+    expect(applyButton?.disabled).toBe(true);
+    expect(applyButton?.dataset.applyAvailable).toBe("false");
+    expect(screen.queryByText(/fc25-base via squad-manager/)).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/ai/apply-suggestions", expect.any(Object));
+
+    fireEvent.click(screen.getByLabelText("Review mode"));
+
+    expect(reviewToggle?.checked).toBe(false);
+    expect(applyButton?.disabled).toBe(false);
+    expect(applyButton?.dataset.reviewMode).toBe("off");
+    expect(applyButton?.dataset.applyAvailable).toBe("true");
   });
 
   it("exposes a mapped football-data.org status for newly supported PL20 clubs", async () => {

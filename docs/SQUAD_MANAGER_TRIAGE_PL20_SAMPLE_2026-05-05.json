@@ -1,0 +1,1961 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-05T09:41:07.531Z",
+  "mode": "review-only",
+  "sampleClubs": [
+    "liverpool",
+    "sunderland",
+    "manchester-united"
+  ],
+  "datasetBefore": {
+    "activeDatasetVersionId": "fc25-20260504102445-4399cb2b-a504ee92",
+    "datasetVersionCount": 3
+  },
+  "datasetAfter": {
+    "activeDatasetVersionId": "fc25-20260504102445-4399cb2b-a504ee92",
+    "datasetVersionCount": 3
+  },
+  "noDatasetMutation": true,
+  "summary": {
+    "clubs": 3,
+    "ok": 3,
+    "failed": 0,
+    "suggestions": 118,
+    "riskCounts": {
+      "low": 70,
+      "medium": 12,
+      "high": 36
+    }
+  },
+  "clubs": [
+    {
+      "clubId": "liverpool",
+      "status": "ok",
+      "cacheStatus": "miss",
+      "apiQuotaRemaining": {
+        "minute": 9,
+        "day": 99
+      },
+      "suggestions": [
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-ad1e3e78-2376-424e-bb87-8e92a5d505aa",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 165154,
+              "name": "Harvey Davies",
+              "position": "Goalkeeper",
+              "dateOfBirth": "2003-09-03",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Harvey Davies",
+              "position": "GK",
+              "nationality": "England",
+              "age": 22,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-444fc28d-3ffb-4db1-86f5-e3b43c150c2b",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 287947,
+              "name": "Kornel Miściur",
+              "position": "Goalkeeper",
+              "dateOfBirth": "2007-04-27",
+              "nationality": "Poland",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Kornel Miściur",
+              "position": "GK",
+              "nationality": "Poland",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-a6ae250f-b5b5-434d-bc39-5c435aa50190",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 273063,
+              "name": "Will Wright",
+              "position": "Defence",
+              "dateOfBirth": "2008-04-03",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Will Wright",
+              "position": "CB",
+              "nationality": "England",
+              "age": 18,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-710cb35d-54f7-475a-9333-4546edd460b9",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 288621,
+              "name": "Wellity Lucky",
+              "position": "Defence",
+              "dateOfBirth": "2006-01-12",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Wellity Lucky",
+              "position": "CB",
+              "nationality": "England",
+              "age": 20,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-863aed3e-7b16-48d7-bc4c-bde6aa5d0112",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 288622,
+              "name": "Carter Pinnington",
+              "position": "Defence",
+              "dateOfBirth": "2007-02-21",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Carter Pinnington",
+              "position": "CB",
+              "nationality": "England",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-6434bf54-533e-482e-9542-c94b32d64ff0",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 295109,
+              "name": "Mor Talla N'Diaye",
+              "position": "Defence",
+              "dateOfBirth": "2008-01-06",
+              "nationality": "Senegal",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Mor Talla N'Diaye",
+              "position": "CB",
+              "nationality": "Senegal",
+              "age": 18,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-a8e96612-abd1-47b0-8dce-7d187926c15b",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 274726,
+              "name": "Kieran Morrison",
+              "position": "Midfield",
+              "dateOfBirth": "2006-11-09",
+              "nationality": "Northern Ireland",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Kieran Morrison",
+              "position": "CM",
+              "nationality": "Northern Ireland",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-334d3298-c592-4d6c-b0f5-c188370c6416",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 286622,
+              "name": "Tommy Pilling",
+              "position": "Midfield",
+              "dateOfBirth": "2004-09-14",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Tommy Pilling",
+              "position": "CM",
+              "nationality": "England",
+              "age": 21,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-06620456-6035-42f1-8ef4-c24d15a376cf",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 288625,
+              "name": "Michael Laffey",
+              "position": "Midfield",
+              "dateOfBirth": "2005-10-11",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Michael Laffey",
+              "position": "CM",
+              "nationality": "England",
+              "age": 20,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-d7921a7a-42cc-447f-abdb-9cf23e1474f4",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 288617,
+              "name": "Keyrol Figueroa",
+              "position": "Offence",
+              "dateOfBirth": "2006-08-31",
+              "nationality": "USA",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Keyrol Figueroa",
+              "position": "ST",
+              "nationality": "USA",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-e6e24dae-6af9-40ef-90ef-76655a2e6753",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 248990,
+              "name": "Amara Nallo",
+              "position": "Centre-Back",
+              "dateOfBirth": "2006-11-18",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Amara Nallo",
+              "position": "CB",
+              "nationality": "England",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-feb58cda-ad98-4320-af26-af4eb308b8ec",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 247657,
+              "name": "Jayden Danns",
+              "position": "Centre-Forward",
+              "dateOfBirth": "2006-01-16",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Jayden Danns",
+              "position": "ST",
+              "nationality": "England",
+              "age": 20,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-4786399d-4589-4480-8448-f4b94a226cb0",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 157176,
+              "name": "Kaide Gordon",
+              "position": "Right Winger",
+              "dateOfBirth": "2004-10-05",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Kaide Gordon",
+              "position": "RW",
+              "nationality": "England",
+              "age": 21,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local EA FC25 data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-a230ab2d-36c6-43ff-9fec-d3e320686d7e",
+            "type": "player_update",
+            "playerId": "209331",
+            "changes": {
+              "name": "Mohamed Salah",
+              "position": "RW",
+              "nationality": "Egypt"
+            },
+            "rationale": "Local player name includes non-Latin characters and can be simplified. Position and nationality are missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-bba59615-395a-4d99-aa47-f57bbadd0236",
+            "type": "player_update",
+            "playerId": "203376",
+            "changes": {
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local player nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-76c2cdde-cf88-4bc2-8cfa-66e8dfb7a937",
+            "type": "player_update",
+            "playerId": "256630",
+            "changes": {
+              "name": "Florian Wirtz",
+              "nationality": "Germany"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-795cf2dc-53bb-4ece-9365-111ab804a8c1",
+            "type": "player_update",
+            "playerId": "212831",
+            "changes": {
+              "name": "Alisson",
+              "nationality": "Brazil"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-95d6d1fb-83cc-4a42-8578-e3f53dd8a627",
+            "type": "player_update",
+            "playerId": "239837",
+            "changes": {
+              "nationality": "Argentina"
+            },
+            "rationale": "Local player nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-34410730-5a9f-4f47-baa4-7ab848e55e94",
+            "type": "player_update",
+            "playerId": "237678",
+            "changes": {
+              "nationality": "France"
+            },
+            "rationale": "Local player nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-3bc6d98b-4a9e-4fa2-9094-5337541de91d",
+            "type": "player_update",
+            "playerId": "246104",
+            "changes": {
+              "name": "Ryan Gravenberch",
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-cca968ef-9ecc-462c-a275-64e82b6ca4ce",
+            "type": "player_update",
+            "playerId": "242516",
+            "changes": {
+              "name": "Cody Gakpo",
+              "position": "LW",
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local player name can be simplified. Position is more accurately LW. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-40092fa8-4e6d-4f72-a55c-8430aaf9343e",
+            "type": "player_update",
+            "playerId": "253149",
+            "changes": {
+              "name": "Jeremie Frimpong",
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-5bca0bac-798b-48d6-bf0a-1334cc757641",
+            "type": "player_update",
+            "playerId": "257289",
+            "changes": {
+              "name": "Hugo Ekitike",
+              "nationality": "France"
+            },
+            "rationale": "Local player name has an incorrect accent. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-b0e7885b-17a2-49df-86ad-e3889ca001f7",
+            "type": "player_update",
+            "playerId": "260908",
+            "changes": {
+              "name": "Milos Kerkez",
+              "nationality": "Hungary"
+            },
+            "rationale": "Local player name includes non-Latin characters and can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-f1342f18-0e65-48a0-aa36-51d1d809bae7",
+            "type": "player_update",
+            "playerId": "233731",
+            "changes": {
+              "nationality": "Sweden"
+            },
+            "rationale": "Local player nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-72b5c6ee-b8cc-4fa5-93af-6b4474fe917c",
+            "type": "player_update",
+            "playerId": "262621",
+            "changes": {
+              "name": "Giorgi Mamardashvili",
+              "nationality": "Georgia"
+            },
+            "rationale": "Local player name includes non-Latin characters and can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-135c0516-2c4a-48af-a81c-a70e727dcf64",
+            "type": "player_update",
+            "playerId": "236772",
+            "changes": {
+              "position": "CM",
+              "nationality": "Hungary"
+            },
+            "rationale": "Local player position is more accurately CM. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-32493df1-9ef3-45a5-815d-2411a192dc35",
+            "type": "player_update",
+            "playerId": "216267",
+            "changes": {
+              "name": "Andrew Robertson",
+              "nationality": "Scotland"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-470c6b4b-59e4-4799-9be7-7d14721a7274",
+            "type": "player_update",
+            "playerId": "235805",
+            "changes": {
+              "position": "RW",
+              "nationality": "Italy"
+            },
+            "rationale": "Local player position is more accurately RW. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-bafbf8f4-a155-4ed2-9d58-370bde322a0d",
+            "type": "player_update",
+            "playerId": "242434",
+            "changes": {
+              "position": "CM",
+              "nationality": "England"
+            },
+            "rationale": "Local player position is more accurately CM. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-cf603f84-eb24-4c5d-938a-273151c5c7c4",
+            "type": "player_update",
+            "playerId": "232487",
+            "changes": {
+              "name": "Wataru Endō",
+              "nationality": "Japan"
+            },
+            "rationale": "Local player name includes non-Latin characters and can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-8d5a35f1-6f0a-4bda-a4c0-d267a41795c8",
+            "type": "player_update",
+            "playerId": "225100",
+            "changes": {
+              "name": "Joe Gomez",
+              "nationality": "England"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-40b9b80d-36ac-4284-a474-38f2566c01c4",
+            "type": "player_update",
+            "playerId": "264298",
+            "changes": {
+              "nationality": "Northern Ireland"
+            },
+            "rationale": "Local player nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-5fb05f1b-7988-4957-9544-40ecc760ded9",
+            "type": "player_update",
+            "playerId": "70824",
+            "changes": {
+              "nationality": "Italy"
+            },
+            "rationale": "Local player nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-3e8f38e1-80c8-4f39-810c-14b65c15b0e2",
+            "type": "player_update",
+            "playerId": "80376",
+            "changes": {
+              "name": "Rio Ngumoha",
+              "nationality": "England"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-c0a646b7-ca3b-4c87-814c-cbc40c4e5f7b",
+            "type": "player_update",
+            "playerId": "279128",
+            "changes": {
+              "name": "Trey Nyoni",
+              "position": "AM",
+              "nationality": "England"
+            },
+            "rationale": "Local player name can be simplified. Position is more accurately AM. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-fcab2f39-902c-4b15-a1a0-0714d04118bd",
+            "type": "player_update",
+            "playerId": "271975",
+            "changes": {
+              "name": "Stefan Bajcetic",
+              "nationality": "Spain"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-44b8d678-663b-40fa-beba-637e2f65c49f",
+            "type": "player_update",
+            "playerId": "222514",
+            "changes": {
+              "name": "Freddie Woodman",
+              "nationality": "England"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-0179a8c2-30a2-434e-925f-60c058e230de",
+            "type": "player_update",
+            "playerId": "252897",
+            "changes": {
+              "name": "Calvin Ramsay",
+              "nationality": "Scotland"
+            },
+            "rationale": "Local player name can be simplified. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-9bf5910e-c446-4862-aca2-2c5393f9e783",
+            "type": "player_update",
+            "playerId": "79922",
+            "changes": {
+              "name": "Armin Pecsi",
+              "nationality": "Hungary"
+            },
+            "rationale": "Local player name has an incorrect accent. Nationality is unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-b221a2eb-00ff-4d27-8f61-957a7185ab89",
+            "type": "player_update",
+            "playerId": "247601",
+            "changes": {
+              "nationality": "England"
+            },
+            "rationale": "Local player nationality is unknown."
+          }
+        }
+      ],
+      "riskCounts": {
+        "low": 22,
+        "medium": 6,
+        "high": 13
+      }
+    },
+    {
+      "clubId": "sunderland",
+      "status": "ok",
+      "cacheStatus": "miss",
+      "apiQuotaRemaining": {
+        "minute": 9,
+        "day": 98
+      },
+      "suggestions": [
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-85da55e8-1ff6-49a6-9760-993deb5d4e24",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 150893,
+              "name": "Melker Ellborg",
+              "position": "Goalkeeper",
+              "dateOfBirth": "2003-05-22",
+              "nationality": "Sweden",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Melker Ellborg",
+              "position": "GK",
+              "nationality": "Sweden",
+              "age": 22,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-5079cdcd-28a6-4f67-8905-2c71ec7fc8a9",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 285390,
+              "name": "Jenson Jones",
+              "position": "Defence",
+              "dateOfBirth": "2006-06-26",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Jenson Jones",
+              "position": "CB",
+              "nationality": "England",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-de7828e9-f8cd-44c1-8c89-92ed5f57a781",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 187375,
+              "name": "Nilson Angulo",
+              "position": "Midfield",
+              "dateOfBirth": "2003-06-19",
+              "nationality": "Ecuador",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Nilson Angulo",
+              "position": "CM",
+              "nationality": "Ecuador",
+              "age": 22,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-1d0b05be-a9e1-49e8-92ea-8d8ea3797571",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 285389,
+              "name": "Jaydon Jones",
+              "position": "Midfield",
+              "dateOfBirth": "2006-11-03",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Jaydon Jones",
+              "position": "CM",
+              "nationality": "England",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-7d6ed005-55dd-4ecc-8d3d-bf066fc1d1d4",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 285392,
+              "name": "Jack Whittaker",
+              "position": "Midfield",
+              "dateOfBirth": "2006-10-14",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Jack Whittaker",
+              "position": "CM",
+              "nationality": "England",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-74470b9b-c039-47bc-8230-b0c0bc635bd5",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 290809,
+              "name": "Jocelin Bi",
+              "position": "Offence",
+              "dateOfBirth": "2005-02-09",
+              "nationality": "Ivory Coast",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Jocelin Bi",
+              "position": "ST",
+              "nationality": "Ivory Coast",
+              "age": 21,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-8c9d31b8-13e0-4b2c-abb1-e127d2a35f4a",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 293571,
+              "name": "Finn Geragusyan",
+              "position": "Offence",
+              "dateOfBirth": "2008-01-01",
+              "nationality": "Armenia",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Finn Geragusyan",
+              "position": "ST",
+              "nationality": "Armenia",
+              "age": 18,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-6a45fb29-ae04-4910-a524-b4439a6d2775",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 268830,
+              "name": "Milan Aleksić",
+              "position": "Central Midfield",
+              "dateOfBirth": "2005-08-30",
+              "nationality": "Serbia",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Milan Aleksić",
+              "position": "CM",
+              "nationality": "Serbia",
+              "age": 20,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad data but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-9bff1035-f7f5-44ae-a142-9b63d28a4744",
+            "type": "player_update",
+            "playerId": "199503",
+            "changes": {
+              "nationality": "Switzerland"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-892ca1b9-40ff-4580-94c1-1eefc861b3d9",
+            "type": "player_update",
+            "playerId": "236045",
+            "changes": {
+              "name": "Reinildo",
+              "nationality": "Mozambique"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-f87f8b51-74a4-42a8-80cc-6cef9f2428a0",
+            "type": "player_update",
+            "playerId": "226166",
+            "changes": {
+              "name": "Nordi Mukiele",
+              "nationality": "France"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-8b7f1dc3-4fae-411d-b721-839fb25aba37",
+            "type": "player_update",
+            "playerId": "240359",
+            "changes": {
+              "name": "Omar Alderete",
+              "nationality": "Paraguay"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-dfb9e2ff-e03a-4c35-a260-466b07370499",
+            "type": "player_update",
+            "playerId": "264293",
+            "changes": {
+              "name": "Habib Diarra",
+              "nationality": "Senegal"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-8ac77b7d-a2d2-406b-8cbb-63280fb3f171",
+            "type": "player_update",
+            "playerId": "260779",
+            "changes": {
+              "nationality": "Ivory Coast"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-80086081-de5a-45ee-8a07-6232bb3efada",
+            "type": "player_update",
+            "playerId": "269230",
+            "changes": {
+              "name": "Noah Sadiki",
+              "nationality": "DR Congo"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-3e741ec2-0c39-45fb-b77e-dca09b9281be",
+            "type": "player_update",
+            "playerId": "266400",
+            "changes": {
+              "nationality": "Northern Ireland"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-aed40e4d-c698-4201-8331-0bd1f73b4a32",
+            "type": "player_update",
+            "playerId": "263798",
+            "changes": {
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-3cd823c1-0349-4876-8ac6-2227383cdb0f",
+            "type": "player_update",
+            "playerId": "275048",
+            "changes": {
+              "nationality": "Morocco"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-32e0b9f4-75f6-4f59-9324-55b1f297fcae",
+            "type": "player_update",
+            "playerId": "247335",
+            "changes": {
+              "nationality": "France"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-5555adcc-8cc8-4602-bf2b-f3f1291a2831",
+            "type": "player_update",
+            "playerId": "241187",
+            "changes": {
+              "position": "RB",
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local player position differs from live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-dbf8f6ab-ef0d-48ed-8809-9fd4c02e6f3d",
+            "type": "player_update",
+            "playerId": "251810",
+            "changes": {
+              "name": "Brian Brobbey",
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-de71ab7c-a4c4-473e-aaac-0381f52216eb",
+            "type": "player_update",
+            "playerId": "246350",
+            "changes": {
+              "name": "Enzo Le Fée",
+              "nationality": "France"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-79eeb855-a15f-4efb-a534-95b23570fddb",
+            "type": "player_update",
+            "playerId": "212491",
+            "changes": {
+              "name": "Arthur Masuaku",
+              "nationality": "DR Congo"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-45cf722f-9847-4b65-a3ed-897a871a5feb",
+            "type": "player_update",
+            "playerId": "207948",
+            "changes": {
+              "name": "Bertrand Traoré",
+              "nationality": "Burkina Faso"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-54f5b37a-6340-47fc-bc79-fdd30c44ef04",
+            "type": "player_update",
+            "playerId": "258483",
+            "changes": {
+              "nationality": "England"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-bfba009f-c2af-44f9-bd68-7de7b270d24e",
+            "type": "player_update",
+            "playerId": "243908",
+            "changes": {
+              "name": "Daniel Ballard",
+              "nationality": "Northern Ireland"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-65a75870-f01a-401d-ae1c-048f9f89ef89",
+            "type": "player_update",
+            "playerId": "246417",
+            "changes": {
+              "nationality": "England"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-89ab95ab-2916-41c3-b0aa-26630df3af6d",
+            "type": "player_update",
+            "playerId": "215700",
+            "changes": {
+              "name": "Luke O'Nien",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-982fa00e-d98a-4e80-b19d-1eac509f15f2",
+            "type": "player_update",
+            "playerId": "271248",
+            "changes": {
+              "name": "Eliezer Mayenda",
+              "nationality": "Spain"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-a314a4e0-c714-474d-9a74-bb04594da1d8",
+            "type": "player_update",
+            "playerId": "273459",
+            "changes": {
+              "name": "Chris Rigg",
+              "position": "CM",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Position also differs. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-a541ae99-97bd-4594-b33b-76fe4be85af9",
+            "type": "player_update",
+            "playerId": "71493",
+            "changes": {
+              "nationality": "England"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-89a23422-3e70-4b3a-9ddb-a63aa562be1b",
+            "type": "player_update",
+            "playerId": "256831",
+            "changes": {
+              "nationality": "Latvia"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-ac3e4f31-3e4a-4847-881b-b6390493367a",
+            "type": "player_update",
+            "playerId": "268903",
+            "changes": {
+              "name": "Romaine Mundle",
+              "position": "LW",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Position also differs. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-10983a29-de66-454a-a8dc-4134be87308b",
+            "type": "player_update",
+            "playerId": "262149",
+            "changes": {
+              "nationality": "France"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-fd301e73-665b-429b-9c1a-173c33af7a3c",
+            "type": "player_update",
+            "playerId": "274219",
+            "changes": {
+              "nationality": "Nigeria"
+            },
+            "rationale": "Local data has an unknown nationality, which can be updated from live data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-07e996f0-1dc4-4658-9a97-ce0e385ef90d",
+            "type": "player_update",
+            "playerId": "194150",
+            "changes": {
+              "name": "Simon Moore",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is overly long compared to the common name in live data. Nationality is also unknown."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-caebab9c-ccae-43ac-807d-cff98f4ce33c",
+            "type": "player_removal",
+            "playerId": "257270",
+            "rationale": "Player is present in local data but could not be matched to any player in the live squad."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-ba8ee04e-badd-4d46-ac9d-873cf0014e67",
+            "type": "player_removal",
+            "playerId": "243390",
+            "rationale": "Player is present in local data but could not be matched to any player in the live squad."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-153cafec-a959-48d9-be06-aed643cf6e7a",
+            "type": "player_removal",
+            "playerId": "240867",
+            "rationale": "Player is present in local data but could not be matched to any player in the live squad."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-fcb2e4e7-e7bf-48cb-95cb-8db8c4f16b0f",
+            "type": "player_removal",
+            "playerId": "253969",
+            "rationale": "Player is present in local data but could not be matched to any player in the live squad."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-4f3e7e73-ffbd-4202-85ef-7ac788904f3b",
+            "type": "player_removal",
+            "playerId": "256442",
+            "rationale": "Player is present in local data but could not be matched to any player in the live squad."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-d5963751-ecbe-487a-b2e0-4e6139b9f348",
+            "type": "player_removal",
+            "playerId": "273898",
+            "rationale": "Player is present in local data but could not be matched to any player in the live squad."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-ee7baaa4-0f9a-4c1b-a75a-c39be63f6213",
+            "type": "player_removal",
+            "playerId": "266424",
+            "rationale": "Player is present in local data but could not be matched to any player in the live squad."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-9b622ab1-d45c-49f3-bafd-85d089e35d46",
+            "type": "player_removal",
+            "playerId": "257138",
+            "rationale": "Player is present in local data but could not be matched to any player in the live squad."
+          }
+        }
+      ],
+      "riskCounts": {
+        "low": 25,
+        "medium": 3,
+        "high": 16
+      }
+    },
+    {
+      "clubId": "manchester-united",
+      "status": "ok",
+      "cacheStatus": "miss",
+      "apiQuotaRemaining": {
+        "minute": 9,
+        "day": 97
+      },
+      "suggestions": [
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-64e550de-853c-4aad-9186-cfbbaeb463b8",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 273281,
+              "name": "Godwill Kukonki",
+              "position": "Defence",
+              "dateOfBirth": "2008-02-06",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Godwill Kukonki",
+              "position": "CB",
+              "nationality": "England",
+              "age": 18,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-55c92ab6-9684-4a3f-8511-d43ae813d2fd",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 278168,
+              "name": "Bendito Mantato",
+              "position": "Defence",
+              "dateOfBirth": "2008-01-25",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Bendito Mantato",
+              "position": "CB",
+              "nationality": "England",
+              "age": 18,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-7232f797-6961-495f-b46e-21781aa54a11",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 271941,
+              "name": "Jack Fletcher",
+              "position": "Midfield",
+              "dateOfBirth": "2007-03-19",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Jack Fletcher",
+              "position": "CM",
+              "nationality": "England",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-7e5af966-68f0-46fb-937f-7c1184e0017a",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 275523,
+              "name": "Jack Moorhouse",
+              "position": "Midfield",
+              "dateOfBirth": "2005-11-29",
+              "nationality": "Ireland",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Jack Moorhouse",
+              "position": "CM",
+              "nationality": "Ireland",
+              "age": 20,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-12b91ef9-1d8e-482b-839c-5364211b228e",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 290139,
+              "name": "Tyler Fletcher",
+              "position": "Midfield",
+              "dateOfBirth": "2007-03-19",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Tyler Fletcher",
+              "position": "CM",
+              "nationality": "England",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-e3609759-289a-42e5-a28e-1704a09f99e5",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 294666,
+              "name": "Jim Thwaites",
+              "position": "Midfield",
+              "dateOfBirth": "2007-12-20",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Jim Thwaites",
+              "position": "CM",
+              "nationality": "England",
+              "age": 18,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "missingPlayers",
+          "risk": "high",
+          "suggestion": {
+            "suggestionId": "sug-1c8be1b6-02eb-4879-a630-898eab6a6925",
+            "type": "player_addition",
+            "livePlayer": {
+              "id": 289557,
+              "name": "Shea Lacey",
+              "position": "Offence",
+              "dateOfBirth": "2007-04-14",
+              "nationality": "England",
+              "shirtNumber": null
+            },
+            "proposed": {
+              "name": "Shea Lacey",
+              "position": "RW",
+              "nationality": "England",
+              "age": 19,
+              "shirtNumber": null
+            },
+            "rationale": "Player is present in the live squad but missing from the local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-4f62d26d-433d-4c26-b105-73610558770f",
+            "type": "player_update",
+            "playerId": "212198",
+            "changes": {
+              "name": "Bruno Fernandes",
+              "nationality": "Portugal"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-42713b07-9b9e-419c-b448-538388144b12",
+            "type": "player_update",
+            "playerId": "243014",
+            "changes": {
+              "name": "Bryan Mbeumo",
+              "nationality": "Cameroon"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-00430267-9554-4d62-96b4-76de67257297",
+            "type": "player_update",
+            "playerId": "240243",
+            "changes": {
+              "name": "Matheus Cunha",
+              "position": "ST",
+              "nationality": "Brazil"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-5d0ea508-f217-45fb-a8a3-898c1e33acff",
+            "type": "player_update",
+            "playerId": "235243",
+            "changes": {
+              "nationality": "Netherlands"
+            },
+            "rationale": "Nationality is missing in local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-ebca5c3d-cf38-4d20-b694-a192fb91e890",
+            "type": "player_update",
+            "playerId": "236401",
+            "changes": {
+              "name": "Noussair Mazraoui",
+              "nationality": "Morocco"
+            },
+            "rationale": "Local player name includes non-Latin characters. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-88cfd204-c792-48fd-a197-1af20d5bae02",
+            "type": "player_update",
+            "playerId": "200145",
+            "changes": {
+              "name": "Casemiro",
+              "nationality": "Brazil"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-1744a69f-7d4f-4b97-806a-82d7c118aea5",
+            "type": "player_update",
+            "playerId": "260592",
+            "changes": {
+              "nationality": "Slovenia"
+            },
+            "rationale": "Nationality is missing in local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-4a08d424-8564-48c4-9198-ea93ca8ff9e1",
+            "type": "player_update",
+            "playerId": "205988",
+            "changes": {
+              "name": "Luke Shaw",
+              "position": "LB",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Position and nationality are incorrect/missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-48b741a7-55ff-42f3-adaf-cbedb3ab8d3a",
+            "type": "player_update",
+            "playerId": "269087",
+            "changes": {
+              "nationality": "France"
+            },
+            "rationale": "Nationality is missing in local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-9796ad83-4b9f-4bc0-aa84-648d2f20b68b",
+            "type": "player_update",
+            "playerId": "243647",
+            "changes": {
+              "nationality": "Turkey"
+            },
+            "rationale": "Nationality is missing in local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-60ecabe2-5cd8-42c4-ab5d-d03e988b5faf",
+            "type": "player_update",
+            "playerId": "277432",
+            "changes": {
+              "name": "Patrick Dorgu",
+              "nationality": "Denmark"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-283ea863-974a-4a29-a2e5-9a70e17ff41d",
+            "type": "player_update",
+            "playerId": "203263",
+            "changes": {
+              "name": "Harry Maguire",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-c6eb954b-b456-4733-9967-daa177ac0926",
+            "type": "player_update",
+            "playerId": "234574",
+            "changes": {
+              "name": "Diogo Dalot",
+              "nationality": "Portugal"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-5f23eaee-704c-4a65-a48e-3b1fa6a17a9e",
+            "type": "player_update",
+            "playerId": "253306",
+            "changes": {
+              "name": "Manuel Ugarte",
+              "nationality": "Uruguay"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "medium",
+          "suggestion": {
+            "suggestionId": "sug-e1d01aed-d059-4678-ab18-e1cafd639846",
+            "type": "player_update",
+            "playerId": "254088",
+            "changes": {
+              "name": "Amad Diallo",
+              "position": "RW",
+              "nationality": "Ivory Coast"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Position and nationality are incorrect/missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-1b222a38-d412-483c-9329-f6854d7e5fc1",
+            "type": "player_update",
+            "playerId": "254803",
+            "changes": {
+              "nationality": "Belgium"
+            },
+            "rationale": "Nationality is missing in local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-442a5ad2-98cd-41e6-b7aa-5bae37bd1291",
+            "type": "player_update",
+            "playerId": "269136",
+            "changes": {
+              "nationality": "England"
+            },
+            "rationale": "Nationality is missing in local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-340f88c5-79c8-4417-83a6-de3e9650bfd9",
+            "type": "player_update",
+            "playerId": "233064",
+            "changes": {
+              "name": "Mason Mount",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-66ef47f5-b77c-4ee8-a9c6-cfe2a67f0bf3",
+            "type": "player_update",
+            "playerId": "250961",
+            "changes": {
+              "name": "Joshua Zirkzee",
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-ccbce529-499e-4e03-816d-d838809a058e",
+            "type": "player_update",
+            "playerId": "75087",
+            "changes": {
+              "name": "Ayden Heaven",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-72b5ea36-3696-415d-907a-203fd25c4efd",
+            "type": "player_update",
+            "playerId": "163264",
+            "changes": {
+              "name": "Tom Heaton",
+              "nationality": "England"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-15d17ea1-1934-44f6-843f-c77b1b7fea3c",
+            "type": "player_update",
+            "playerId": "269233",
+            "changes": {
+              "nationality": "England"
+            },
+            "rationale": "Nationality is missing in local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-5c590257-540f-4156-b1f2-ead5ba27aae7",
+            "type": "player_update",
+            "playerId": "74142",
+            "changes": {
+              "name": "Diego León",
+              "nationality": "Paraguay"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-dde10fdc-429a-4296-b53f-97cb6905a3a6",
+            "type": "player_update",
+            "playerId": "239301",
+            "changes": {
+              "nationality": "Argentina"
+            },
+            "rationale": "Nationality is missing in local data."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-dbd3ebc1-c4d0-4338-871c-0e94148bfcc2",
+            "type": "player_update",
+            "playerId": "238041",
+            "changes": {
+              "name": "Tyrell Malacia",
+              "nationality": "Netherlands"
+            },
+            "rationale": "Local player name is the full legal name; live data uses the common name. Nationality is missing."
+          }
+        },
+        {
+          "sourceClass": "suggestions",
+          "risk": "low",
+          "suggestion": {
+            "suggestionId": "sug-4603913d-f8c6-4983-9393-4d0aa3382acc",
+            "type": "player_update",
+            "playerId": "77354",
+            "changes": {
+              "name": "Chido Obi-Martin",
+              "nationality": "Denmark"
+            },
+            "rationale": "Local player name is a variant; live data uses a more common name. Nationality is missing."
+          }
+        }
+      ],
+      "riskCounts": {
+        "low": 23,
+        "medium": 3,
+        "high": 7
+      }
+    }
+  ]
+}
