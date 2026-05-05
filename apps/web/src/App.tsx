@@ -11,6 +11,7 @@ import { AdminExtractProfilesPage } from "./admin/pages/AdminExtractProfilesPage
 import { AdminHomePage } from "./admin/pages/AdminHomePage";
 import { AdminPlayerDetailPage } from "./admin/pages/AdminPlayerDetailPage";
 import { AdminProfileVersionsPage } from "./admin/pages/AdminProfileVersionsPage";
+import { DashboardPage } from "./dashboard/DashboardPage";
 import { LayoutShell } from "./layout/LayoutShell";
 import { MatchPage } from "./match/MatchPage";
 import { BatchDistributionPage } from "./match/visualiser/BatchDistributionPage";
@@ -197,7 +198,7 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<LayoutShell />}>
-            <Route path="/" element={<SmokeTestPage />} />
+            <Route path="/" element={<DashboardPage />} />
             <Route path="/smoke-test" element={<SmokeTestPage />} />
             <Route path="/match" element={<MatchPage />} />
             <Route path="/visualise" element={<VisualiserPage />} />

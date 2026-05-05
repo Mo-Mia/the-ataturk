@@ -84,6 +84,130 @@ body {
   font-size: 12px;
 }
 
+.dashboard-shell {
+  width: min(1760px, calc(100% - 32px));
+  font-family: "Trebuchet MS", sans-serif;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.dashboard-note,
+.dashboard-muted {
+  margin-top: 8px;
+  color: #555047;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-card {
+  min-width: 0;
+  border: 1px solid #d4d0c4;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.dashboard-card--wide {
+  grid-column: span 2;
+}
+
+.dashboard-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.dashboard-card h2,
+.dashboard-card p {
+  margin-top: 0;
+}
+
+.dashboard-card__link {
+  flex: 0 0 auto;
+  border: 1px solid #151515;
+  border-radius: 4px;
+  color: #151515;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 10px;
+  text-decoration: none;
+}
+
+.dashboard-empty {
+  border: 1px solid #d4d0c4;
+  background: #f8f6f0;
+  color: #555047;
+  padding: 12px;
+}
+
+.dashboard-definition-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.dashboard-definition-list div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.dashboard-definition-list dt {
+  color: #555047;
+  font-weight: 700;
+}
+
+.dashboard-definition-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-run-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.dashboard-run {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #e4dfd3;
+  color: #151515;
+  padding: 10px;
+  text-decoration: none;
+}
+
+.dashboard-run span {
+  color: #555047;
+  font-size: 13px;
+}
+
+.dashboard-callout {
+  border: 1px solid #d4d0c4;
+  background: #f8f6f0;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+
+.dashboard-metrics-table {
+  margin-bottom: 0;
+}
+
+.dashboard-metrics-table th,
+.dashboard-metrics-table td {
+  white-space: nowrap;
+}
+
 main {
   width: min(1040px, calc(100% - 32px));
   margin: 0 auto;
@@ -601,6 +725,18 @@ pre {
 }
 
 @media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-card--wide {
+    grid-column: auto;
+  }
+
+  .dashboard-card__header {
+    display: grid;
+  }
+
   .sim-runner-grid {
     grid-template-columns: 1fr;
   }
