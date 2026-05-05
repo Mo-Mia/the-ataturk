@@ -50,6 +50,11 @@ describe("AdminSquadManagerPage", () => {
     renderPage();
 
     await waitFor(() => expect(screen.getAllByText("Mohamed Salah").length).toBeGreaterThan(0));
+    const status = document.querySelector<HTMLElement>(
+      '[data-uat="squad-manager-football-data-status"]'
+    );
+    expect(status?.dataset.footballDataTeamId).toBe("64");
+    expect(status?.dataset.footballDataName).toBe("Liverpool FC");
     fireEvent.click(screen.getByRole("button", { name: "Verify squad" }));
     await screen.findByText("Add New Forward");
     fireEvent.click(screen.getByLabelText(/Add New Forward/));
@@ -60,6 +65,41 @@ describe("AdminSquadManagerPage", () => {
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith("/api/ai/apply-suggestions", expect.any(Object))
     );
+  });
+
+  it("exposes a mapped football-data.org status for newly supported PL20 clubs", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url === "/api/ai/squad-manager/context") {
+          return Promise.resolve(
+            jsonResponse({
+              activeVersion: version,
+              datasetVersions: [version],
+              clubs
+            })
+          );
+        }
+        if (url.startsWith("/api/ai/squad-manager/squad")) {
+          return Promise.resolve(jsonResponse({ squad }));
+        }
+        return Promise.reject(new Error(`Unexpected fetch ${url}`));
+      })
+    );
+
+    renderPage();
+
+    await waitFor(() => expect(screen.getAllByText("Mohamed Salah").length).toBeGreaterThan(0));
+    fireEvent.change(screen.getByLabelText("Away club"), { target: { value: "sunderland" } });
+    fireEvent.change(screen.getByLabelText("Verify"), { target: { value: "sunderland" } });
+
+    const status = document.querySelector<HTMLElement>(
+      '[data-uat="squad-manager-football-data-status"]'
+    );
+    expect(status?.dataset.footballDataState).toBe("mapped");
+    expect(status?.dataset.footballDataTeamId).toBe("71");
+    expect(status?.textContent).toContain("Sunderland AFC");
   });
 });
 
@@ -116,7 +156,26 @@ const clubs = [
     league: "Premier League",
     fc25_team_id: "Liverpool",
     created_at: "2026-05-03T00:00:00.000Z",
-    updated_at: "2026-05-03T00:00:00.000Z"
+    updated_at: "2026-05-03T00:00:00.000Z",
+    footballData: {
+      footballDataTeamId: 64,
+      footballDataName: "Liverpool FC"
+    }
+  },
+  {
+    dataset_version_id: "fc25-base",
+    id: "sunderland",
+    name: "Sunderland",
+    short_name: "SUN",
+    country: "England",
+    league: "Premier League",
+    fc25_team_id: "Sunderland",
+    created_at: "2026-05-03T00:00:00.000Z",
+    updated_at: "2026-05-03T00:00:00.000Z",
+    footballData: {
+      footballDataTeamId: 71,
+      footballDataName: "Sunderland AFC"
+    }
   },
   {
     dataset_version_id: "fc25-base",
@@ -127,7 +186,11 @@ const clubs = [
     league: "Premier League",
     fc25_team_id: "Manchester City",
     created_at: "2026-05-03T00:00:00.000Z",
-    updated_at: "2026-05-03T00:00:00.000Z"
+    updated_at: "2026-05-03T00:00:00.000Z",
+    footballData: {
+      footballDataTeamId: 65,
+      footballDataName: "Manchester City FC"
+    }
   }
 ];
 

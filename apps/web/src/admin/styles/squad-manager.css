@@ -61,6 +61,12 @@
   margin: 14px 0;
 }
 
+.squad-manager__verification-source {
+  margin: -6px 0 14px;
+  color: #5f5546;
+  font-size: 13px;
+}
+
 .squad-manager label {
   display: grid;
   gap: 4px;

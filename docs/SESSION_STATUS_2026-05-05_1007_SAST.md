@@ -60,6 +60,20 @@ Runtime DB checkpoint after the UAT/display-name readiness sprint:
   runs include improved display-name metadata in persisted XI/bench summaries
   and snapshot rosters.
 
+PL20 Admin Expansion checkpoint:
+
+- Squad Manager football-data.org mappings now cover all 20 active FC26 Premier
+  League clubs.
+- Live verification command:
+  `pnpm --filter @the-ataturk/server football-data:verify-pl20`.
+- Live result against active dataset
+  `fc25-20260504102445-4399cb2b-a504ee92`: `20/20` clubs succeeded, `0`
+  failed.
+- The verification pass generated suggestions for review only; no suggestions
+  were applied and no dataset version was created.
+- Final football-data.org quota reported by the command: `9` minute remaining,
+  `80` day remaining.
+
 The dashboard engine-character card surfaces the locked Phase 14b/17 values:
 
 - Shots: `22.67` in `[19.4, 30.2]`
@@ -72,18 +86,17 @@ The dashboard engine-character card surfaces the locked Phase 14b/17 values:
 
 The logical next-step conversation should choose between:
 
-- UAT agent readiness pass: make existing non-dashboard pages easier for agents
-  to navigate and extract data from.
 - Workbench UX polish pass: reduce friction now that navigation exists.
-- Data/admin expansion: football-data.org mappings for all 20 PL clubs.
+- Squad Manager suggestion triage: decide whether any live PL20 verification
+  suggestions should become accepted dataset changes.
+- Admin infrastructure: persistent football-data.org cache, cache invalidation,
+  diff visualisation, rollback, or XI movement.
 - Calibration/fidelity continuation: aerial/byline/goal-line corner texture,
   position ratings, work-rate, or tighter real-PL bands.
 
-## Next After This
+## Completed After This
 
-**PL20 Admin Expansion** should be the following sprint after the UAT/display-name
-readiness pass. Scope: add football-data.org mappings for all 20 FC26 Premier
-League clubs, verify route/API coverage for the expanded mappings, and build
-confidence that Squad Manager verification works across the full PL20 dataset.
-Do not fold club mapping implementation into the current UAT/display-name
-sprint.
+**PL20 Admin Expansion** is complete. It added football-data.org mappings for
+all 20 FC26 Premier League clubs, verified route/API coverage for the expanded
+mappings, and proved Squad Manager verification works across the full PL20
+dataset.

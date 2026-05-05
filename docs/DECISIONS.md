@@ -4,6 +4,22 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-05 — FootSim PL20 Admin Expansion: Squad Manager mapped for all clubs
+
+Squad Manager football-data.org verification now covers all 20 active FC26
+Premier League clubs. The mapping is complete for `FC25_CLUB_IDS`, has unique
+football-data.org team ids, and is surfaced through the Squad Manager context
+and UAT status row.
+
+Live verification was run against active dataset
+`fc25-20260504102445-4399cb2b-a504ee92`: `20/20` clubs returned successful
+verification responses. The sprint deliberately did not apply any generated
+suggestions or create any dataset version.
+
+Out of scope and tracked in BACKLOG: persistent football-data.org cache, manual
+cache invalidation, diff visualisation, rollback, XI editing, and arbitrary
+attribute editing.
+
 ## 2026-05-05 — FootSim UI consolidation: dashboard + navigation strip
 
 The workbench has grown to five disparate pages across thirty sprints with no

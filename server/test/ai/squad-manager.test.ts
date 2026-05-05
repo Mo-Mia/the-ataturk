@@ -1,4 +1,4 @@
-import { getDb, importFc25Dataset } from "@the-ataturk/data";
+import { FC25_CLUB_IDS, getDb, importFc25Dataset } from "@the-ataturk/data";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const genAiMocks = vi.hoisted(() => ({
@@ -34,6 +34,7 @@ import { createServerTestDatabase, type TestDatabase } from "../admin/test-db";
 const previousFootballDataApiKey = process.env.FOOTBALL_DATA_API_KEY;
 const previousGeminiApiKey = process.env.GEMINI_API_KEY;
 const FIXTURE_PATH = "data/fc-25/fixtures/male_players_top5pl.csv";
+const FC26_PL20_FIXTURE_PATH = "data/fc-25/FC26_20250921.csv";
 
 let testDatabase: TestDatabase | undefined;
 
@@ -62,6 +63,16 @@ interface ErrorResponse {
   error: string;
 }
 
+interface SquadManagerContextResponse {
+  clubs: Array<{
+    id: string;
+    footballData?: {
+      footballDataTeamId: number;
+      footballDataName: string;
+    };
+  }>;
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   genAiMocks.generateContent.mockReset();
@@ -83,6 +94,86 @@ afterEach(() => {
 });
 
 describe("AI squad manager routes", () => {
+  it("maps every FC26 PL20 club to a unique football-data.org team", () => {
+    expect(Object.keys(FOOTBALL_DATA_TEAMS).sort()).toEqual([...FC25_CLUB_IDS].sort());
+    expect(
+      new Set(Object.values(FOOTBALL_DATA_TEAMS).map((mapping) => mapping.footballDataTeamId)).size
+    ).toBe(FC25_CLUB_IDS.length);
+    expect(FOOTBALL_DATA_TEAMS.sunderland).toEqual({
+      footballDataTeamId: 71,
+      footballDataName: "Sunderland AFC"
+    });
+  });
+
+  it("exposes football-data.org mappings for every active PL20 club in context", async () => {
+    testDatabase = createFc26Pl20ServerDatabase("ai-squad-manager-pl20-context");
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/api/ai/squad-manager/context"
+      });
+
+      expect(response.statusCode).toBe(200);
+      const clubs = response.json<SquadManagerContextResponse>().clubs;
+      expect(clubs).toHaveLength(20);
+      expect(clubs.every((club) => club.footballData)).toBe(true);
+      expect(clubs.find((club) => club.id === "afc-bournemouth")?.footballData).toEqual({
+        footballDataTeamId: 1044,
+        footballDataName: "AFC Bournemouth"
+      });
+    } finally {
+      await app.close();
+    }
+  }, 15_000);
+
+  it("verifies every PL20 club with mocked football-data.org and Gemini responses", async () => {
+    testDatabase = createFc26Pl20ServerDatabase("ai-squad-manager-pl20-verify");
+    process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
+    process.env.GEMINI_API_KEY = "gemini-key";
+    const fetchMock = vi.fn<typeof fetch>().mockImplementation((input) => {
+      const teamId = Number.parseInt(String(input).split("/").at(-1) ?? "", 10);
+      const mapping = Object.values(FOOTBALL_DATA_TEAMS).find(
+        (candidate) => candidate.footballDataTeamId === teamId
+      );
+      return Promise.resolve(
+        jsonResponse({
+          id: teamId,
+          name: mapping?.footballDataName ?? `Team ${teamId}`,
+          squad: []
+        })
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    genAiMocks.generateContent.mockResolvedValue({
+      text: JSON.stringify({
+        missingPlayers: [],
+        suggestions: [],
+        attributeWarnings: []
+      })
+    });
+    const app = buildApp();
+
+    try {
+      for (const clubId of FC25_CLUB_IDS) {
+        resetAiRouteStateForTests();
+        const response = await app.inject({
+          method: "POST",
+          url: "/api/ai/verify-squad",
+          payload: { clubId, datasetVersionId: "fc26-pl20-base" }
+        });
+
+        expect(response.statusCode, clubId).toBe(200);
+        expect(response.json<VerifySquadTestResponse>().cacheStatus).toBe("miss");
+      }
+
+      expect(fetchMock).toHaveBeenCalledTimes(FC25_CLUB_IDS.length);
+    } finally {
+      await app.close();
+    }
+  }, 15_000);
+
   it("verifies a squad, generates suggestion ids, caches live team responses, and applies issued suggestions", async () => {
     testDatabase = createFc25ServerDatabase("ai-squad-manager");
     process.env.FOOTBALL_DATA_API_KEY = "football-data-key";
@@ -543,6 +634,20 @@ function createFc25ServerDatabase(prefix: string): TestDatabase {
     datasetVersionId: "fc25-base",
     name: "FC25 base",
     now: new Date("2026-05-03T09:00:00.000Z")
+  });
+  return database;
+}
+
+function createFc26Pl20ServerDatabase(prefix: string): TestDatabase {
+  const database = createServerTestDatabase(prefix);
+  importFc25Dataset({
+    databasePath: database.path,
+    csvPath: FC26_PL20_FIXTURE_PATH,
+    datasetVersionId: "fc26-pl20-base",
+    name: "FC26 PL20 base",
+    format: "fc26",
+    clubUniverse: "pl20",
+    now: new Date("2026-05-05T09:00:00.000Z")
   });
   return database;
 }

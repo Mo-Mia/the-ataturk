@@ -145,6 +145,8 @@ export function AdminSquadManagerPage() {
   }
 
   const clubs = contextQuery.data?.clubs ?? [];
+  const focusedClub = clubs.find((club) => club.id === focusedClubId);
+  const focusedFootballData = focusedClub?.footballData;
 
   return (
     <section
@@ -227,6 +229,20 @@ export function AdminSquadManagerPage() {
           </select>
         </label>
       </section>
+
+      <p
+        className="squad-manager__verification-source"
+        data-uat="squad-manager-football-data-status"
+        data-club-id={focusedClubId}
+        data-football-data-state={focusedFootballData ? "mapped" : "unmapped"}
+        data-football-data-team-id={focusedFootballData?.footballDataTeamId ?? ""}
+        data-football-data-name={focusedFootballData?.footballDataName ?? ""}
+      >
+        football-data.org:{" "}
+        {focusedFootballData
+          ? `${focusedFootballData.footballDataName} (${focusedFootballData.footballDataTeamId})`
+          : "Not mapped"}
+      </p>
 
       {contextQuery.error || homeSquadQuery.error || awaySquadQuery.error ? (
         <p className="squad-manager-error">Could not load squad-manager data.</p>

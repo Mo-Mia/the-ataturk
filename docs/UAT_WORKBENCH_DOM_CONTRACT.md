@@ -145,12 +145,14 @@ Stable page and entity selectors:
 | Home club select | `[data-uat="squad-manager-home-club-select"]` | selected club id |
 | Away club select | `[data-uat="squad-manager-away-club-select"]` | selected club id |
 | Focused club select | `[data-uat="squad-manager-focused-club-select"]` | selected club id |
+| Football-data status | `[data-uat="squad-manager-football-data-status"]` | `data-club-id`, `data-football-data-state`, `data-football-data-team-id`, `data-football-data-name` |
 | Board | `[data-uat="squad-manager-board"]` | contains squad lists and verification panel |
 | Squad list | `[data-uat="squad-manager-squad-list"]` | child player rows |
 | Squad player | `[data-uat="squad-manager-player"]` | `data-player-id`, `data-display-name`, `data-source-name`, `data-source-short-name` |
 
 Squad Manager shows friendly display names while preserving full source names
-as tooltips and data attributes for audit.
+as tooltips and data attributes for audit. Every active FC26 PL20 club now
+exposes a mapped football-data.org team id/name through the status row.
 
 ## Recommended UAT Flow
 

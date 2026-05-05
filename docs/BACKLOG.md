@@ -71,11 +71,11 @@ Cosmetic only. Probably v0.3+.
 
 ## Admin & Data Management
 
-### PL20 Admin Expansion
-Add football-data.org mappings for all 20 FC26 Premier League clubs, expand
-verification coverage around those mappings, and build Squad Manager confidence
-across the full PL20 dataset. This is the next intended sprint after UAT/player
-display-name readiness; do not bundle it into the current sprint.
+### ~~PL20 Admin Expansion~~ ✅ Done
+Added football-data.org mappings for all 20 FC26 Premier League clubs and
+verified the active FC26 PL20 dataset live through Squad Manager. Follow-up
+work should treat the generated suggestions as review material, not as already
+accepted data changes.
 
 ### Future fidelity sprint: aerial-duel/header corner vocabulary
 Phase 17 closed the active corner-volume band without aerial-specific events.

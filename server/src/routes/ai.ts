@@ -21,14 +21,33 @@ import {
 import type { FastifyInstance } from "fastify";
 
 export const SQUAD_RECONCILIATION_MODEL = "gemini-2.5-pro";
-export const FOOTBALL_DATA_TEAMS: Partial<
-  Record<Fc25ClubId, { footballDataTeamId: number; footballDataName: string }>
+export const FOOTBALL_DATA_TEAMS: Record<
+  Fc25ClubId,
+  { footballDataTeamId: number; footballDataName: string }
 > = {
+  "afc-bournemouth": { footballDataTeamId: 1044, footballDataName: "AFC Bournemouth" },
   arsenal: { footballDataTeamId: 57, footballDataName: "Arsenal FC" },
   "aston-villa": { footballDataTeamId: 58, footballDataName: "Aston Villa FC" },
+  brentford: { footballDataTeamId: 402, footballDataName: "Brentford FC" },
+  brighton: { footballDataTeamId: 397, footballDataName: "Brighton & Hove Albion FC" },
+  burnley: { footballDataTeamId: 328, footballDataName: "Burnley FC" },
+  chelsea: { footballDataTeamId: 61, footballDataName: "Chelsea FC" },
+  "crystal-palace": { footballDataTeamId: 354, footballDataName: "Crystal Palace FC" },
+  everton: { footballDataTeamId: 62, footballDataName: "Everton FC" },
+  fulham: { footballDataTeamId: 63, footballDataName: "Fulham FC" },
+  "leeds-united": { footballDataTeamId: 341, footballDataName: "Leeds United FC" },
   liverpool: { footballDataTeamId: 64, footballDataName: "Liverpool FC" },
   "manchester-city": { footballDataTeamId: 65, footballDataName: "Manchester City FC" },
-  "manchester-united": { footballDataTeamId: 66, footballDataName: "Manchester United FC" }
+  "manchester-united": { footballDataTeamId: 66, footballDataName: "Manchester United FC" },
+  "newcastle-united": { footballDataTeamId: 67, footballDataName: "Newcastle United FC" },
+  "nottingham-forest": { footballDataTeamId: 351, footballDataName: "Nottingham Forest FC" },
+  sunderland: { footballDataTeamId: 71, footballDataName: "Sunderland AFC" },
+  "tottenham-hotspur": { footballDataTeamId: 73, footballDataName: "Tottenham Hotspur FC" },
+  "west-ham-united": { footballDataTeamId: 563, footballDataName: "West Ham United FC" },
+  "wolverhampton-wanderers": {
+    footballDataTeamId: 76,
+    footballDataName: "Wolverhampton Wanderers FC"
+  }
 };
 
 export const DATA_VERACITY_RECONCILER_PROMPT = `You are Data Veracity Reconciler for FootSim.
