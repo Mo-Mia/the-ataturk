@@ -53,6 +53,14 @@ export interface IterateMatchOptions {
 
 const SECONDS_PER_ITERATION = 6;
 
+/**
+ * Iterate the legacy engine from a half-time state and yield UI-ready match ticks.
+ *
+ * @param initialMatchDetails Engine state at the start of the streamed segment.
+ * @param options Optional iteration count, delay, and abort signal.
+ * @returns Async iterable of match ticks including clock, score, semantic events, and raw state.
+ * @throws DOMException with `AbortError` when the supplied signal is aborted.
+ */
 export async function* iterateMatch(
   initialMatchDetails: MatchDetails,
   options: IterateMatchOptions = {}
@@ -77,6 +85,12 @@ export async function* iterateMatch(
   }
 }
 
+/**
+ * Convert a second-half iteration index into the replay clock.
+ *
+ * @param iteration Iteration index from the streamed second-half segment.
+ * @returns Match clock in half/minute/second form.
+ */
 export function clockForIteration(iteration: number): MatchClock {
   const elapsedSeconds = iteration * SECONDS_PER_ITERATION;
   const totalSeconds = 45 * 60 + elapsedSeconds;
@@ -88,6 +102,12 @@ export function clockForIteration(iteration: number): MatchClock {
   };
 }
 
+/**
+ * Convert the latest streamed tick into the final SSE summary payload.
+ *
+ * @param matchTick Last emitted match tick.
+ * @returns Final score, statistics, clock, and raw engine state.
+ */
 export function toFinalMatchSummary(matchTick: MatchTick): FinalMatchSummary {
   return {
     iterations: matchTick.iteration,

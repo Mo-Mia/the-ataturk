@@ -193,6 +193,12 @@ export const FC25_FOOTSIM_CLUBS = FC25_CLUBS.filter((club) =>
   ["arsenal", "aston-villa", "liverpool", "manchester-city", "manchester-united"].includes(club.id)
 );
 
+/**
+ * Return the FC25 club definitions included in a named import universe.
+ *
+ * @param universe FootSim seed clubs or full PL20 club set.
+ * @returns Club definitions for the requested universe.
+ */
 export function clubsForUniverse(universe: Fc25ClubUniverse): readonly Fc25ClubDefinition[] {
   return universe === "pl20" ? FC25_CLUBS : FC25_FOOTSIM_CLUBS;
 }

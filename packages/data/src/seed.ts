@@ -50,6 +50,12 @@ const EMPTY_PROFILE_VERSION: PlayerProfileVersion = {
   updated_at: "2026-04-29T00:00:00.000Z"
 };
 
+/**
+ * Reset and seed the legacy Istanbul dataset tables.
+ *
+ * @param options Optional database path and seed directory override.
+ * @returns Counts for the seeded entities.
+ */
 export function seed(options: { databasePath?: string; seedsDir?: string } = {}): SeedResult {
   const db = getDb(options.databasePath);
   const seedsDir = options.seedsDir ?? SEEDS_DIR;

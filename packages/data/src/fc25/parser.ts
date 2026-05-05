@@ -49,6 +49,9 @@ const FC26_POSITION_RATING_FIELDS = [
   "gk"
 ] as const;
 
+/**
+ * Error raised when an FC25/FC26 CSV row cannot be parsed into the project schema.
+ */
 export class Fc25ParseError extends Error {
   constructor(message: string) {
     super(message);
@@ -56,6 +59,14 @@ export class Fc25ParseError extends Error {
   }
 }
 
+/**
+ * Parse an FC25 or FC26 players CSV into normalised player rows.
+ *
+ * @param content Raw CSV content.
+ * @param options Optional source format override; `auto` detects from headers.
+ * @returns Parsed player rows with source line numbers preserved.
+ * @throws Fc25ParseError when required fields are missing or invalid.
+ */
 export function parseFc25PlayersCsv(
   content: string,
   options: { format?: Fc25CsvFormat } = {}
@@ -75,6 +86,14 @@ export function parseFc25PlayersCsv(
   );
 }
 
+/**
+ * Parse a single FC25-format CSV record.
+ *
+ * @param record CSV record keyed by FC25 column names.
+ * @param sourceLine One-based source line for diagnostics.
+ * @returns Normalised player row.
+ * @throws Fc25ParseError when required FC25 fields are missing or invalid.
+ */
 export function parseFc25PlayerRecord(
   record: Fc25CsvRecord,
   sourceLine: number
@@ -116,6 +135,14 @@ export function parseFc25PlayerRecord(
   };
 }
 
+/**
+ * Parse a single FC26-format CSV record.
+ *
+ * @param record CSV record keyed by FC26 column names.
+ * @param sourceLine One-based source line for diagnostics.
+ * @returns Normalised player row.
+ * @throws Fc25ParseError when required FC26 fields are missing or invalid.
+ */
 export function parseFc26PlayerRecord(
   record: Fc25CsvRecord,
   sourceLine: number

@@ -28,7 +28,15 @@ function listMigrationFiles(migrationsDir = MIGRATIONS_DIR): string[] {
     .sort();
 }
 
-export function migrate(options: { databasePath?: string; migrationsDir?: string } = {}): MigrationResult {
+/**
+ * Apply pending SQL migrations to a SQLite database.
+ *
+ * @param options Optional database path and migrations directory override.
+ * @returns Lists of applied and skipped migrations plus the resolved database path.
+ */
+export function migrate(
+  options: { databasePath?: string; migrationsDir?: string } = {}
+): MigrationResult {
   const databasePath = getDatabasePath(options.databasePath);
   const migrationsDir = options.migrationsDir ?? MIGRATIONS_DIR;
 

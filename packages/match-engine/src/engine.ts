@@ -3,6 +3,13 @@ import { buildSnapshot, emitFullTime, tickCount, toMatchTick } from "./snapshot"
 import type { MatchConfig, MatchConfigV2, MatchSnapshot, MatchTick } from "./types";
 import { runTick } from "./ticks/runTick";
 
+/**
+ * Run a deterministic match simulation and return the complete replay snapshot.
+ *
+ * @param config Match setup, teams, duration, seed, dynamics, and optional pre-match state.
+ * @returns A full match snapshot containing ticks, final score, statistics, and diagnostics.
+ * @throws If the supplied team/player configuration cannot build an initial match state.
+ */
 export function simulateMatch(config: MatchConfig): MatchSnapshot;
 export function simulateMatch(config: MatchConfigV2): MatchSnapshot;
 export function simulateMatch(config: MatchConfig | MatchConfigV2): MatchSnapshot;
@@ -22,6 +29,14 @@ export function simulateMatch(config: MatchConfig | MatchConfigV2): MatchSnapsho
   return buildSnapshot(state, config, ticks);
 }
 
+/**
+ * Stream deterministic match ticks without materialising a full snapshot.
+ *
+ * @param config Match setup, teams, duration, seed, dynamics, and optional pre-match state.
+ * @param options Optional abort signal for cancelling long-running streams.
+ * @returns An async iterable yielding each simulated match tick in order.
+ * @throws DOMException with name `AbortError` when the abort signal is triggered.
+ */
 export function simulateMatchStream(
   config: MatchConfig,
   options?: { signal?: AbortSignal }

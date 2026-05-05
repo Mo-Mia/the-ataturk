@@ -300,11 +300,19 @@ function profileExtractionLogDetails(error: unknown): Record<string, unknown> {
   return { error };
 }
 
+/**
+ * Register profile-version, profile-edit, and profile-extraction admin routes.
+ *
+ * @param app Fastify instance receiving the route registrations.
+ * @returns Nothing; routes are registered for later HTTP handling.
+ */
 export function registerProfileAdminRoutes(app: FastifyInstance): void {
+  /** GET `/api/profile-versions`: list player profile versions. */
   app.get<{ Reply: PlayerProfileVersionSummary[] }>("/api/profile-versions", () =>
     listProfileVersions()
   );
 
+  /** POST `/api/profile-versions`: create a player profile version. */
   app.post<{ Body: unknown; Reply: PlayerProfileVersion | ErrorReply }>(
     "/api/profile-versions",
     (request, reply) => {
@@ -328,6 +336,7 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** POST `/api/profile-versions/:id/activate`: activate a profile version. */
   app.post<{ Params: ProfileVersionParams; Reply: PlayerProfileVersion | ErrorReply }>(
     "/api/profile-versions/:id/activate",
     (request, reply) => {
@@ -344,6 +353,7 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** GET `/api/players/:playerId/profile`: load one player profile from a version. */
   app.get<{
     Params: PlayerParams;
     Querystring: ProfileQuery;
@@ -374,6 +384,7 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
     return profile;
   });
 
+  /** PATCH `/api/players/:playerId/profile`: update validated profile fields. */
   app.patch<{ Params: PlayerParams; Body: unknown; Reply: PlayerProfile | ErrorReply }>(
     "/api/players/:playerId/profile",
     (request, reply) => {
@@ -412,6 +423,7 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** GET `/api/players/:playerId/profile-history`: list profile changes for one player. */
   app.get<{
     Params: PlayerParams;
     Querystring: ProfileHistoryQuery;
@@ -439,6 +451,7 @@ export function registerProfileAdminRoutes(app: FastifyInstance): void {
     }
   });
 
+  /** POST `/api/profile-extraction/run`: stream Gemini profile extraction progress over SSE. */
   app.post<{ Body: unknown }>("/api/profile-extraction/run", async (request, reply) => {
     const input = parseExtractionBody(request.body);
 

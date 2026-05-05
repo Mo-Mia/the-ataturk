@@ -71,6 +71,11 @@ async function runSmokeMatchInternal(): Promise<SmokeMatchResponse> {
   return toSmokeMatchResponse(matchDetails, fullLog);
 }
 
+/**
+ * Run the deterministic legacy engine smoke-match fixture.
+ *
+ * @returns Match details without iterationLog plus a truncated match-history log.
+ */
 export async function runSmokeMatch(): Promise<SmokeMatchResponse> {
   return withEngineConsoleMuted(runSmokeMatchInternal);
 }

@@ -21,10 +21,22 @@ interface MatchRunRow {
   artefact_filename: string;
 }
 
+/**
+ * Create an opaque id for a persisted match run.
+ *
+ * @returns UUID suitable for `match_runs.id`.
+ */
 export function createMatchRunId(): string {
   return randomUUID();
 }
 
+/**
+ * Persist one or more match runs in a single transaction.
+ *
+ * @param inputs Match-run rows to persist.
+ * @param db Optional database connection.
+ * @returns Persisted runs with null-normalised batch ids.
+ */
 export function createMatchRuns(inputs: CreateMatchRunInput[], db = getDb()): MatchRun[] {
   const insert = db.prepare(
     `
@@ -60,6 +72,13 @@ export function createMatchRuns(inputs: CreateMatchRunInput[], db = getDb()): Ma
   return inputs.map((input) => ({ ...input, batch_id: input.batch_id ?? null }));
 }
 
+/**
+ * List persisted match runs using page/limit pagination.
+ *
+ * @param options Optional page and limit.
+ * @param db Optional database connection.
+ * @returns Paginated run page ordered newest first.
+ */
 export function listMatchRuns(
   options: { page?: number; limit?: number } = {},
   db = getDb()
@@ -89,6 +108,12 @@ export function listMatchRuns(
   };
 }
 
+/**
+ * List all persisted match runs.
+ *
+ * @param db Optional database connection.
+ * @returns All runs ordered newest first.
+ */
 export function listAllMatchRuns(db = getDb()): MatchRun[] {
   return db
     .prepare<[], MatchRunRow>(
@@ -102,12 +127,26 @@ export function listAllMatchRuns(db = getDb()): MatchRun[] {
     .map(mapRunRow);
 }
 
+/**
+ * Load one persisted match run.
+ *
+ * @param id Match run id.
+ * @param db Optional database connection.
+ * @returns Matching run, or null when absent.
+ */
 export function getMatchRun(id: string, db = getDb()): MatchRun | null {
   const row =
     db.prepare<[string], MatchRunRow>("SELECT * FROM match_runs WHERE id = ?").get(id) ?? null;
   return row ? mapRunRow(row) : null;
 }
 
+/**
+ * List all runs in a persisted batch.
+ *
+ * @param batchId Batch id.
+ * @param db Optional database connection.
+ * @returns Runs ordered by seed and creation time.
+ */
 export function listMatchRunsByBatch(batchId: string, db = getDb()): MatchRun[] {
   return db
     .prepare<[string], MatchRunRow>(
@@ -122,6 +161,13 @@ export function listMatchRunsByBatch(batchId: string, db = getDb()): MatchRun[] 
     .map(mapRunRow);
 }
 
+/**
+ * Delete one persisted match run row.
+ *
+ * @param id Match run id.
+ * @param db Optional database connection.
+ * @returns Deleted run, or null when it did not exist.
+ */
 export function deleteMatchRun(id: string, db = getDb()): MatchRun | null {
   const existing = getMatchRun(id, db);
   if (!existing) {

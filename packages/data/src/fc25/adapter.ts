@@ -5,6 +5,9 @@ import type { Fc25ParsedPlayerRow } from "../types";
 /**
  * Convert a parsed FC25 CSV row into the match-engine v2 input shape.
  *
+ * @param row Parsed FC25 or FC26 player row from the CSV importer.
+ * @returns Match-engine v2 player input preserving rich attribute groups.
+ *
  * This adapter deliberately stops at CSV row -> v2 player. The match engine's
  * own v2 -> v1 bridge remains the only place where rich FC25 attributes are
  * collapsed into calibrated simulation attributes.

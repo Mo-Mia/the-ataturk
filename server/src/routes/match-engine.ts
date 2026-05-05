@@ -156,9 +156,17 @@ const PRESSING_LEVELS = ["low", "medium", "high"] as const;
 const LINE_HEIGHTS = ["deep", "normal", "high"] as const;
 const WIDTHS = ["narrow", "normal", "wide"] as const;
 
+/**
+ * Register FC25 match-engine routes used by the workbench and visualiser.
+ *
+ * @param app Fastify instance receiving the route registrations.
+ * @returns Nothing; routes are registered for later HTTP handling.
+ */
 export function registerMatchEngineRoutes(app: FastifyInstance): void {
+  /** GET `/api/match-engine/clubs`: list active FC25 clubs. */
   app.get<{ Reply: Fc25Club[] }>("/api/match-engine/clubs", () => listFc25Clubs());
 
+  /** GET `/api/match-engine/clubs/:clubId/squad`: load squad, auto-XI, bench, and warnings. */
   app.get<{ Params: ClubParams; Querystring: SquadQuery }>(
     "/api/match-engine/clubs/:clubId/squad",
     (request, reply) => {
@@ -192,6 +200,7 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** POST `/api/match-engine/simulate`: run one or more deterministic simulations. */
   app.post<{ Body: SimulateBody; Reply: SimulateResponse | { error: string } }>(
     "/api/match-engine/simulate",
     async (request, reply) => {
@@ -275,6 +284,7 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** GET `/api/match-engine/runs`: list saved simulation runs with filters. */
   app.get<{ Querystring: RunsQuery }>("/api/match-engine/runs", async (request) => {
     const query = isRecord(request.query) ? request.query : {};
     const page = parseOptionalPositiveInteger(query.page, 1);
@@ -294,6 +304,7 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
     };
   });
 
+  /** GET `/api/match-engine/runs/:id`: load one saved simulation run. */
   app.get<{ Params: RunParams }>("/api/match-engine/runs/:id", async (request, reply) => {
     const run = getMatchRun(request.params.id);
     if (!run || !(await visualiserArtifactExists(run.artefact_filename))) {
@@ -303,6 +314,7 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
     return runResponse(run);
   });
 
+  /** GET `/api/match-engine/batches/:batchId/runs`: list runs in a saved batch. */
   app.get<{ Params: BatchParams }>(
     "/api/match-engine/batches/:batchId/runs",
     async (request, reply) => {
@@ -315,6 +327,7 @@ export function registerMatchEngineRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** DELETE `/api/match-engine/runs/:id`: delete a saved run and its visualiser artefact. */
   app.delete<{ Params: RunParams }>("/api/match-engine/runs/:id", async (request, reply) => {
     const deleted = deleteMatchRun(request.params.id, getDb());
     if (deleted) {

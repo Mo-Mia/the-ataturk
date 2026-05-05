@@ -19,6 +19,14 @@ const ARTIFACTS_DIR = fileURLToPath(
 );
 const JSON_ARTIFACT_PATTERN = /^[A-Za-z0-9._-]+\.json$/;
 
+/**
+ * Write a JSON visualiser artefact under the managed artefact directory.
+ *
+ * @param filename Safe basename ending in `.json`.
+ * @param content JSON content to write.
+ * @returns The written filename.
+ * @throws Error when the filename is unsafe.
+ */
 export async function writeVisualiserArtifact(filename: string, content: string): Promise<string> {
   if (!isSafeArtifactFilename(filename)) {
     throw new Error(`Invalid artifact filename '${filename}'`);
@@ -29,6 +37,12 @@ export async function writeVisualiserArtifact(filename: string, content: string)
   return filename;
 }
 
+/**
+ * Check whether a managed visualiser artefact exists.
+ *
+ * @param filename Safe basename ending in `.json`.
+ * @returns True when the artefact exists and is a file.
+ */
 export async function visualiserArtifactExists(filename: string): Promise<boolean> {
   if (!isSafeArtifactFilename(filename)) {
     return false;
@@ -45,6 +59,13 @@ export async function visualiserArtifactExists(filename: string): Promise<boolea
   }
 }
 
+/**
+ * Delete a managed visualiser artefact if it exists.
+ *
+ * @param filename Safe basename ending in `.json`.
+ * @returns Nothing.
+ * @throws Error when the filename is unsafe.
+ */
 export async function deleteVisualiserArtifact(filename: string): Promise<void> {
   if (!isSafeArtifactFilename(filename)) {
     throw new Error(`Invalid artifact filename '${filename}'`);
@@ -60,7 +81,14 @@ export async function deleteVisualiserArtifact(filename: string): Promise<void> 
   }
 }
 
+/**
+ * Register visualiser artefact listing and retrieval routes.
+ *
+ * @param app Fastify instance receiving the route registrations.
+ * @returns Nothing; routes are registered for later HTTP handling.
+ */
 export function registerVisualiserArtifactRoutes(app: FastifyInstance): void {
+  /** GET `/api/visualiser/artifacts`: list JSON visualiser artefacts newest-first. */
   app.get("/api/visualiser/artifacts", async () => {
     await mkdir(ARTIFACTS_DIR, { recursive: true });
     const entries = await readdir(ARTIFACTS_DIR, { withFileTypes: true });
@@ -83,6 +111,7 @@ export function registerVisualiserArtifactRoutes(app: FastifyInstance): void {
     return { files };
   });
 
+  /** GET `/api/visualiser/artifacts/:filename`: return one JSON visualiser artefact. */
   app.get<{ Params: ArtifactParams }>(
     "/api/visualiser/artifacts/:filename",
     async (request, reply) => {

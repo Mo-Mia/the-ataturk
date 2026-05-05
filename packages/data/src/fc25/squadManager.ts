@@ -130,6 +130,12 @@ interface TemplatePlayerRow {
   gk_reflexes: number | null;
 }
 
+/**
+ * List FC25 dataset versions newest-first for admin dataset management.
+ *
+ * @param db Database connection to query.
+ * @returns Dataset version records with SQLite activity flags normalised.
+ */
 export function listFc25DatasetVersions(db = getDb()): Fc25DatasetVersion[] {
   return db
     .prepare<[], Fc25DatasetVersionRow>(
@@ -139,6 +145,13 @@ export function listFc25DatasetVersions(db = getDb()): Fc25DatasetVersion[] {
     .map(mapDatasetVersionRow);
 }
 
+/**
+ * Load one FC25 dataset version by id.
+ *
+ * @param datasetVersionId Dataset version identifier.
+ * @param db Database connection to query.
+ * @returns Matching dataset version, or null when the id is unknown.
+ */
 export function getFc25DatasetVersion(
   datasetVersionId: string,
   db = getDb()
@@ -153,6 +166,14 @@ export function getFc25DatasetVersion(
   return row ? mapDatasetVersionRow(row) : null;
 }
 
+/**
+ * Load a club from a specific FC25 dataset version.
+ *
+ * @param clubId Stable FC25 club id.
+ * @param datasetVersionId Dataset version to inspect; defaults to the active version.
+ * @param db Database connection to query.
+ * @returns Matching club, or null when the dataset or club is unavailable.
+ */
 export function getFc25Club(
   clubId: Fc25ClubId,
   datasetVersionId = getActiveFc25DatasetVersion()?.id,
@@ -171,6 +192,14 @@ export function getFc25Club(
   );
 }
 
+/**
+ * Load a full squad for Squad Manager verification workflows.
+ *
+ * @param clubId Stable FC25 club id.
+ * @param datasetVersionId Dataset version to inspect; defaults to the active version.
+ * @param db Database connection to query.
+ * @returns All players for the club, including unavailable/reserve rows needed for verification.
+ */
 export function loadFc25SquadForVerification(
   clubId: Fc25ClubId,
   datasetVersionId = getActiveFc25DatasetVersion()?.id,
@@ -179,6 +208,15 @@ export function loadFc25SquadForVerification(
   return loadFc25Squad(clubId, datasetVersionId, { include: "all", db }).players;
 }
 
+/**
+ * Apply verified Squad Manager suggestions by cloning a dataset version and activating the clone.
+ *
+ * @param input Club, base dataset, suggestions, optional rationale, clock, and database connection.
+ * @returns New activated dataset version id and applied/update/add/remove counts.
+ * @throws When the base dataset or club does not exist, or a suggestion is structurally invalid.
+ * @deprecated The safe admin apply flow is `applyLowRiskSquadManagerSuggestions`, which never
+ * auto-activates and enforces low-risk suggestions server-side.
+ */
 export function applySquadManagerSuggestions(
   input: ApplySquadManagerSuggestionsInput
 ): ApplySquadManagerSuggestionsResult {

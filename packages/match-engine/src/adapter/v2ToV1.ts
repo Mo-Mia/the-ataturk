@@ -7,6 +7,10 @@ import type { PlayerAttributes, PlayerInput, PlayerInputV2 } from "../types";
  * richer v2 inputs to enter the engine. Repeated source attributes are
  * deliberate weighting choices: for example, vision contributes to both
  * passing and perception because it affects both distribution and reading play.
+ *
+ * @param player FC25-style v2 player input.
+ * @returns Equivalent v1 player input for the calibrated engine core.
+ * @throws If a goalkeeper is missing goalkeeper-specific attributes.
  */
 export function adaptV2ToV1(player: PlayerInputV2): PlayerInput {
   if (player.position === "GK" && !player.gkAttributes) {
@@ -24,6 +28,12 @@ export function adaptV2ToV1(player: PlayerInputV2): PlayerInput {
   };
 }
 
+/**
+ * Identify whether a player input uses the FC25-style v2 attribute shape.
+ *
+ * @param player Player input in either supported public engine format.
+ * @returns True when the input carries v2 footedness and skill metadata.
+ */
 export function isPlayerInputV2(player: PlayerInput | PlayerInputV2): player is PlayerInputV2 {
   return "preferredFoot" in player && "weakFootRating" in player && "skillMovesRating" in player;
 }

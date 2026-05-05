@@ -72,6 +72,13 @@ interface ErrorResponse {
   error?: string;
 }
 
+/**
+ * Run the review-only Squad Manager triage sample and write JSON/Markdown evidence.
+ *
+ * @param input Fastify app, output directory, optional sample clubs, and optional clock.
+ * @returns Report payload and written file paths.
+ * @throws Error when the triage path mutates active dataset metadata.
+ */
 export async function runSquadManagerTriageSample(input: {
   app: FastifyInstance;
   outputDir: string;
@@ -108,6 +115,12 @@ export async function runSquadManagerTriageSample(input: {
   return { report, jsonPath, markdownPath };
 }
 
+/**
+ * Classify a Squad Manager suggestion into the sprint risk buckets.
+ *
+ * @param suggestion Suggestion emitted by the verification route.
+ * @returns Low for name/age/nationality updates, medium for position updates, high for additions/removals.
+ */
 export function classifySuggestionRisk(suggestion: SquadManagerSuggestion): SuggestionRiskBucket {
   if (suggestion.type === "player_addition" || suggestion.type === "player_removal") {
     return "high";

@@ -21,7 +21,14 @@ interface ErrorReply {
 const DEFAULT_FIXTURE_ID = "final-2005";
 const DEFAULT_DATASET_VERSION = "v2-llm-derived-final";
 
+/**
+ * Register the legacy Liverpool v AC Milan SSE match route.
+ *
+ * @param app Fastify instance receiving the route registration.
+ * @returns Nothing; route is registered for later HTTP handling.
+ */
 export function registerMatchRoute(app: FastifyInstance): void {
+  /** POST `/api/match/run`: stream the 2005 final replay ticks over SSE. */
   app.post<{ Body: unknown; Querystring: MatchRunQuery }>(
     "/api/match/run",
     async (request, reply) => {

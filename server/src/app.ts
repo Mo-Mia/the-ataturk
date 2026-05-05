@@ -11,6 +11,11 @@ import { registerMatchRoute } from "./routes/match";
 import { registerSmokeMatchRoute } from "./routes/smoke-match";
 import { registerVisualiserArtifactRoutes } from "./routes/visualiser-artifacts";
 
+/**
+ * Build the Fastify HTTP application and register all public API routes.
+ *
+ * @returns Configured Fastify instance ready to listen or be injected in tests.
+ */
 export function buildApp() {
   const app = Fastify({
     requestTimeout: 600_000,

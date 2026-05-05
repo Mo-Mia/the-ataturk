@@ -87,6 +87,12 @@ export class DataNotFoundError extends Error {
 let dbInstance: SqliteDatabase | undefined;
 let dbPath: string | undefined;
 
+/**
+ * Resolve the SQLite database path from an explicit value, `DATABASE_URL`, or the default path.
+ *
+ * @param databasePath Optional configured database path.
+ * @returns Absolute database path within the repository when relative.
+ */
 export function getDatabasePath(databasePath = process.env.DATABASE_URL): string {
   const configuredPath =
     databasePath && databasePath.trim().length > 0 ? databasePath : DEFAULT_DATABASE_PATH;
@@ -94,6 +100,12 @@ export function getDatabasePath(databasePath = process.env.DATABASE_URL): string
   return resolveRepoPath(configuredPath);
 }
 
+/**
+ * Open or reuse the process-wide SQLite connection.
+ *
+ * @param databasePath Optional database path override.
+ * @returns Open SQLite database with foreign keys enabled.
+ */
 export function getDb(databasePath?: string): SqliteDatabase {
   const resolvedPath = getDatabasePath(databasePath);
 
@@ -114,6 +126,11 @@ export function getDb(databasePath?: string): SqliteDatabase {
   return dbInstance;
 }
 
+/**
+ * Close the cached SQLite connection, if one is open.
+ *
+ * @returns Nothing.
+ */
 export function closeDb(): void {
   if (dbInstance?.open) {
     dbInstance.close();
@@ -123,14 +140,34 @@ export function closeDb(): void {
   dbPath = undefined;
 }
 
+/**
+ * List all legacy clubs.
+ *
+ * @param db Optional database connection.
+ * @returns Clubs ordered by name.
+ */
 export function listClubs(db = getDb()): Club[] {
   return db.prepare<[], ClubRow>("SELECT * FROM clubs ORDER BY name").all();
 }
 
+/**
+ * Load one legacy club by id.
+ *
+ * @param id Club id.
+ * @param db Optional database connection.
+ * @returns Matching club, or null when absent.
+ */
 export function getClub(id: string, db = getDb()): Club | null {
   return db.prepare<[string], ClubRow>("SELECT * FROM clubs WHERE id = ?").get(id) ?? null;
 }
 
+/**
+ * List all legacy players for one club.
+ *
+ * @param clubId Club id.
+ * @param db Optional database connection.
+ * @returns Players ordered by squad number and name.
+ */
 export function listPlayersByClub(clubId: string, db = getDb()): Player[] {
   const rows = db
     .prepare<[string], PlayerRow>("SELECT * FROM players WHERE club_id = ? ORDER BY squad_number, name")
@@ -139,6 +176,13 @@ export function listPlayersByClub(clubId: string, db = getDb()): Player[] {
   return rows.map(mapPlayerRow);
 }
 
+/**
+ * List real legacy players for one club.
+ *
+ * @param clubId Club id.
+ * @param db Optional database connection.
+ * @returns Real players ordered by squad number and name.
+ */
 export function listRealPlayersByClub(clubId: string, db = getDb()): RealPlayer[] {
   const rows = db
     .prepare<[string], PlayerRow>(
@@ -149,6 +193,13 @@ export function listRealPlayersByClub(clubId: string, db = getDb()): RealPlayer[
   return rows.map(mapRealPlayerRow);
 }
 
+/**
+ * List user-created legacy players for one club.
+ *
+ * @param clubId Club id.
+ * @param db Optional database connection.
+ * @returns User-created players ordered by squad number and name.
+ */
 export function listUserPlayersByClub(clubId: string, db = getDb()): UserCreatedPlayer[] {
   const rows = db
     .prepare<[string], PlayerRow>(
@@ -159,11 +210,26 @@ export function listUserPlayersByClub(clubId: string, db = getDb()): UserCreated
   return rows.map(mapUserCreatedPlayerRow);
 }
 
+/**
+ * Load one legacy player by id.
+ *
+ * @param id Player id.
+ * @param db Optional database connection.
+ * @returns Matching player, or null when absent.
+ */
 export function getPlayer(id: string, db = getDb()): Player | null {
   const row = db.prepare<[string], PlayerRow>("SELECT * FROM players WHERE id = ?").get(id);
   return row ? mapPlayerRow(row) : null;
 }
 
+/**
+ * Load generated/editable attributes for one legacy player and dataset version.
+ *
+ * @param playerId Player id.
+ * @param datasetVersion Attribute dataset version id.
+ * @param db Optional database connection.
+ * @returns Attribute row, or null when absent.
+ */
 export function getPlayerAttributes(
   playerId: string,
   datasetVersion: string,
@@ -178,6 +244,12 @@ export function getPlayerAttributes(
   );
 }
 
+/**
+ * List legacy player-attribute dataset versions.
+ *
+ * @param db Optional database connection.
+ * @returns Dataset versions ordered newest first.
+ */
 export function listDatasetVersions(db = getDb()): DatasetVersion[] {
   const rows = db
     .prepare<[], DatasetVersionRow>("SELECT * FROM player_dataset_versions ORDER BY created_at DESC, id")
@@ -186,6 +258,13 @@ export function listDatasetVersions(db = getDb()): DatasetVersion[] {
   return rows.map(mapDatasetVersionRow);
 }
 
+/**
+ * Load one legacy player-attribute dataset version.
+ *
+ * @param id Dataset version id.
+ * @param db Optional database connection.
+ * @returns Matching dataset version, or null when absent.
+ */
 export function getDatasetVersion(id: string, db = getDb()): DatasetVersion | null {
   const row =
     db
@@ -195,6 +274,12 @@ export function getDatasetVersion(id: string, db = getDb()): DatasetVersion | nu
   return row ? mapDatasetVersionRow(row) : null;
 }
 
+/**
+ * Load the active legacy player-attribute dataset version.
+ *
+ * @param db Optional database connection.
+ * @returns Active dataset version, or null when none exists.
+ */
 export function getActiveDatasetVersion(db = getDb()): DatasetVersion | null {
   const row =
     db
@@ -206,6 +291,14 @@ export function getActiveDatasetVersion(db = getDb()): DatasetVersion | null {
   return row ? mapDatasetVersionRow(row) : null;
 }
 
+/**
+ * Create a legacy player-attribute dataset version.
+ *
+ * @param input Dataset version payload.
+ * @param db Optional database connection.
+ * @returns Created dataset version.
+ * @throws DataValidationError when the id already exists or parent is invalid.
+ */
 export function createDatasetVersion(
   input: CreateDatasetVersionInput,
   db = getDb()
@@ -307,6 +400,14 @@ export function createDatasetVersion(
   return created;
 }
 
+/**
+ * Activate a legacy player-attribute dataset version.
+ *
+ * @param id Dataset version id.
+ * @param db Optional database connection.
+ * @returns Activated dataset version.
+ * @throws DataNotFoundError when the version does not exist.
+ */
 export function activateDatasetVersion(id: string, db = getDb()): DatasetVersion {
   const activate = db.transaction(() => {
     if (!getDatasetVersion(id, db)) {
@@ -331,6 +432,12 @@ export function activateDatasetVersion(id: string, db = getDb()): DatasetVersion
   return activated;
 }
 
+/**
+ * List player-profile versions with curation counts.
+ *
+ * @param db Optional database connection.
+ * @returns Profile version summaries ordered newest first.
+ */
 export function listProfileVersions(db = getDb()): PlayerProfileVersionSummary[] {
   const rows = db
     .prepare<[], PlayerProfileVersionSummaryRow>(
@@ -351,6 +458,13 @@ export function listProfileVersions(db = getDb()): PlayerProfileVersionSummary[]
   return rows.map(mapProfileVersionSummaryRow);
 }
 
+/**
+ * Load one player-profile version.
+ *
+ * @param id Profile version id.
+ * @param db Optional database connection.
+ * @returns Matching profile version, or null when absent.
+ */
 export function getProfileVersion(id: string, db = getDb()): PlayerProfileVersion | null {
   const row =
     db
@@ -360,6 +474,12 @@ export function getProfileVersion(id: string, db = getDb()): PlayerProfileVersio
   return row ? mapProfileVersionRow(row) : null;
 }
 
+/**
+ * Load the active player-profile version.
+ *
+ * @param db Optional database connection.
+ * @returns Active profile version, or null when none exists.
+ */
 export function getActiveProfileVersion(db = getDb()): PlayerProfileVersion | null {
   const row =
     db
@@ -371,6 +491,14 @@ export function getActiveProfileVersion(db = getDb()): PlayerProfileVersion | nu
   return row ? mapProfileVersionRow(row) : null;
 }
 
+/**
+ * Create a player-profile version, optionally forking rows from a parent version.
+ *
+ * @param input Profile version payload.
+ * @param db Optional database connection.
+ * @returns Created profile version.
+ * @throws DataValidationError when the id already exists or parent is invalid.
+ */
 export function createProfileVersion(
   input: CreatePlayerProfileVersionInput,
   db = getDb()
@@ -445,6 +573,14 @@ export function createProfileVersion(
   return created;
 }
 
+/**
+ * Activate a player-profile version.
+ *
+ * @param id Profile version id.
+ * @param db Optional database connection.
+ * @returns Activated profile version.
+ * @throws DataNotFoundError when the version does not exist.
+ */
 export function activateProfileVersion(id: string, db = getDb()): PlayerProfileVersion {
   const activate = db.transaction(() => {
     if (!getProfileVersion(id, db)) {
@@ -468,6 +604,14 @@ export function activateProfileVersion(id: string, db = getDb()): PlayerProfileV
   return activated;
 }
 
+/**
+ * Load one player profile in a profile version.
+ *
+ * @param playerId Player id.
+ * @param profileVersion Profile version id.
+ * @param db Optional database connection.
+ * @returns Matching profile row, or null when absent.
+ */
 export function getPlayerProfile(
   playerId: string,
   profileVersion: string,
@@ -483,6 +627,14 @@ export function getPlayerProfile(
   return row ? mapPlayerProfileRow(row) : null;
 }
 
+/**
+ * Update editable player-profile fields and record history rows.
+ *
+ * @param input Profile update payload.
+ * @param db Optional database connection.
+ * @returns Updated player profile.
+ * @throws DataNotFoundError when player, version, or profile rows are missing.
+ */
 export function updatePlayerProfile(
   input: UpdatePlayerProfileInput,
   db = getDb()
@@ -573,6 +725,15 @@ export function updatePlayerProfile(
   return updateProfile();
 }
 
+/**
+ * List profile edit history for one player.
+ *
+ * @param playerId Player id.
+ * @param profileVersion Optional profile version filter.
+ * @param limit Maximum rows to return.
+ * @param db Optional database connection.
+ * @returns Newest profile history rows first.
+ */
 export function getPlayerProfileHistory(
   playerId: string,
   profileVersion?: string,
@@ -610,6 +771,14 @@ export function getPlayerProfileHistory(
     .all(playerId, limit);
 }
 
+/**
+ * List player profiles still needing LLM profile extraction.
+ *
+ * @param profileVersion Profile version id.
+ * @param playerIds Optional player id filter.
+ * @param db Optional database connection.
+ * @returns Candidate player/profile pairs.
+ */
 export function listProfileExtractionCandidates(
   profileVersion: string,
   playerIds?: string[],
@@ -648,6 +817,15 @@ export function listProfileExtractionCandidates(
     });
 }
 
+/**
+ * Mark one profile extraction candidate as failed.
+ *
+ * @param playerId Player id.
+ * @param profileVersion Profile version id.
+ * @param generatedAt Failure timestamp.
+ * @param db Optional database connection.
+ * @returns Updated player profile.
+ */
 export function markPlayerProfileExtractionFailed(
   playerId: string,
   profileVersion: string,
@@ -670,10 +848,24 @@ export function markPlayerProfileExtractionFailed(
   return profile;
 }
 
+/**
+ * List seeded Istanbul fixtures.
+ *
+ * @param db Optional database connection.
+ * @returns Fixtures ordered by kickoff time.
+ */
 export function listFixtures(db = getDb()): Fixture[] {
   return db.prepare<[], FixtureRow>("SELECT * FROM fixtures ORDER BY kicked_off_at").all();
 }
 
+/**
+ * Update editable player attributes and record history rows.
+ *
+ * @param input Attribute update payload.
+ * @param db Optional database connection.
+ * @returns Updated player attributes.
+ * @throws DataNotFoundError when player, version, or attribute rows are missing.
+ */
 export function updatePlayerAttributes(
   input: UpdatePlayerAttributesInput,
   db = getDb()
@@ -763,6 +955,15 @@ export function updatePlayerAttributes(
   return updateAttributes();
 }
 
+/**
+ * List player attributes that are eligible for LLM derivation.
+ *
+ * @param datasetVersion Attribute dataset version id.
+ * @param profileVersion Profile version id used as derivation context.
+ * @param playerIds Optional player id filter.
+ * @param db Optional database connection.
+ * @returns Candidate player/profile/attribute triples.
+ */
 export function listAttributeDerivationCandidates(
   datasetVersion: string,
   profileVersion: string,
@@ -844,6 +1045,14 @@ export function listAttributeDerivationCandidates(
     });
 }
 
+/**
+ * List profile issues that block attribute derivation.
+ *
+ * @param profileVersion Profile version id.
+ * @param playerIds Optional player id filter.
+ * @param db Optional database connection.
+ * @returns Blocking reasons per player.
+ */
 export function listPlayerProfileDerivationBlockers(
   profileVersion: string,
   playerIds?: string[],
@@ -896,6 +1105,15 @@ export function listPlayerProfileDerivationBlockers(
     });
 }
 
+/**
+ * Mark one attribute derivation candidate as failed.
+ *
+ * @param playerId Player id.
+ * @param datasetVersion Attribute dataset version id.
+ * @param generatedAt Failure timestamp.
+ * @param db Optional database connection.
+ * @returns Updated player attributes.
+ */
 export function markPlayerAttributeDerivationFailed(
   playerId: string,
   datasetVersion: string,
@@ -920,6 +1138,15 @@ export function markPlayerAttributeDerivationFailed(
   return attributes;
 }
 
+/**
+ * List attribute edit history for one player.
+ *
+ * @param playerId Player id.
+ * @param datasetVersion Optional dataset version filter.
+ * @param limit Maximum rows to return.
+ * @param db Optional database connection.
+ * @returns Newest attribute history rows first.
+ */
 export function getPlayerAttributeHistory(
   playerId: string,
   datasetVersion?: string,
@@ -957,6 +1184,13 @@ export function getPlayerAttributeHistory(
     .all(playerId, limit);
 }
 
+/**
+ * Insert a user-created player into the legacy player table.
+ *
+ * @param playerData User-created player payload.
+ * @param db Optional database connection.
+ * @returns Inserted user-created player.
+ */
 export function insertUserPlayer(
   playerData: InsertUserPlayerInput,
   db = getDb()
@@ -1007,6 +1241,14 @@ export function insertUserPlayer(
   return inserted;
 }
 
+/**
+ * List a club squad with attributes from the active legacy dataset version.
+ *
+ * @param clubId Club id.
+ * @param origin Optional player-origin filter.
+ * @param db Optional database connection.
+ * @returns Squad players paired with active attributes when available.
+ */
 export function listSquadWithActiveAttributes(
   clubId: string,
   origin?: PlayerOrigin,

@@ -189,9 +189,17 @@ function resolveAttributeVersion(version: string | undefined): DatasetVersion | 
   return getActiveDatasetVersion();
 }
 
+/**
+ * Register core data management routes for clubs, dataset versions, players, and attributes.
+ *
+ * @param app Fastify instance receiving the route registrations.
+ * @returns Nothing; routes are registered for later HTTP handling.
+ */
 export function registerDataRoutes(app: FastifyInstance): void {
+  /** GET `/api/clubs`: list clubs in the active working dataset. */
   app.get<{ Reply: Club[] }>("/api/clubs", () => listClubs());
 
+  /** GET `/api/clubs/:id/squad`: list a club squad with active attributes. */
   app.get<{
     Params: SquadParams;
     Querystring: SquadQuery;
@@ -207,8 +215,10 @@ export function registerDataRoutes(app: FastifyInstance): void {
     return listSquadWithActiveAttributes(request.params.id, origin);
   });
 
+  /** GET `/api/dataset-versions`: list working dataset versions. */
   app.get<{ Reply: DatasetVersion[] }>("/api/dataset-versions", () => listDatasetVersions());
 
+  /** POST `/api/dataset-versions`: create a new working dataset version. */
   app.post<{ Body: unknown; Reply: DatasetVersion | ErrorReply }>(
     "/api/dataset-versions",
     (request, reply) => {
@@ -232,6 +242,7 @@ export function registerDataRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** POST `/api/dataset-versions/:id/activate`: activate a working dataset version. */
   app.post<{ Params: DatasetVersionParams; Reply: DatasetVersion | ErrorReply }>(
     "/api/dataset-versions/:id/activate",
     (request, reply) => {
@@ -248,6 +259,7 @@ export function registerDataRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** GET `/api/players/:playerId`: load one player record. */
   app.get<{ Params: PlayerParams; Reply: Player | ErrorReply }>(
     "/api/players/:playerId",
     (request, reply) => {
@@ -262,6 +274,7 @@ export function registerDataRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** GET `/api/players/:playerId/attributes`: load attributes for one player/version. */
   app.get<{
     Params: PlayerParams;
     Querystring: AttributeQuery;
@@ -292,6 +305,7 @@ export function registerDataRoutes(app: FastifyInstance): void {
     return attributes;
   });
 
+  /** PATCH `/api/players/:playerId/attributes`: update validated player attributes. */
   app.patch<{ Params: PlayerParams; Body: unknown; Reply: PlayerAttributes | ErrorReply }>(
     "/api/players/:playerId/attributes",
     (request, reply) => {
@@ -330,6 +344,7 @@ export function registerDataRoutes(app: FastifyInstance): void {
     }
   );
 
+  /** GET `/api/players/:playerId/attribute-history`: list attribute changes for one player. */
   app.get<{
     Params: PlayerParams;
     Querystring: AttributeHistoryQuery;

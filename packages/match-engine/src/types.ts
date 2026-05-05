@@ -47,6 +47,7 @@ export type TackleType = "standing" | "sliding";
 export type PassType = "short" | "long" | "through_ball" | "cross" | "cutback" | "switch" | "back";
 export type SubstitutionReason = "manual" | "auto-fatigue" | "auto-tactical" | "auto-injury-future";
 
+/** Calibrated v1 player attributes consumed directly by the match engine. */
 export interface PlayerAttributes {
   passing: number;
   shooting: number;
@@ -60,6 +61,7 @@ export interface PlayerAttributes {
   control: number;
 }
 
+/** FC25-style outfield attribute payload accepted by the v2 adapter. */
 export interface PlayerAttributesV2 {
   acceleration: number;
   sprintSpeed: number;
@@ -92,6 +94,7 @@ export interface PlayerAttributesV2 {
   aggression: number;
 }
 
+/** FC25-style goalkeeper attribute payload required for v2 goalkeepers. */
 export interface GoalkeeperAttributesV2 {
   gkDiving: number;
   gkHandling: number;
@@ -100,6 +103,7 @@ export interface GoalkeeperAttributesV2 {
   gkReflexes: number;
 }
 
+/** A match team using the calibrated v1 player shape. */
 export interface Team {
   id: string;
   name: string;
@@ -111,6 +115,7 @@ export interface Team {
   secondaryColor?: string;
 }
 
+/** Public v1 player input accepted by the match engine. */
 export interface PlayerInput {
   id: string;
   name: string;
@@ -123,11 +128,13 @@ export interface PlayerInput {
   overrides?: PlayerOverrides;
 }
 
+/** A match team using FC25-style v2 player inputs. */
 export interface TeamV2 extends Omit<Team, "players" | "bench"> {
   players: PlayerInputV2[];
   bench?: PlayerInputV2[];
 }
 
+/** Public FC25-style v2 player input accepted through the adapter bridge. */
 export interface PlayerInputV2 {
   id: string;
   name: string;
@@ -147,6 +154,7 @@ export interface PlayerInputV2 {
   overrides?: PlayerOverrides;
 }
 
+/** Tactical levers applied at kickoff for each simulated team. */
 export interface TeamTactics {
   formation: string;
   mentality: "defensive" | "balanced" | "attacking";
@@ -156,6 +164,7 @@ export interface TeamTactics {
   width: "narrow" | "normal" | "wide";
 }
 
+/** Optional user-player intent toggles applied to an individual player. */
 export interface PlayerOverrides {
   killerPass?: boolean;
   takeItOnYourself?: boolean;
@@ -165,6 +174,7 @@ export interface PlayerOverrides {
   aggressiveTackle?: boolean;
 }
 
+/** Public v1 match configuration for a deterministic simulation. */
 export interface MatchConfig {
   homeTeam: Team;
   awayTeam: Team;
@@ -179,11 +189,13 @@ export interface MatchConfig {
   };
 }
 
+/** Public v2 match configuration using FC25-style player inputs. */
 export interface MatchConfigV2 extends Omit<MatchConfig, "homeTeam" | "awayTeam"> {
   homeTeam: TeamV2;
   awayTeam: TeamV2;
 }
 
+/** Feature flags for calibrated optional match dynamics. */
 export interface MatchDynamicsConfig {
   fatigue?: boolean;
   scoreState?: boolean;
@@ -193,6 +205,7 @@ export interface MatchDynamicsConfig {
   sideSwitch?: boolean;
 }
 
+/** Scheduled substitution request applied at or after the requested match clock. */
 export interface ScheduledSubstitution {
   teamId: TeamId;
   playerOutId: string;
@@ -201,6 +214,7 @@ export interface ScheduledSubstitution {
   second?: number;
 }
 
+/** Full replay artefact produced by `simulateMatch`. */
 export interface MatchSnapshot {
   meta: {
     homeTeam: { id: string; name: string; shortName: string };
@@ -231,11 +245,13 @@ export interface MatchSnapshot {
   };
 }
 
+/** End-of-match stamina entry for one player. */
 export interface PlayerStaminaSummary {
   playerId: string;
   stamina: number;
 }
 
+/** Summary of one manual or automatic substitution. */
 export interface SubstitutionSummary {
   minute: number;
   second: number;
@@ -245,18 +261,21 @@ export interface SubstitutionSummary {
   mode: "manual" | "auto";
 }
 
+/** Diagnostic record of score-state urgency at a score change. */
 export interface ScoreStateEventSummary {
   tick: number;
   score: { home: number; away: number };
   urgency: { home: number; away: number };
 }
 
+/** Selected set-piece takers for a team. */
 export interface SetPieceTakers {
   freeKick: string | null;
   corner: string | null;
   penalty: string | null;
 }
 
+/** Aggregate set-piece output for a team. */
 export interface SetPieceSummary {
   corners: number;
   directFreeKicks: number;
@@ -266,6 +285,7 @@ export interface SetPieceSummary {
   setPieceGoals: number;
 }
 
+/** Roster metadata preserved in replay snapshots. */
 export interface SnapshotRosterPlayer {
   id: string;
   name: string;
@@ -284,6 +304,7 @@ export interface SnapshotRosterPlayer {
   gkAttributesV2?: GoalkeeperAttributesV2;
 }
 
+/** One deterministic simulation tick in a replay or stream. */
 export interface MatchTick {
   iteration: number;
   matchClock: { half: 1 | 2; minute: number; seconds: number };
@@ -309,6 +330,7 @@ export interface MatchTick {
   events: SemanticEvent[];
 }
 
+/** Optional per-tick diagnostic payload for workbench visualisation. */
 export interface MatchTickDiagnostics {
   shape: {
     home: TeamShapeDiagnostics;
@@ -316,6 +338,7 @@ export interface MatchTickDiagnostics {
   };
 }
 
+/** Team-shape diagnostic values used by replay and compare views. */
 export interface TeamShapeDiagnostics {
   activePlayers: number;
   lineHeight: {
@@ -338,6 +361,7 @@ export interface TeamShapeDiagnostics {
   ballSidePlayers: number;
 }
 
+/** Semantic event emitted for replay timelines, statistics, and UAT inspection. */
 export interface SemanticEvent {
   type:
     | "goal"
@@ -369,6 +393,7 @@ export interface SemanticEvent {
   detail?: Record<string, unknown>;
 }
 
+/** Aggregate team statistics captured at each replay tick and final summary. */
 export interface TeamStatistics {
   goals: number;
   shots: { total: number; on: number; off: number; blocked: number };
@@ -379,6 +404,7 @@ export interface TeamStatistics {
   possession: number;
 }
 
+/** Characterisation target bands used by calibration checks. */
 export interface CalibrationTargets {
   shotsTarget: [number, number];
   goalsTarget: [number, number];

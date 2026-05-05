@@ -68,6 +68,15 @@ interface PlayerNameRow {
 const applyLocks = new Set<string>();
 const LOW_RISK_CHANGE_FIELDS = ["age", "name", "nationality"] as const;
 
+/**
+ * Apply low-risk Squad Manager suggestions by cloning the source FC25 dataset version.
+ *
+ * @param input Club, source dataset, low-risk suggestions, optional actor/clock, and database.
+ * @returns New inactive dataset version id, idempotency flag, summary counts, and audit payload.
+ * @throws SquadManagerApplyConflictError when a concurrent apply is already running for the club.
+ * @throws Error when source state is stale or suggestions are not low-risk player updates.
+ * @see docs/SQUAD_MANAGER_APPLY_MECHANISM.md
+ */
 export function applyLowRiskSquadManagerSuggestions(
   input: ApplyLowRiskSquadManagerInput
 ): ApplyLowRiskSquadManagerResult {
@@ -162,6 +171,15 @@ export function applyLowRiskSquadManagerSuggestions(
   }
 }
 
+/**
+ * Activate an FC25 dataset version through the explicit Squad Manager activation flow.
+ *
+ * @param datasetVersionId Dataset version id to make active.
+ * @param db Database connection to update.
+ * @param now Clock used for the update timestamp.
+ * @returns Activated dataset version.
+ * @throws Error when the requested dataset version does not exist.
+ */
 export function activateFc25DatasetVersionForSquadManager(
   datasetVersionId: string,
   db = getDb(),
@@ -192,6 +210,12 @@ export function activateFc25DatasetVersionForSquadManager(
   return activated;
 }
 
+/**
+ * Parse Squad Manager apply audit metadata from a dataset-version description.
+ *
+ * @param description Dataset version description field.
+ * @returns Audit payload when the description contains a valid apply record, otherwise null.
+ */
 export function parseSquadManagerApplyAudit(
   description: string | null | undefined
 ): SquadManagerApplyAudit | null {
@@ -224,6 +248,9 @@ export function parseSquadManagerApplyAudit(
   }
 }
 
+/**
+ * Error raised when concurrent Squad Manager apply requests target the same source and club.
+ */
 export class SquadManagerApplyConflictError extends Error {
   constructor(message: string) {
     super(message);

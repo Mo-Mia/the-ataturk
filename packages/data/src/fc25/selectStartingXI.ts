@@ -32,6 +32,9 @@ const ADJACENT_POSITIONS: Record<Position, readonly Fc25Position[]> = {
   ST: ["LW", "RW", "AM"]
 };
 
+/**
+ * Error raised when a squad cannot satisfy the requested FC25 lineup shape.
+ */
 export class Fc25LineupSelectionError extends Error {
   readonly formation: string;
   readonly role?: Position;
@@ -58,6 +61,14 @@ export interface LineupSelectionResult {
   warnings: MatchRunLineupWarning[];
 }
 
+/**
+ * Select an automatic starting XI for a supported formation.
+ *
+ * @param squad Candidate FC25 squad players.
+ * @param formation Supported tactical formation.
+ * @returns Eleven players assigned to formation roles.
+ * @throws Fc25LineupSelectionError when no valid role coverage can be found.
+ */
 export function selectStartingXI(
   squad: readonly Fc25SquadPlayer[],
   formation: SupportedFormation
@@ -65,6 +76,15 @@ export function selectStartingXI(
   return selectLineup(squad, formation).xi;
 }
 
+/**
+ * Select an FC25 lineup either automatically or from a validated manual XI.
+ *
+ * @param squad Candidate FC25 squad players.
+ * @param formation Supported tactical formation.
+ * @param manualPlayerIds Optional ordered manual XI player ids.
+ * @returns XI, bench, role assignments, and lineup warnings.
+ * @throws Fc25LineupSelectionError when the requested manual or automatic XI is invalid.
+ */
 export function selectLineup(
   squad: readonly Fc25SquadPlayer[],
   formation: SupportedFormation,
@@ -79,6 +99,14 @@ export function selectLineup(
   return resultFor("manual", squad, formation, manualXi);
 }
 
+/**
+ * Select the strongest bench outside the starting XI.
+ *
+ * @param squad Full available squad.
+ * @param xi Starting players to exclude.
+ * @param size Maximum bench size.
+ * @returns Bench players ordered by rating.
+ */
 export function selectBench(
   squad: readonly Fc25SquadPlayer[],
   xi: readonly Fc25SquadPlayer[],
@@ -91,14 +119,31 @@ export function selectBench(
     .slice(0, size);
 }
 
+/**
+ * Check whether a string is one of the supported FC25 formation templates.
+ *
+ * @param value Formation string to validate.
+ * @returns True when the value is a supported formation.
+ */
 export function supportedFormation(value: string): value is SupportedFormation {
   return Object.hasOwn(FORMATION_TEMPLATES, value);
 }
 
+/**
+ * Return the engine role sequence for a supported FC25 formation.
+ *
+ * @param formation Supported formation.
+ * @returns Ordered role template used for lineup assignment.
+ */
 export function formationRoles(formation: SupportedFormation): readonly Position[] {
   return FORMATION_TEMPLATES[formation];
 }
 
+/**
+ * Return the source-position adjacency map used for fallback lineup coverage.
+ *
+ * @returns Mapping from engine roles to acceptable nearby FC25 source positions.
+ */
 export function fallbackAdjacency(): Record<Position, readonly Fc25Position[]> {
   return ADJACENT_POSITIONS;
 }

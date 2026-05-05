@@ -141,6 +141,12 @@ interface Fc25PlayerDbRow {
 
 type Fc25ClubRow = Fc25Club;
 
+/**
+ * Import an FC25/FC26 CSV into a versioned FC25 runtime dataset.
+ *
+ * @param options CSV path, database path, dataset id/name, format, and club-universe options.
+ * @returns Import summary including dataset version id and row counts.
+ */
 export function importFc25Dataset(options: Fc25ImportOptions = {}): Fc25ImportResult {
   const csvPath = resolveRepoPath(options.csvPath ?? FC25_SOURCE_FILE_DEFAULT);
   const sourceCsv = readFileSync(csvPath, "utf8");
@@ -184,6 +190,12 @@ export function importFc25Dataset(options: Fc25ImportOptions = {}): Fc25ImportRe
   };
 }
 
+/**
+ * Load the active FC25 runtime dataset version.
+ *
+ * @param db Optional database connection.
+ * @returns Active FC25 dataset version, or null when none exists.
+ */
 export function getActiveFc25DatasetVersion(db = getDb()): Fc25DatasetVersion | null {
   const row =
     db
@@ -195,6 +207,13 @@ export function getActiveFc25DatasetVersion(db = getDb()): Fc25DatasetVersion | 
   return row ? mapDatasetVersionRow(row) : null;
 }
 
+/**
+ * List FC25 clubs for a dataset version.
+ *
+ * @param datasetVersionId Dataset version id, defaulting to the active version.
+ * @param db Optional database connection.
+ * @returns Clubs ordered by name.
+ */
 export function listFc25Clubs(
   datasetVersionId = getActiveFc25DatasetVersion()?.id,
   db = getDb()
@@ -210,6 +229,15 @@ export function listFc25Clubs(
     .all(datasetVersionId);
 }
 
+/**
+ * Load an FC25 club squad for simulation or admin verification.
+ *
+ * @param clubId Club id.
+ * @param datasetVersionId Dataset version id, defaulting to the active version.
+ * @param options Include-mode and database override.
+ * @returns Club metadata plus selected squad players.
+ * @throws If no active dataset exists or the club is unknown in the dataset.
+ */
 export function loadFc25Squad(
   clubId: Fc25ClubId,
   datasetVersionId = getActiveFc25DatasetVersion()?.id,
@@ -257,6 +285,12 @@ export function loadFc25Squad(
   };
 }
 
+/**
+ * Parse CLI arguments for the FC25 import command.
+ *
+ * @param args Raw command-line arguments.
+ * @returns Import options.
+ */
 export function parseFc25ImportCliArgs(args: string[]): Fc25ImportOptions {
   const options: Fc25ImportOptions = {};
 

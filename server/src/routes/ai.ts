@@ -166,7 +166,14 @@ const cacheTtlMs = envInteger("FOOTBALL_DATA_CACHE_TTL_MS", 86_400_000);
 let footballDataCurlFallbackRunner = runFootballDataCurlFallback;
 let geminiCurlFallbackRunner = runGeminiCurlFallback;
 
+/**
+ * Register AI-assisted Squad Manager routes for context, squad loading, and verification.
+ *
+ * @param app Fastify instance receiving the route registrations.
+ * @returns Nothing; routes are registered for later HTTP handling.
+ */
 export function registerAiRoutes(app: FastifyInstance): void {
+  /** GET `/api/ai/squad-manager/context`: load active dataset, versions, clubs, and live ids. */
   app.get("/api/ai/squad-manager/context", () => {
     const activeVersion = getActiveFc25DatasetVersion();
     return {
@@ -179,6 +186,7 @@ export function registerAiRoutes(app: FastifyInstance): void {
     };
   });
 
+  /** GET `/api/ai/squad-manager/squad`: load a club squad for verification review. */
   app.get<{
     Querystring: { clubId?: unknown; datasetVersionId?: unknown };
     Reply: { squad: Fc25SquadPlayer[] } | ErrorReply;
@@ -197,6 +205,7 @@ export function registerAiRoutes(app: FastifyInstance): void {
     }
   });
 
+  /** POST `/api/ai/verify-squad`: reconcile local FC25 squad data against football-data.org. */
   app.post<{ Body: unknown }>("/api/ai/verify-squad", async (request, reply) => {
     const parsed = parseVerifySquadBody(request.body);
     if ("error" in parsed) {
@@ -248,18 +257,35 @@ export function registerAiRoutes(app: FastifyInstance): void {
   });
 }
 
+/**
+ * Override the Gemini curl fallback runner in tests.
+ *
+ * @param runner Replacement runner, or undefined to restore the default.
+ * @returns Nothing.
+ */
 export function setGeminiCurlFallbackRunnerForTests(
   runner: typeof runGeminiCurlFallback | undefined
 ): void {
   geminiCurlFallbackRunner = runner ?? runGeminiCurlFallback;
 }
 
+/**
+ * Override the football-data.org curl fallback runner in tests.
+ *
+ * @param runner Replacement runner, or undefined to restore the default.
+ * @returns Nothing.
+ */
 export function setFootballDataCurlFallbackRunnerForTests(
   runner: typeof runFootballDataCurlFallback | undefined
 ): void {
   footballDataCurlFallbackRunner = runner ?? runFootballDataCurlFallback;
 }
 
+/**
+ * Reset AI route caches, fallback runners, and rate-limit state between tests.
+ *
+ * @returns Nothing.
+ */
 export function resetAiRouteStateForTests(): void {
   footballDataCache.clear();
   footballDataCurlFallbackRunner = runFootballDataCurlFallback;
@@ -267,6 +293,12 @@ export function resetAiRouteStateForTests(): void {
   rateLimitGate.reset();
 }
 
+/**
+ * Create the in-memory football-data.org sliding-window rate limiter.
+ *
+ * @param config Minute/day limits and window durations.
+ * @returns Gate with attempt, remaining, and reset operations.
+ */
 export function createSlidingWindowRateLimitGate(config: RateLimitConfig) {
   let minuteRequests: number[] = [];
   let dayRequests: number[] = [];

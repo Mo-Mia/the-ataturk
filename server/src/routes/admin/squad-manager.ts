@@ -28,7 +28,15 @@ interface ApplyBody {
   verifyFresh?: boolean;
 }
 
+/**
+ * Register guarded Squad Manager admin mutation routes.
+ *
+ * @param app Fastify instance receiving the route registrations.
+ * @returns Nothing; routes are registered for later HTTP handling.
+ * @see docs/SQUAD_MANAGER_APPLY_MECHANISM.md
+ */
 export function registerSquadManagerAdminRoutes(app: FastifyInstance): void {
+  /** POST `/api/admin/squad-manager/apply`: apply low-risk suggestions to a new inactive dataset. */
   app.post<{ Body: unknown }>("/api/admin/squad-manager/apply", (request, reply) => {
     const parsed = parseApplyBody(request.body);
     if ("error" in parsed) {
@@ -50,6 +58,7 @@ export function registerSquadManagerAdminRoutes(app: FastifyInstance): void {
     }
   });
 
+  /** POST `/api/admin/squad-manager/dataset-versions/:id/activate`: explicitly activate a dataset. */
   app.post<{ Params: ActivateParams }>(
     "/api/admin/squad-manager/dataset-versions/:id/activate",
     (request, reply) => {

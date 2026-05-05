@@ -64,12 +64,20 @@ const RUBRIC_DOCUMENT_PATH = new URL("../../../../docs/prompt_rubric_draft.md", 
 const ATTRIBUTE_DERIVATION_RETRY_DELAY_MS = process.env.NODE_ENV === "test" ? 0 : 5_000;
 const TRANSIENT_CIRCUIT_BREAKER_LIMIT = 5;
 
+/**
+ * Register attribute derivation preflight and streaming run routes.
+ *
+ * @param app Fastify instance receiving the route registrations.
+ * @returns Nothing; routes are registered for later HTTP handling.
+ */
 export function registerAttributeAdminRoutes(app: FastifyInstance): void {
+  /** GET `/api/attribute-derivation/preflight`: validate derivation readiness. */
   app.get<{ Querystring: DerivationQuery; Reply: DerivationPreflight }>(
     "/api/attribute-derivation/preflight",
     (request) => runPreflight(request.query)
   );
 
+  /** POST `/api/attribute-derivation/run`: stream Gemini attribute derivation progress over SSE. */
   app.post<{ Body: unknown }>("/api/attribute-derivation/run", async (request, reply) => {
     const input = parseDerivationBody(request.body);
 

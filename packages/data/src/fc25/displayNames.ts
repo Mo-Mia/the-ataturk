@@ -8,6 +8,12 @@ const CURATED_DISPLAY_NAMES: Record<string, string> = {
   "231866": "Rodri"
 };
 
+/**
+ * Resolve the display name used for an FC25 player in UI and match artefacts.
+ *
+ * @param input FC25 source identifiers and names.
+ * @returns Curated or cleaned Latin display name.
+ */
 export function displayNameForFc25Player(input: Fc25DisplayNameInput): string {
   const curated = CURATED_DISPLAY_NAMES[input.id];
   if (curated) {
@@ -31,6 +37,12 @@ export function displayNameForFc25Player(input: Fc25DisplayNameInput): string {
   return sourceShortName;
 }
 
+/**
+ * Remove non-Latin suffixes from FIFA source names while preserving Latin marks.
+ *
+ * @param value Raw source name.
+ * @returns Trimmed Latin-prefix name.
+ */
 export function stripNonLatinSuffix(value: string): string {
   const firstNonLatinIndex = Array.from(value).findIndex(
     (char) => !/[\p{Script=Latin}\p{Mark}\s.'’-]/u.test(char)
