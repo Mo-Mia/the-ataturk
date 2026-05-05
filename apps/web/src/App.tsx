@@ -11,6 +11,7 @@ import { AdminExtractProfilesPage } from "./admin/pages/AdminExtractProfilesPage
 import { AdminHomePage } from "./admin/pages/AdminHomePage";
 import { AdminPlayerDetailPage } from "./admin/pages/AdminPlayerDetailPage";
 import { AdminProfileVersionsPage } from "./admin/pages/AdminProfileVersionsPage";
+import { LayoutShell } from "./layout/LayoutShell";
 import { MatchPage } from "./match/MatchPage";
 import { BatchDistributionPage } from "./match/visualiser/BatchDistributionPage";
 import { ComparePage } from "./match/visualiser/ComparePage";
@@ -195,29 +196,32 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<SmokeTestPage />} />
-          <Route path="/match" element={<MatchPage />} />
-          <Route path="/visualise" element={<VisualiserPage />} />
-          <Route path="/visualise/batch/:batchId" element={<BatchDistributionPage />} />
-          <Route path="/visualise/compare" element={<ComparePage />} />
-          <Route path="/visualise/run" element={<SimRunnerPage />} />
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminHomePage />} />
-            <Route path="clubs" element={<AdminClubsPage />} />
-            <Route path="clubs/:id" element={<AdminClubDetailPage />} />
-            <Route path="players/:id" element={<AdminPlayerDetailPage />} />
-            <Route path="dataset-versions" element={<AdminDatasetVersionsPage />} />
-            <Route path="profile-versions" element={<AdminProfileVersionsPage />} />
-            <Route path="extract-profiles" element={<AdminExtractProfilesPage />} />
-            <Route path="derive-attributes" element={<AdminDeriveAttributesPage />} />
-            <Route
-              path="squad-manager"
-              element={
-                <Suspense fallback={<p>Loading squad manager...</p>}>
-                  <AdminSquadManagerPage />
-                </Suspense>
-              }
-            />
+          <Route element={<LayoutShell />}>
+            <Route path="/" element={<SmokeTestPage />} />
+            <Route path="/smoke-test" element={<SmokeTestPage />} />
+            <Route path="/match" element={<MatchPage />} />
+            <Route path="/visualise" element={<VisualiserPage />} />
+            <Route path="/visualise/batch/:batchId" element={<BatchDistributionPage />} />
+            <Route path="/visualise/compare" element={<ComparePage />} />
+            <Route path="/visualise/run" element={<SimRunnerPage />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminHomePage />} />
+              <Route path="clubs" element={<AdminClubsPage />} />
+              <Route path="clubs/:id" element={<AdminClubDetailPage />} />
+              <Route path="players/:id" element={<AdminPlayerDetailPage />} />
+              <Route path="dataset-versions" element={<AdminDatasetVersionsPage />} />
+              <Route path="profile-versions" element={<AdminProfileVersionsPage />} />
+              <Route path="extract-profiles" element={<AdminExtractProfilesPage />} />
+              <Route path="derive-attributes" element={<AdminDeriveAttributesPage />} />
+              <Route
+                path="squad-manager"
+                element={
+                  <Suspense fallback={<p>Loading squad manager...</p>}>
+                    <AdminSquadManagerPage />
+                  </Suspense>
+                }
+              />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>
