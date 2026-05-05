@@ -34,17 +34,17 @@ Score each of the following dimensions:
 
 ## Calibration anchors
 
-These are the engine's own per-match calibration targets, validated across 200 seeds. Use these as the reference for "is the calibration on target", **not** real-football EPL averages (which differ slightly):
+These are the active Phase 14b/17 per-match calibration anchors, validated across the FC26 PL20 matrix against real-PL 2025/26 one-SD bands:
 
 | Metric | Target band | Current full-90 baseline |
 |---|---|---|
-| Total shots per match | 16–24 | 16.54 |
-| Total goals per match | 2–6 | 2.10 |
-| Total fouls per match | 8–16 | 9.86 |
-| Total cards per match | 2–6 | 2.70 |
-| Max single score share | ≤ 40% | comfortably below ceiling in latest full-match checks |
+| Total shots per match | 19.4-30.2 | 22.67 |
+| Total goals per match | 1.16-4.34 | 2.19 |
+| Total fouls per match | 16.6-26.6 | 17.47 |
+| Total cards per match | 1.83-5.87 | 5.10 |
+| Total corners per match | 6.7-13.2 | 7.01 |
 
-A run that lands at 8 total shots is anomalous; a run at 28 total shots is also anomalous. Both are worth flagging. Variance across seeds is expected and **not** a calibration concern.
+A run that lands well outside these bands is worth inspecting. Variance across individual seeds is expected and **not** automatically a calibration concern.
 
 ## Known limitations — do NOT flag these as concerns
 
@@ -55,7 +55,7 @@ issues wastes triage time:
 - **No extra time or penalties.** Matches end at 90:00 regardless of score.
 - **No in-match tactical changes.** Tactics are locked at kickoff.
 - **Only four formations supported.** 4-4-2, 4-3-1-2, 4-3-3, 4-2-3-1.
-- **Only five Premier League clubs available.** Arsenal, Manchester City, Manchester United, Liverpool, Aston Villa.
+- **Squad Manager live verification is mapped for only five Premier League clubs.** Match simulation uses the active FC26 PL20 runtime dataset, but football-data.org verification remains mapped to Arsenal, Manchester City, Manchester United, Liverpool, and Aston Villa.
 - **No commentary.** Match output is stats and replay only.
 - **No live substitutions during replay.** Scheduled substitutions and AI Auto Subs exist, but live in-replay substitution control is deferred.
 - **No manual bench editor.** Manual starting XIs exist; bench selection is automatic.

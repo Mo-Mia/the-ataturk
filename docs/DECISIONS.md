@@ -4,6 +4,33 @@ Append-only. Newest at the top. Each entry: date, decision, rationale, alternati
 
 ---
 
+## 2026-05-05 — FootSim UI consolidation: dashboard + navigation strip
+
+The workbench has grown to five disparate pages across thirty sprints with no
+unifying surface. This sprint adds a persistent navigation strip across existing
+pages and a read-only dashboard at `/`, providing observability (what's the
+state of the system?) and wayfinding (how do I reach the page I want?) without
+redesigning any existing page.
+
+The dashboard is read-only, widget-based, and click-through to existing pages
+for any interactive work. Widgets surface active dataset, recent runs, last
+batch summary, calibration baseline, engine character, and system status. The
+navigation strip is persistent, minimal, and reaches all five existing
+workbench routes.
+
+Sprint timing: ships immediately after Phase 17 closed the calibration round.
+The engine now matches real-PL 2025/26 within 1 SD across all primary metrics
+for the first time; the engine-character card surfaces this state. Active
+runtime DB is FC26 PL20 (all 20 Premier League clubs).
+
+This is not an aesthetic project. Existing page styles stay heterogeneous.
+Future sprints address visual coherence; this one addresses navigability and
+observability.
+
+Out of scope and tracked in BACKLOG: aesthetic theming pass, information
+architecture refactor, mobile responsiveness, real-time updates, dashboard
+customisation, mutation controls on the dashboard.
+
 ## 2026-05-05 — FootSim Phase 17 outcome: corner pathways landed, Phase 14b locked
 
 Phase 17 completed the Phase 14b event-volume tuning arc. Save/parry-wide

@@ -8,6 +8,39 @@ Add new items at the top of the relevant section. If an item sits here
 for more than a few months without being addressed, it's probably not
 actually worth doing — delete it.
 
+## Workbench UI
+
+### Aesthetic theming pass across workbench pages
+Existing workbench pages intentionally remain visually heterogeneous after the
+dashboard/navigation sprint. A future pass can make the surfaces coherent once
+the observability/navigation structure has settled.
+
+### Information architecture refactor
+Reorganise the workbench around workflows rather than current page boundaries.
+The dashboard/navigation sprint keeps existing routes intact.
+
+### Mobile responsive layouts for workbench pages
+The dashboard and navigation avoid obvious breakage on narrow screens, but
+mobile ergonomics for the broader workbench remain deferred.
+
+### Real-time dashboard updates
+Consider websocket or polling support for running simulations, new runs, and
+server state. The current dashboard refreshes only on page load/navigation.
+
+### Dashboard widget customisation
+Allow user-saved widget layouts only after the static dashboard has proved
+which signals are actually useful.
+
+### Mutation controls on dashboard
+Consider delete run, switch dataset, or similar actions only once UAT capability
+validates that dashboard mutations do not degrade operational safety.
+
+### Search / command palette for navigation
+Useful if the page set grows beyond the current persistent navigation strip.
+
+### Submenus or dropdowns in nav strip
+Keep deferred until page count or route depth makes the flat strip inefficient.
+
 ## Match Orchestration
 
 ### ~~Half-time historical state — exact stats, simulated micro-state~~ ✅ Done
